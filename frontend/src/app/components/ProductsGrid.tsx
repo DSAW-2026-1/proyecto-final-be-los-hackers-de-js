@@ -1,3 +1,4 @@
+//TODO: PROTOTYPE - NOT INTERACTIVE
 import { ProductCard } from './ProductCard';
 import { Button } from './ui/button';
 import { Grid3x3, List } from 'lucide-react';

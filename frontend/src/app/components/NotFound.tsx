@@ -1,3 +1,4 @@
+//TODO: PROTOTYPE - NOT INTERACTIVE
 import { Button } from './ui/button';
 import { Home, Search, ArrowLeft, HelpCircle } from 'lucide-react';
 import { motion } from 'motion/react';

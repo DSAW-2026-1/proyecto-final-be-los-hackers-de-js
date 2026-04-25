@@ -1,3 +1,4 @@
+//TODO: PROTOTYPE - NOT INTERACTIVE
 import { Facebook, Instagram, Twitter, Mail, MapPin, Phone } from 'lucide-react';
 import { Separator } from './ui/separator';
 

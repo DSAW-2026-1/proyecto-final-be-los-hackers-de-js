@@ -1,3 +1,4 @@
+//TODO: PROTOTYPE - NOT INTERACTIVE
 import { Button } from './ui/button';
 import { ArrowRight, Package, Users, Shield } from 'lucide-react';
 

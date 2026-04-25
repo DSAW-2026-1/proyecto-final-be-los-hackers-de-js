@@ -1,3 +1,4 @@
+//TODO: PROTOTYPE - NOT INTERACTIVE
 import { Card } from './ui/card';
 import { Input } from './ui/input';
 import { Button } from './ui/button';

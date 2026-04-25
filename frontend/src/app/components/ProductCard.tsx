@@ -1,3 +1,4 @@
+//TODO: PROTOTYPE - NOT INTERACTIVE
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
 import { Star, MapPin } from 'lucide-react';

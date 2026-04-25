@@ -1,3 +1,4 @@
+//TODO: PROTOTYPE - NOT INTERACTIVE
 import { ShoppingCart, Bell, User, Search, Menu } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';

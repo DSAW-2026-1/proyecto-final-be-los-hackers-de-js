@@ -1,3 +1,4 @@
+//TODO: PROTOTYPE - NOT INTERACTIVE
 import { useState } from 'react';
 import { ProductCard } from './ProductCard';
 import { Input } from './ui/input';
