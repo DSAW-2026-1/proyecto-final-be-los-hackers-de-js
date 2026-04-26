@@ -8,7 +8,9 @@ import { Checkbox } from './ui/checkbox';
 import { Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router';
 import { authService } from '../services/authService';
+import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
+//TODO: You should not be able to log in when you are already logged in. That's just straight up cursed
 
 export function Login() {
   const [email, setEmail] = useState('');
@@ -16,6 +18,7 @@ export function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +36,7 @@ export function Login() {
         password: password,
       });
 
-      authService.setToken(response.token);
+      login(response.token);
       toast.success('¡Bienvenido de nuevo!');
       navigate('/');
     } catch (err: unknown) {
