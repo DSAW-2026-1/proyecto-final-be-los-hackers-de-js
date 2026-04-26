@@ -38,6 +38,12 @@ export function Login() {
       navigate('/');
     } catch (err: unknown) {
       console.error('Login error:', err);
+      
+      if (err instanceof Error && err.name === 'TypeError' && err.message.includes('fetch')) {
+        toast.error('No se pudo conectar con el servidor. Verifica tu conexión.');
+        return;
+      }
+
       const error = err as { status?: number; data?: { message?: string } };
       
       if (error.status === 400) {

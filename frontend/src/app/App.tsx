@@ -1,4 +1,5 @@
 import { Routes, Route } from 'react-router';
+import { Toaster } from 'sonner';
 import { Login } from './components/Login';
 import { Register } from './components/Register';
 import { HeroSection } from './components/HeroSection';
@@ -35,7 +36,9 @@ function Home() {
 
 export default function App() {
   return (
-    <Routes>
+    <>
+      <Toaster position="top-right" expand={true} richColors />
+      <Routes>
       {/* Main app routes with MainLayout */}
       <Route element={<MainLayout />}>
         <Route path="/" element={<Home />} />
@@ -72,5 +75,6 @@ export default function App() {
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
+    </>
   );
 }
