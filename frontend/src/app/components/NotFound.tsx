@@ -1,9 +1,11 @@
-//TODO: PROTOTYPE - NOT INTERACTIVE
 import { Button } from './ui/button';
 import { Home, Search, ArrowLeft, HelpCircle } from 'lucide-react';
 import { motion } from 'motion/react';
+import { Link, useNavigate } from 'react-router';
 
 export function NotFound() {
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-[80vh] flex items-center justify-center bg-background px-4">
       <div className="max-w-md w-full text-center">
@@ -27,15 +29,15 @@ export function NotFound() {
           </p>
 
           <div className="flex flex-col gap-3">
-            <Button size="lg" className="bg-primary hover:bg-primary/90 w-full" asChild>
-              <a href="/">
+            <Link to="/">
+              <Button size="lg" className="bg-primary hover:bg-primary/90 w-full">
                 <Home className="w-5 h-5 mr-2" />
                 Volver al Inicio
-              </a>
-            </Button>
+              </Button>
+            </Link>
             
             <div className="grid grid-cols-2 gap-3">
-              <Button variant="outline" className="w-full">
+              <Button variant="outline" className="w-full" onClick={() => navigate(-1)}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Atrás
               </Button>
@@ -49,10 +51,10 @@ export function NotFound() {
           <div className="mt-12 pt-8 border-t border-border">
             <p className="text-sm text-muted-foreground mb-4">¿Buscabas algo en particular?</p>
             <div className="flex flex-wrap justify-center gap-2">
-              <a href="#" className="text-xs bg-muted px-3 py-1 rounded-full hover:bg-primary hover:text-white transition-colors">Libros</a>
-              <a href="#" className="text-xs bg-muted px-3 py-1 rounded-full hover:bg-primary hover:text-white transition-colors">Calculadoras</a>
-              <a href="#" className="text-xs bg-muted px-3 py-1 rounded-full hover:bg-primary hover:text-white transition-colors">Tecnología</a>
-              <a href="#" className="text-xs bg-muted px-3 py-1 rounded-full hover:bg-primary hover:text-white transition-colors">Deportes</a>
+              <Link to="/search" className="text-xs bg-muted px-3 py-1 rounded-full hover:bg-primary hover:text-white transition-colors">Libros</Link>
+              <Link to="/search" className="text-xs bg-muted px-3 py-1 rounded-full hover:bg-primary hover:text-white transition-colors">Calculadoras</Link>
+              <Link to="/search" className="text-xs bg-muted px-3 py-1 rounded-full hover:bg-primary hover:text-white transition-colors">Tecnología</Link>
+              <Link to="/search" className="text-xs bg-muted px-3 py-1 rounded-full hover:bg-primary hover:text-white transition-colors">Deportes</Link>
             </div>
           </div>
         </motion.div>

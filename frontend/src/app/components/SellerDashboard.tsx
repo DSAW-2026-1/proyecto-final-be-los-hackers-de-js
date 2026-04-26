@@ -1,4 +1,3 @@
-//TODO: PROTOTYPE - NOT INTERACTIVE
 import React from "react";
 
 import {

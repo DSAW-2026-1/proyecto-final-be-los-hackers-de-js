@@ -1,8 +1,6 @@
-//TODO: Prototype visualization only. Replace with proper UI
-
+import { Routes, Route } from 'react-router';
 import { Login } from './components/Login';
 import { Register } from './components/Register';
-import { Navigation } from './components/Navigation';
 import { HeroSection } from './components/HeroSection';
 import { ProductsGrid } from './components/ProductsGrid';
 import { ProductSearch } from './components/ProductSearch';
@@ -24,105 +22,55 @@ import { ReportView } from './components/ReportView';
 import { AdminDashboard } from './components/AdminDashboard';
 import { AdminReportView } from './components/AdminReportView';
 import { EditProduct } from './components/EditProduct';
-import { Footer } from './components/Footer';
-import { Separator } from './components/ui/separator';
+import { MainLayout } from './components/MainLayout';
+
+function Home() {
+  return (
+    <>
+      <HeroSection />
+      <ProductsGrid />
+    </>
+  );
+}
 
 export default function App() {
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      {/* Authentication Screens */}
-      <Login />
+    <Routes>
+      {/* Main app routes with MainLayout */}
+      <Route element={<MainLayout />}>
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/search" element={<ProductSearch />} />
+        <Route path="/product/:id" element={<ProductDetail />} />
+        <Route path="/cart" element={<ShoppingCart />} />
+        <Route path="/checkout" element={<Checkout />} />
+        <Route path="/orders" element={<OrderHistory />} />
+        <Route path="/orders/:id/status" element={<BuyerShippingStatus />} />
+        <Route path="/orders/:id/review" element={<LeaveReview />} />
+        
+        {/* Seller routes */}
+        <Route path="/seller" element={<SellerDashboard />} />
+        <Route path="/seller/products/create" element={<CreateProduct />} />
+        <Route path="/seller/products/edit/:id" element={<EditProduct />} />
+        <Route path="/seller/orders/:id/update" element={<SellerShippingUpdate />} />
+        
+        {/* User profile routes */}
+        <Route path="/profile" element={<UserProfile />} />
+        <Route path="/profile/edit" element={<EditProfile />} />
+        
+        {/* Communication & Utils */}
+        <Route path="/chat" element={<ChatInterface />} />
+        <Route path="/notifications" element={<Notifications />} />
+        <Route path="/report/:id" element={<ReportView />} />
+        
+        {/* Admin routes */}
+        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/admin/reports/:id" element={<AdminReportView />} />
 
-      <div className="my-12" />
-
-      <Register />
-
-      <div className="my-12" />
-
-      {/* Main App Screens */}
-      <Navigation />
-
-      <main className="flex-1">
-        <HeroSection />
-
-        <ProductsGrid />
-
-        <ProductSearch />
-
-        <Separator className="max-w-7xl mx-auto" />
-
-        <ProductDetail />
-
-        <Separator className="max-w-7xl mx-auto" />
-
-        <CreateProduct />
-
-        <Separator className="max-w-7xl mx-auto" />
-
-        <EditProduct />
-
-        <Separator className="max-w-7xl mx-auto" />
-
-        <ShoppingCart />
-
-        <Separator className="max-w-7xl mx-auto" />
-
-        <Checkout />
-
-        <Separator className="max-w-7xl mx-auto" />
-
-        <OrderHistory />
-
-        <Separator className="max-w-7xl mx-auto" />
-
-        <BuyerShippingStatus />
-
-        <Separator className="max-w-7xl mx-auto" />
-
-        <LeaveReview />
-
-        <Separator className="max-w-7xl mx-auto" />
-
-        <SellerDashboard />
-
-        <Separator className="max-w-7xl mx-auto" />
-
-        <SellerShippingUpdate />
-
-        <Separator className="max-w-7xl mx-auto" />
-
-        <UserProfile />
-
-        <Separator className="max-w-7xl mx-auto" />
-
-        <EditProfile />
-
-        <Separator className="max-w-7xl mx-auto" />
-
-        <NotFound />
-
-        <Separator className="max-w-7xl mx-auto" />
-
-        <ChatInterface />
-
-        <Separator className="max-w-7xl mx-auto" />
-
-        <Notifications />
-
-        <Separator className="max-w-7xl mx-auto" />
-
-        <ReportView />
-
-        <Separator className="max-w-7xl mx-auto" />
-
-        <AdminDashboard />
-
-        <Separator className="max-w-7xl mx-auto" />
-
-        <AdminReportView />
-      </main>
-
-      <Footer />
-    </div>
+        {/* 404 must be inside layout or outside? Usually inside or has its own layout */}
+        <Route path="*" element={<NotFound />} />
+      </Route>
+    </Routes>
   );
 }

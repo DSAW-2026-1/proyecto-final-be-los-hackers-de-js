@@ -1,8 +1,8 @@
-//TODO: PROTOTYPE - NOT INTERACTIVE
 import { ProductCard } from './ProductCard';
 import { Button } from './ui/button';
 import { Grid3x3, List } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
+import { Link } from 'react-router';
 
 const MOCK_PRODUCTS = [
   {
@@ -102,14 +102,20 @@ export function ProductsGrid() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {MOCK_PRODUCTS.slice(0, 3).map((product) => (
-          <ProductCard key={product.id} {...product} />
+          <ProductCard 
+            key={product.id} 
+            {...product} 
+            id={product.id.toString()} 
+          />
         ))}
       </div>
 
       <div className="flex justify-center mt-12">
-        <Button variant="outline" size="lg">
-          Ver todos los productos
-        </Button>
+        <Link to="/search">
+          <Button variant="outline" size="lg">
+            Ver todos los productos
+          </Button>
+        </Link>
       </div>
     </div>
   );

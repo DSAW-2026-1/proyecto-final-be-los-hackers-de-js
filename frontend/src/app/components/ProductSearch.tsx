@@ -1,4 +1,3 @@
-//TODO: PROTOTYPE - NOT INTERACTIVE
 import { useState } from 'react';
 import { ProductCard } from './ProductCard';
 import { Input } from './ui/input';
@@ -7,6 +6,7 @@ import { Slider } from './ui/slider';
 import { Checkbox } from './ui/checkbox';
 import { Label } from './ui/label';
 import { Separator } from './ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { 
   SlidersHorizontal, 
   Grid3x3, 
@@ -311,7 +311,7 @@ export function ProductSearch() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
               {MOCK_PRODUCTS.map((p) => (
-                <ProductCard key={p.id} {...p} />
+                <ProductCard key={p.id} {...p} id={p.id.toString()} />
               ))}
             </div>
 
@@ -344,6 +344,3 @@ export function ProductSearch() {
     </div>
   );
 }
-
-// Needed for the Select in the results area
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';

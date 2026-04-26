@@ -1,6 +1,6 @@
-//TODO: PROTOTYPE - NOT INTERACTIVE
 import { Button } from './ui/button';
 import { ArrowRight, Package, Users, Shield } from 'lucide-react';
+import { Link } from 'react-router';
 
 export function HeroSection() {
   return (
@@ -19,15 +19,18 @@ export function HeroSection() {
             </p>
 
             <div className="flex flex-wrap gap-4 mb-12">
-              <Button size="lg" className="bg-accent hover:bg-accent/90 text-white">
-                Explorar Productos
-                <ArrowRight className="ml-2 w-5 h-5" />
-              </Button>
-              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-primary">
-                Publicar Producto
-              </Button>
+              <Link to="/search">
+                <Button size="lg" className="bg-accent hover:bg-accent/90 text-white">
+                  Explorar Productos
+                  <ArrowRight className="ml-2 w-5 h-5" />
+                </Button>
+              </Link>
+              <Link to="/seller/products/create">
+                <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-primary">
+                  Publicar Producto
+                </Button>
+              </Link>
             </div>
-
             <div className="grid grid-cols-3 gap-6">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-lg bg-white/10 flex items-center justify-center">

@@ -1,4 +1,3 @@
-//TODO: PROTOTYPE - NOT INTERACTIVE
 import { Card } from './ui/card';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
@@ -6,6 +5,7 @@ import { Label } from './ui/label';
 import { Checkbox } from './ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { User, Mail, Lock, Phone, GraduationCap, Building } from 'lucide-react';
+import { Link } from 'react-router';
 
 export function Register() {
   return (
@@ -186,9 +186,9 @@ export function Register() {
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
               ¿Ya tienes una cuenta?{' '}
-              <a href="#" className="text-primary font-medium hover:underline">
+              <Link to="/login" className="text-primary font-medium hover:underline">
                 Inicia sesión aquí
-              </a>
+              </Link>
             </p>
           </div>
         </div>
