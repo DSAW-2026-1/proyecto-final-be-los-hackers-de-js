@@ -52,6 +52,12 @@ export function Register() {
       return;
     }
 
+    // Institutional email check
+    if (!formData.email.endsWith('@unisabana.edu.co')) {
+      toast.error('Debes usar un correo institucional de la Universidad de La Sabana (@unisabana.edu.co)');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
