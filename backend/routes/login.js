@@ -21,7 +21,7 @@ router.post('/', (req, res) => {
 
 	if(user.isSuspended) return res.status(403).json({ error: 'User is suspended' });
 
-	const payload = { sub: user.UID, isSeller: user.isSeller };
+	const payload = { UID: user.UID, isSeller: user.isSeller };
 	const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' });
 
 	res.json({ token });
