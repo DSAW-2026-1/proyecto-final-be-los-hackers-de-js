@@ -4,12 +4,11 @@ import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { Label } from './ui/label';
 import { Checkbox } from './ui/checkbox';
-import { Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Lock, Eye, EyeOff, Loader2, UserCircle} from 'lucide-react';
 import { Link, useNavigate } from 'react-router';
 import { authService } from '../services/authService';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
-//TODO: You should not be able to log in when you are already logged in. That's just straight up cursed
 
 export function Login() {
   const [email, setEmail] = useState('');
@@ -85,7 +84,7 @@ export function Login() {
             <div className="space-y-2">
               <Label htmlFor="email">Usuario o Correo Institucional</Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <UserCircle className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
                   id="email"
                   type="text"
