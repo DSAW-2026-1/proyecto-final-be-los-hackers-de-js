@@ -5,7 +5,8 @@ const jwt = require('jsonwebtoken');
 //TODO: Placeholder user storage. Change to proper stuff and use hashes for the stuff
 const users = [
 	{ UID: 1, username: 'SELLER', email: 'SELLER@unisabana.edu.co', password: 'SELLER', isSeller: true, isSuspended: false },
-	{ UID: 2, username: 'USER', email: 'USER@unisabana.edu.co', password: 'USER', isSeller: false, isSuspended: false  }
+	{ UID: 2, username: 'USER', email: 'USER@unisabana.edu.co', password: 'USER', isSeller: false, isSuspended: false  },
+	{ UID: 3, username: 'SUSPENDED', email: 'SUSPENDED@unisabana.edu.co', password: 'SUSPENDED', isSeller: false, isSuspended: true  }
 ];
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_change_me';
