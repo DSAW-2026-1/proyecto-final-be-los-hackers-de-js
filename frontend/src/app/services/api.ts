@@ -5,7 +5,7 @@ export const API_URL = `${BASE_URL}:${PORT}/api`;
 
 export interface ApiError extends Error {
   status?: number;
-  data?: any;
+  data?: unknown;
 }
 
 export async function apiRequest<T = unknown>(

@@ -3,7 +3,6 @@ import { Link, NavLink } from 'react-router';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
-import { authService } from '../services/authService';
 import { useAuth } from '../context/AuthContext';
 
 export function Navigation() {

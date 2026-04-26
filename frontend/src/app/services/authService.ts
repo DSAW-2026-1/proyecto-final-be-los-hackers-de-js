@@ -9,9 +9,22 @@ export interface LoginPayload {
   password: string;
 }
 
+export interface RegisterPayload {
+  username: string;
+  email: string;
+  password: string;
+}
+
 export const authService = {
   async login(payload: LoginPayload): Promise<LoginResponse> {
     return apiRequest<LoginResponse>('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async register(payload: RegisterPayload): Promise<LoginResponse> {
+    return apiRequest<LoginResponse>('/api/auth/register', {
       method: 'POST',
       body: JSON.stringify(payload),
     });

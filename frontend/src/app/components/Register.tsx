@@ -1,13 +1,92 @@
+import { useState } from 'react';
 import { Card } from './ui/card';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { Label } from './ui/label';
 import { Checkbox } from './ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { User, Mail, Lock, Phone, GraduationCap, Building } from 'lucide-react';
-import { Link } from 'react-router';
+import { User, Mail, Lock, Phone, GraduationCap, Building, Loader2, UserCircle } from 'lucide-react';
+import { Link, useNavigate } from 'react-router';
+import { authService } from '../services/authService';
+import { useAuth } from '../context/AuthContext';
+import { toast } from 'sonner';
 
 export function Register() {
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    username: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    terms: false,
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+  const { login } = useAuth();
+
+  const handleInputChange = (field: string, value: string | boolean) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formData.username || !formData.email || !formData.password || !formData.confirmPassword) {
+      toast.error('Por favor completa todos los campos obligatorios');
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      toast.error('Las contraseñas no coinciden');
+      return;
+    }
+
+    if (!formData.terms) {
+      toast.error('Debes aceptar los términos y condiciones');
+      return;
+    }
+
+    // Alphanumeric check for username
+    if (!/^[a-zA-Z0-9]+$/.test(formData.username)) {
+      toast.error('El nombre de usuario debe ser alfanumérico');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response = await authService.register({
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
+      });
+
+      login(response.token);
+      toast.success('¡Cuenta creada exitosamente!');
+      navigate('/');
+    } catch (err: unknown) {
+      console.error('Registration error:', err);
+      
+      if (err instanceof Error && err.name === 'TypeError' && err.message.includes('fetch')) {
+        toast.error('No se pudo conectar con el servidor. Verifica tu conexión.');
+        return;
+      }
+
+      const error = err as { status?: number; data?: { message?: string } };
+      
+      if (error.status === 409) {
+        toast.error('El usuario o correo ya existe');
+      } else if (error.status === 400) {
+        toast.error('Datos inválidos o incompletos');
+      } else {
+        toast.error('Error al crear la cuenta. Inténtalo de nuevo.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary via-primary to-[#1e4976] flex items-center justify-center p-4 py-12">
       <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiAxOGMzLjMxNCAwIDYgMi42ODYgNiA2cy0yLjY4NiA2LTYgNi02LTIuNjg2LTYtNiAyLjY4Ni02IDYtNiIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDUpIi8+PC9nPjwvc3ZnPg==')] opacity-10" />
@@ -29,7 +108,7 @@ export function Register() {
             </p>
           </div>
 
-          <form className="space-y-5">
+          <form className="space-y-5" onSubmit={handleRegister}>
             <div className="grid md:grid-cols-2 gap-5">
               <div className="space-y-2">
                 <Label htmlFor="firstName">Nombre</Label>
@@ -39,6 +118,9 @@ export function Register() {
                     id="firstName"
                     placeholder="Juan"
                     className="pl-11"
+                    value={formData.firstName}
+                    onChange={(e) => handleInputChange('firstName', e.target.value)}
+                    disabled={isLoading}
                   />
                 </div>
               </div>
@@ -51,8 +133,26 @@ export function Register() {
                     id="lastName"
                     placeholder="Pérez"
                     className="pl-11"
+                    value={formData.lastName}
+                    onChange={(e) => handleInputChange('lastName', e.target.value)}
+                    disabled={isLoading}
                   />
                 </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="username">Nombre de Usuario (Alfanumérico)</Label>
+              <div className="relative">
+                <UserCircle className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Input
+                  id="username"
+                  placeholder="juanperez123"
+                  className="pl-11"
+                  value={formData.username}
+                  onChange={(e) => handleInputChange('username', e.target.value)}
+                  disabled={isLoading}
+                />
               </div>
             </div>
 
@@ -65,6 +165,9 @@ export function Register() {
                   type="email"
                   placeholder="nombre.apellido@unisabana.edu.co"
                   className="pl-11"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                  disabled={isLoading}
                 />
               </div>
               <p className="text-xs text-muted-foreground">
@@ -81,6 +184,7 @@ export function Register() {
                   type="tel"
                   placeholder="+57 300 123 4567"
                   className="pl-11"
+                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -90,7 +194,7 @@ export function Register() {
                 <Label htmlFor="faculty">Facultad</Label>
                 <div className="relative">
                   <Building className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10" />
-                  <Select>
+                  <Select disabled={isLoading}>
                     <SelectTrigger className="pl-11">
                       <SelectValue placeholder="Selecciona tu facultad" />
                     </SelectTrigger>
@@ -110,7 +214,7 @@ export function Register() {
                 <Label htmlFor="program">Programa</Label>
                 <div className="relative">
                   <GraduationCap className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10" />
-                  <Select>
+                  <Select disabled={isLoading}>
                     <SelectTrigger className="pl-11">
                       <SelectValue placeholder="Selecciona tu programa" />
                     </SelectTrigger>
@@ -137,6 +241,9 @@ export function Register() {
                     type="password"
                     placeholder="••••••••"
                     className="pl-11"
+                    value={formData.password}
+                    onChange={(e) => handleInputChange('password', e.target.value)}
+                    disabled={isLoading}
                   />
                 </div>
               </div>
@@ -150,6 +257,9 @@ export function Register() {
                     type="password"
                     placeholder="••••••••"
                     className="pl-11"
+                    value={formData.confirmPassword}
+                    onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                    disabled={isLoading}
                   />
                 </div>
               </div>
@@ -157,7 +267,13 @@ export function Register() {
 
             <div className="space-y-3 pt-2">
               <div className="flex items-start gap-2">
-                <Checkbox id="terms" className="mt-1" />
+                <Checkbox 
+                  id="terms" 
+                  className="mt-1" 
+                  checked={formData.terms}
+                  onCheckedChange={(checked) => handleInputChange('terms', checked as boolean)}
+                  disabled={isLoading}
+                />
                 <label htmlFor="terms" className="text-sm cursor-pointer leading-relaxed">
                   Acepto los{' '}
                   <a href="#" className="text-primary hover:underline">
@@ -171,15 +287,27 @@ export function Register() {
               </div>
 
               <div className="flex items-start gap-2">
-                <Checkbox id="notifications" className="mt-1" />
+                <Checkbox id="notifications" className="mt-1" disabled={isLoading} />
                 <label htmlFor="notifications" className="text-sm cursor-pointer leading-relaxed">
                   Deseo recibir notificaciones sobre nuevos productos y ofertas
                 </label>
               </div>
             </div>
 
-            <Button type="submit" className="w-full bg-primary hover:bg-primary/90" size="lg">
-              Crear Cuenta
+            <Button 
+              type="submit" 
+              className="w-full bg-primary hover:bg-primary/90" 
+              size="lg"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creando cuenta...
+                </>
+              ) : (
+                'Crear Cuenta'
+              )}
             </Button>
           </form>
 
