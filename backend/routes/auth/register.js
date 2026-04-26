@@ -16,6 +16,8 @@ router.post('/', async (req, res) => {
     if (existingUser) return res.status(409).json({error: 'User or email already exists'})
 
     const hashedPassword = await bcrypt.hash(password, saltRounds)
+
+    //TODO: These are not all the variables a user may need. Check if we actually need to create them straight away or if we can get away with this
     const user = {
         username: username,
         email: email,
