@@ -1,13 +1,57 @@
+import { useState } from 'react';
 import { Card } from './ui/card';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { Label } from './ui/label';
 import { Separator } from './ui/separator';
 import { Checkbox } from './ui/checkbox';
-import { Mail, Lock, Eye } from 'lucide-react';
-import { Link } from 'react-router';
+import { Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Link, useNavigate } from 'react-router';
+import { authService } from '../services/authService';
+import { toast } from 'sonner';
 
 export function Login() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!email || !password) {
+      toast.error('Por favor ingresa todos los campos');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response = await authService.login({
+        userOrEmail: email,
+        password: password,
+      });
+
+      authService.setToken(response.token);
+      toast.success('¡Bienvenido de nuevo!');
+      navigate('/');
+    } catch (err: unknown) {
+      console.error('Login error:', err);
+      const error = err as { status?: number; data?: { message?: string } };
+      
+      if (error.status === 400) {
+        toast.error('Credenciales inválidas');
+      } else if (error.status === 403) {
+        toast.error('Tu cuenta está suspendida. Contacta a soporte.');
+      } else {
+        toast.error('Error al iniciar sesión. Inténtalo de nuevo.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary via-primary to-[#1e4976] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiAxOGMzLjMxNCAwIDYgMi42ODYgNiA2cy0yLjY4NiA2LTYgNi02LTIuNjg2LTYtNiAyLjY4Ni02IDYtNiIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDUpIi8+PC9nPjwvc3ZnPg==')] opacity-10" />
@@ -29,16 +73,19 @@ export function Login() {
             </p>
           </div>
 
-          <form className="space-y-5">
+          <form className="space-y-5" onSubmit={handleLogin}>
             <div className="space-y-2">
               <Label htmlFor="email">Correo Institucional</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
                   id="email"
-                  type="email"
-                  placeholder="nombre.apellido@unisabana.edu.co"
+                  type="text"
+                  placeholder="nombre.apellido o correo"
                   className="pl-11"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -49,17 +96,26 @@ export function Login() {
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
                   id="password"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   placeholder="••••••••"
                   className="pl-11 pr-11"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={isLoading}
                 />
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon"
                   className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
+                  onClick={() => setShowPassword(!showPassword)}
+                  disabled={isLoading}
                 >
-                  <Eye className="w-4 h-4 text-muted-foreground" />
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4 text-muted-foreground" />
+                  ) : (
+                    <Eye className="w-4 h-4 text-muted-foreground" />
+                  )}
                 </Button>
               </div>
             </div>
@@ -76,8 +132,20 @@ export function Login() {
               </a>
             </div>
 
-            <Button type="submit" className="w-full bg-primary hover:bg-primary/90" size="lg">
-              Iniciar Sesión
+            <Button 
+              type="submit" 
+              className="w-full bg-primary hover:bg-primary/90" 
+              size="lg"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Iniciando sesión...
+                </>
+              ) : (
+                'Iniciar Sesión'
+              )}
             </Button>
           </form>
 
