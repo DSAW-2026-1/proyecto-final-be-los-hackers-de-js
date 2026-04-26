@@ -16,10 +16,7 @@ router.post('/', async (req, res) => {
     if (existingUser) return res.status(409).json({error: 'User or email already exists'})
 
     const hashedPassword = await bcrypt.hash(password, saltRounds)
-
-    //TODO: Save this new user to some form of db
     const user = {
-        UID: 1, //TODO: Generate this UID randomly
         username: username,
         email: email,
         password: hashedPassword,
@@ -27,9 +24,9 @@ router.post('/', async (req, res) => {
         isSuspended: false
     }
 
-    console.log(user)
+    await db.addUser(user)
 
-    const payload = {UID: user.UID, isSeller: user.isSeller};
+    const payload = {UID: user._id, isSeller: user.isSeller};
     const token = jwt.sign(payload, JWT_SECRET, {expiresIn: '1h'});
 
     res.json({token});
