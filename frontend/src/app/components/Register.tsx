@@ -4,8 +4,7 @@ import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { Label } from './ui/label';
 import { Checkbox } from './ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { User, Mail, Lock, Phone, GraduationCap, Building, Loader2, UserCircle } from 'lucide-react';
+import { Mail, Lock, Loader2, UserCircle } from 'lucide-react';
 import { Link, useNavigate } from 'react-router';
 import { authService } from '../services/authService';
 import { useAuth } from '../context/AuthContext';
@@ -109,45 +108,15 @@ export function Register() {
           </div>
 
           <form className="space-y-5" onSubmit={handleRegister}>
-            <div className="grid md:grid-cols-2 gap-5">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">Nombre</Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input
-                    id="firstName"
-                    placeholder="Juan"
-                    className="pl-11"
-                    value={formData.firstName}
-                    onChange={(e) => handleInputChange('firstName', e.target.value)}
-                    disabled={isLoading}
-                  />
-                </div>
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Apellido</Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input
-                    id="lastName"
-                    placeholder="Pérez"
-                    className="pl-11"
-                    value={formData.lastName}
-                    onChange={(e) => handleInputChange('lastName', e.target.value)}
-                    disabled={isLoading}
-                  />
-                </div>
-              </div>
-            </div>
 
             <div className="space-y-2">
-              <Label htmlFor="username">Nombre de Usuario (Alfanumérico)</Label>
+              <Label htmlFor="username">Nombre de Usuario</Label>
               <div className="relative">
                 <UserCircle className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
                   id="username"
-                  placeholder="juanperez123"
+                  placeholder="Ej: JuanPerez2026"
                   className="pl-11"
                   value={formData.username}
                   onChange={(e) => handleInputChange('username', e.target.value)}
@@ -163,7 +132,7 @@ export function Register() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="nombre.apellido@unisabana.edu.co"
+                  placeholder="correo@unisabana.edu.co"
                   className="pl-11"
                   value={formData.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
@@ -171,64 +140,8 @@ export function Register() {
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                Debes usar tu correo institucional de La Sabana
+                Debes usar tu correo institucional de la Universidad de La Sabana
               </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="phone">Teléfono (Opcional)</Label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input
-                  id="phone"
-                  type="tel"
-                  placeholder="+57 300 123 4567"
-                  className="pl-11"
-                  disabled={isLoading}
-                />
-              </div>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-5">
-              <div className="space-y-2">
-                <Label htmlFor="faculty">Facultad</Label>
-                <div className="relative">
-                  <Building className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10" />
-                  <Select disabled={isLoading}>
-                    <SelectTrigger className="pl-11">
-                      <SelectValue placeholder="Selecciona tu facultad" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ingenieria">Ingeniería</SelectItem>
-                      <SelectItem value="medicina">Medicina</SelectItem>
-                      <SelectItem value="economia">Economía y Administración</SelectItem>
-                      <SelectItem value="derecho">Derecho</SelectItem>
-                      <SelectItem value="comunicacion">Comunicación</SelectItem>
-                      <SelectItem value="educacion">Educación</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="program">Programa</Label>
-                <div className="relative">
-                  <GraduationCap className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10" />
-                  <Select disabled={isLoading}>
-                    <SelectTrigger className="pl-11">
-                      <SelectValue placeholder="Selecciona tu programa" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="sistemas">Ingeniería Informática</SelectItem>
-                      <SelectItem value="industrial">Ingeniería Industrial</SelectItem>
-                      <SelectItem value="civil">Ingeniería Civil</SelectItem>
-                      <SelectItem value="electronica">Ingeniería Electrónica</SelectItem>
-                      <SelectItem value="medicina">Medicina</SelectItem>
-                      <SelectItem value="administracion">Administración de Empresas</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
             </div>
 
             <div className="grid md:grid-cols-2 gap-5">
@@ -283,13 +196,6 @@ export function Register() {
                   <a href="#" className="text-primary hover:underline">
                     Política de Privacidad
                   </a>
-                </label>
-              </div>
-
-              <div className="flex items-start gap-2">
-                <Checkbox id="notifications" className="mt-1" disabled={isLoading} />
-                <label htmlFor="notifications" className="text-sm cursor-pointer leading-relaxed">
-                  Deseo recibir notificaciones sobre nuevos productos y ofertas
                 </label>
               </div>
             </div>
