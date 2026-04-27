@@ -25,6 +25,7 @@ import { AdminDashboard } from './components/AdminDashboard';
 import { AdminReportView } from './components/AdminReportView';
 import { EditProduct } from './components/EditProduct';
 import { MainLayout } from './components/MainLayout';
+import { AdminLogin } from  './components/AdminLogin.tsx'
 
 function Home() {
   return (
@@ -71,6 +72,8 @@ export default function App() {
         {/* Admin routes */}
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/admin/reports/:id" element={<AdminReportView />} />
+
+        <Route path="/admin/login" element={<AdminLogin />} />
 
         {/* 404 must be inside layout or outside? Usually inside or has its own layout */}
         <Route path="*" element={<NotFound />} />
