@@ -14,12 +14,20 @@ export async function apiRequest<T = unknown>(
 ): Promise<T> {
   const url = `${BASE_URL}:${PORT}${endpoint}`;
   
+  const token = localStorage.getItem('token');
+  
+  const headers = new Headers({
+    'Content-Type': 'application/json',
+    ...Object.fromEntries(new Headers(options.headers || {}).entries()),
+  });
+
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+
   const response = await fetch(url, {
     ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
+    headers,
   });
 
   if (!response.ok) {

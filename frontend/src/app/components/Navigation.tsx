@@ -1,9 +1,11 @@
 import { ShoppingCart, Bell, User, Search, Menu, LogIn, UserPlus, Settings, LogOut } from 'lucide-react';
 import { Link, NavLink, useNavigate } from 'react-router';
+import { useEffect } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
 import { useAuth } from '../context/AuthContext';
+import { userService } from '../services/userService';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,8 +17,21 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 
 export function Navigation() {
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, user, setUserInfo, logout } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isAuthenticated && !user) {
+      userService.getProfile().then(profile => {
+        setUserInfo({
+          username: profile.username,
+          email: profile.email
+        });
+      }).catch(err => {
+        console.error('Failed to fetch user profile in navigation:', err);
+      });
+    }
+  }, [isAuthenticated, user, setUserInfo]);
 
   const handleLogout = () => {
     logout();
@@ -124,9 +139,9 @@ export function Navigation() {
                   <DropdownMenuContent className="w-56" align="end">
                     <DropdownMenuLabel className="font-normal">
                       <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">Mi Cuenta</p>
+                        <p className="text-sm font-medium leading-none">{user?.username || 'Mi Cuenta'}</p>
                         <p className="text-xs leading-none text-muted-foreground">
-                          sabana.user@unisabana.edu.co
+                          {user?.email || 'cargando...'}
                         </p>
                       </div>
                     </DropdownMenuLabel>

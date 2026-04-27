@@ -1,9 +1,14 @@
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router';
+import { toast } from 'sonner';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Avatar } from './ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Star, MapPin, Calendar, Package, ShoppingBag, MessageCircle, Edit } from 'lucide-react';
+import { Star, MapPin, Calendar, Package, ShoppingBag, MessageCircle, Edit, Loader2 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { userService, UserProfileResponse } from '../services/userService';
 
 const USER_PRODUCTS = [
   {
@@ -39,16 +44,57 @@ const REVIEWS = [
     comment: 'Buena comunicación y entrega rápida. El producto llegó en buen estado.',
     date: '10 Abril 2026'
   },
-  {
-    id: 3,
-    reviewer: 'Juan Pérez',
-    rating: 5,
-    comment: 'Muy profesional y confiable. Sin duda volvería a comprar.',
-    date: '5 Abril 2026'
-  },
 ];
 
 export function UserProfile() {
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const [user, setUser] = useState<UserProfileResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      toast.error('Debes iniciar sesión para ver tu perfil');
+      navigate('/login');
+      return;
+    }
+
+    const fetchProfile = async () => {
+      try {
+        const data = await userService.getProfile();
+        setUser(data);
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+        toast.error('Error al cargar el perfil');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, [isAuthenticated, navigate]);
+
+  if (!isAuthenticated) return null;
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <p className="text-muted-foreground">No se pudo cargar la información del usuario.</p>
+        <Button onClick={() => window.location.reload()}>Reintentar</Button>
+      </div>
+    );
+  }
+
+  const userInitial = user.username.charAt(0).toUpperCase();
+
   return (
     <div className="bg-background py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -59,28 +105,37 @@ export function UserProfile() {
             <div className="flex flex-col md:flex-row md:items-end md:justify-between -mt-16 mb-6">
               <div className="flex items-end gap-6">
                 <Avatar className="w-32 h-32 border-4 border-white shadow-lg">
-                  <div className="w-full h-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-4xl font-bold">
-                    LM
-                  </div>
+                  {user.photo ? (
+                    <img 
+                      src={`data:image/jpeg;base64,${user.photo}`} 
+                      alt={user.username} 
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-4xl font-bold">
+                      {userInitial}
+                    </div>
+                  )}
                 </Avatar>
 
                 <div className="pb-2">
                   <div className="flex items-center gap-3 mb-2">
-                    <h1 className="text-3xl font-bold">Laura Martínez</h1>
+                    <h1 className="text-3xl font-bold">{user.username}</h1>
                     <Badge className="bg-green-600">Verificado</Badge>
+                    {user.isSeller && <Badge variant="outline" className="border-primary text-primary">Vendedor</Badge>}
                   </div>
                   <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
                     <div className="flex items-center gap-1">
                       <MapPin className="w-4 h-4" />
-                      <span>Bogotá, Colombia</span>
+                      <span>Universidad de La Sabana</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
-                      <span>Miembro desde Enero 2025</span>
+                      <span>Miembro Activo</span>
                     </div>
                   </div>
                   <p className="text-sm text-muted-foreground max-w-2xl">
-                    Estudiante de Ingeniería Informática • Vendedor confiable de tecnología y accesorios
+                    {user.career || 'Estudiante'} • {user.isSeller ? 'Vendedor verificado' : 'Comprador verificado'}
                   </p>
                 </div>
               </div>
@@ -88,9 +143,9 @@ export function UserProfile() {
               <div className="flex gap-3 mt-4 md:mt-0 md:pb-2">
                 <Button variant="outline">
                   <MessageCircle className="w-4 h-4 mr-2" />
-                  Mensaje
+                  Mensajes
                 </Button>
-                <Button>
+                <Button onClick={() => navigate('/profile/edit')}>
                   <Edit className="w-4 h-4 mr-2" />
                   Editar Perfil
                 </Button>
@@ -101,7 +156,9 @@ export function UserProfile() {
               <Card className="p-4 text-center bg-primary/5">
                 <div className="flex items-center justify-center mb-2">
                   <Star className="w-5 h-5 fill-accent text-accent mr-1" />
-                  <span className="text-2xl font-bold">4.9</span>
+                  <span className="text-2xl font-bold">
+                    {user.reputation ? user.reputation.split(' ')[0] : '0.0'}
+                  </span>
                 </div>
                 <p className="text-sm text-muted-foreground">Calificación</p>
               </Card>
@@ -109,15 +166,16 @@ export function UserProfile() {
               <Card className="p-4 text-center bg-primary/5">
                 <div className="flex items-center justify-center mb-2">
                   <Package className="w-5 h-5 text-primary mr-2" />
-                  <span className="text-2xl font-bold">23</span>
+                  <span className="text-2xl font-bold">{user.sales}</span>
                 </div>
                 <p className="text-sm text-muted-foreground">Ventas</p>
               </Card>
 
+              {/* These sections could be data-driven later */}
               <Card className="p-4 text-center bg-primary/5">
                 <div className="flex items-center justify-center mb-2">
                   <ShoppingBag className="w-5 h-5 text-primary mr-2" />
-                  <span className="text-2xl font-bold">5</span>
+                  <span className="text-2xl font-bold">{USER_PRODUCTS.length}</span>
                 </div>
                 <p className="text-sm text-muted-foreground">Publicados</p>
               </Card>
@@ -139,33 +197,43 @@ export function UserProfile() {
               </TabsList>
 
               <TabsContent value="products" className="mt-6">
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {USER_PRODUCTS.map((product) => (
-                    <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                      <div className="relative h-48 bg-muted">
-                        <img
-                          src={product.image}
-                          alt={product.title}
-                          className="w-full h-full object-cover"
-                        />
-                        <Badge className="absolute top-3 right-3 bg-green-600">
-                          {product.status}
-                        </Badge>
-                      </div>
-                      <div className="p-4">
-                        <h3 className="font-semibold mb-2 line-clamp-2">{product.title}</h3>
-                        <div className="flex items-center justify-between">
-                          <span className="text-xl font-bold text-primary">
-                            ${product.price.toLocaleString()}
-                          </span>
-                          <span className="text-sm text-muted-foreground">
-                            {product.views} vistas
-                          </span>
+                {user.isSeller ? (
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {USER_PRODUCTS.map((product) => (
+                      <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                        <div className="relative h-48 bg-muted">
+                          <img
+                            src={product.image}
+                            alt={product.title}
+                            className="w-full h-full object-cover"
+                          />
+                          <Badge className="absolute top-3 right-3 bg-green-600">
+                            {product.status}
+                          </Badge>
                         </div>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
+                        <div className="p-4">
+                          <h3 className="font-semibold mb-2 line-clamp-2">{product.title}</h3>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xl font-bold text-primary">
+                              ${product.price.toLocaleString('es-CO')}
+                            </span>
+                            <span className="text-sm text-muted-foreground">
+                              {product.views} vistas
+                            </span>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 bg-muted/20 rounded-lg">
+                    <Package className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
+                    <p className="text-muted-foreground">No eres un vendedor activo todavía.</p>
+                    <Button variant="link" onClick={() => navigate('/seller/products/create')}>
+                      ¡Empieza a vender ahora!
+                    </Button>
+                  </div>
+                )}
               </TabsContent>
 
               <TabsContent value="reviews" className="mt-6">
@@ -193,6 +261,11 @@ export function UserProfile() {
                       <p className="text-muted-foreground leading-relaxed">{review.comment}</p>
                     </Card>
                   ))}
+                  {REVIEWS.length === 0 && (
+                    <div className="text-center py-8">
+                      <p className="text-muted-foreground">Aún no tienes reseñas.</p>
+                    </div>
+                  )}
                 </div>
               </TabsContent>
 
@@ -202,7 +275,7 @@ export function UserProfile() {
                   <div className="space-y-3 text-sm">
                     <div className="flex items-center justify-between py-2 border-b">
                       <span className="text-muted-foreground">Carrera</span>
-                      <span className="font-medium">Ingeniería Informática</span>
+                      <span className="font-medium">{user.career || 'No especificada'}</span>
                     </div>
                     <div className="flex items-center justify-between py-2 border-b">
                       <span className="text-muted-foreground">Universidad</span>
