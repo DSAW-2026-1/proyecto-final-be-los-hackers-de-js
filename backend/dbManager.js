@@ -74,6 +74,9 @@ class DbManager{
             let db = await this.#openConnection()
             return await db.collection(database).findOne({_id: new ObjectId(id)})
         }
+        catch (e){
+            return null
+        }
         finally {
             await this.#closeConnection()
         }
@@ -94,6 +97,7 @@ class DbManager{
             return null
         }
     }
+    //TODO: Try/catch in findUserByUID and findAdminByUID is probably unnecessary
     static async findUserByUID(UID){
         try{
             return this.#findByID(USERS_DB, UID)
