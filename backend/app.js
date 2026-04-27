@@ -6,6 +6,7 @@ var logger = require('morgan');
 var indexRouter = require('./routes/index');
 //var usersRouter = require('./routes/users');
 const loginRouter = require('./routes/auth/login');
+const adminLoginRouter = require('./routes/auth/admin/login');
 const registerRouter = require('./routes/auth/register');
 const tokenValidatorMiddleware = require('./middleware/auth/tokenValidator');
 const userAuthMiddleware = require('./middleware/auth/userValidator')
@@ -26,5 +27,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/api/auth/login', loginRouter);
 app.use('/api/auth/register', registerRouter);
+app.use('/api/admin/login', adminLoginRouter);
 
 module.exports = app;

@@ -11,6 +11,7 @@ if(!process.env.DB_HOST){
 }
 else console.log("Using MongoDB instance supplied by environment variable")
 const USERS_DB = "users"
+const ADMINS_DB = "admins"
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -45,6 +46,9 @@ class DbManager{
     static async addUser(user){
         await this.#addToCollection(USERS_DB, user)
     }
+    static async addAdmin(user){
+        await this.#addToCollection(ADMINS_DB, user)
+    }
     static async #findInDb(database, query){
         try {
             let db = await this.#openConnection()
@@ -76,6 +80,14 @@ class DbManager{
     static async findUser(query){
         try{
             return this.#findOneInDb(USERS_DB, query)
+        }
+        catch (e){
+            return null
+        }
+    }
+    static async findAdmin(query){
+        try{
+            return this.#findOneInDb(ADMINS_DB, query)
         }
         catch (e){
             return null
