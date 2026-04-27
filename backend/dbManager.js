@@ -4,7 +4,7 @@ require('dotenv').config();
 const dns = require("dns");
 dns.setServers(["1.1.1.1"]);
 
-const { MongoClient, ServerApiVersion, Db} = require('mongodb');
+const { MongoClient, ServerApiVersion, Db, ObjectId} = require('mongodb');
 const uri = process.env.DB_HOST || "mongodb://localhost";
 if(!process.env.DB_HOST){
     console.log("Using local MongoDB instance")
@@ -63,9 +63,27 @@ class DbManager{
             await this.#closeConnection()
         }
     }
+    static async #findByID(database, id){
+        try {
+            console.log(id)
+            let db = await this.#openConnection()
+            return await db.collection(database).findOne({_id: new ObjectId(id)})
+        }
+        finally {
+            await this.#closeConnection()
+        }
+    }
     static async findUser(query){
         try{
             return this.#findOneInDb(USERS_DB, query)
+        }
+        catch (e){
+            return null
+        }
+    }
+    static async findUserByUID(UID){
+        try{
+            return this.#findByID(USERS_DB, UID)
         }
         catch (e){
             return null
