@@ -11,7 +11,6 @@ router.post('/', [body('email').isEmail()], async(req, res) => {
     const errorMsg = "User, email or password is missing/malformed"
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-        console.log(errors.array())
         return res.status(400).json({ errorMsg });
     }
     const {username, email, password} = req.body || {};
