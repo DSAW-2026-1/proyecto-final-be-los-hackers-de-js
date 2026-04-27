@@ -1,10 +1,10 @@
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
+const express = require('express');
+const path = require('path');
+const cookieParser = require('cookie-parser');
+const logger = require('morgan');
 
-var indexRouter = require('./routes/index');
-//var usersRouter = require('./routes/users');
+//var indexRouter = require('./routes/index');
+const usersRouter = require('./routes/users');
 const loginRouter = require('./routes/auth/login');
 const adminLoginRouter = require('./routes/auth/admin/login');
 const registerRouter = require('./routes/auth/register');
@@ -28,5 +28,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/api/auth/login', loginRouter);
 app.use('/api/auth/register', registerRouter);
 app.use('/api/admin/login', adminLoginRouter);
+app.use('/api/users', usersRouter)
 
 module.exports = app;
