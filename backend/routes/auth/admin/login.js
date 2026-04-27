@@ -24,16 +24,17 @@ router.post('/', async (req, res) => {
         }
         else return res.status(400).json({error: 'Invalid credentials'})
     }
+    else{
+        bcrypt.compare(password, admin.password, function(err, result) {
+            if(result === true){
+                const payload = {UID: admin._id, role: admin.role, permissions: admin.permissions};
+                const token = jwt.sign(payload, JWT_SECRET, {expiresIn: '1h'});
 
-    bcrypt.compare(password, admin.password, function(err, result) {
-        if(result === true){
-            const payload = {UID: admin._id, role: admin.role, permissions: admin.permissions};
-            const token = jwt.sign(payload, JWT_SECRET, {expiresIn: '1h'});
-
-            res.json({token});
-        }
-        else return res.status(400).json({error: 'Invalid credentials'})
-    })
+                res.json({token});
+            }
+            else return res.status(400).json({error: 'Invalid credentials'})
+        })
+    }
 });
 
 module.exports = router;
