@@ -15,9 +15,21 @@ export interface RegisterPayload {
   password: string;
 }
 
+export interface AdminLoginPayload {
+  username: string;
+  password: string;
+}
+
 export const authService = {
   async login(payload: LoginPayload): Promise<LoginResponse> {
     return apiRequest<LoginResponse>('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async adminLogin(payload: AdminLoginPayload): Promise<LoginResponse> {
+    return apiRequest<LoginResponse>('/api/admin/login', {
       method: 'POST',
       body: JSON.stringify(payload),
     });
@@ -35,15 +47,32 @@ export const authService = {
     window.location.href = '/login';
   },
 
+  adminLogout() {
+    localStorage.removeItem('admin_token');
+    window.location.href = '/admin/login';
+  },
+
   getToken(): string | null {
     return localStorage.getItem('token');
+  },
+
+  getAdminToken(): string | null {
+    return localStorage.getItem('admin_token');
   },
 
   setToken(token: string) {
     localStorage.setItem('token', token);
   },
 
+  setAdminToken(token: string) {
+    localStorage.setItem('admin_token', token);
+  },
+
   isAuthenticated(): boolean {
     return !!this.getToken();
+  },
+
+  isAdminAuthenticated(): boolean {
+    return !!this.getAdminToken();
   }
 };

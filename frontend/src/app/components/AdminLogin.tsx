@@ -16,7 +16,7 @@ export function AdminLogin() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { login } = useAuth(); //TODO: Replace with an actual admin auth flow (different from user auth flow)
+  const { adminLogin } = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,16 +29,16 @@ export function AdminLogin() {
     setIsLoading(true);
 
     try {
-      const response = await authService.login({
-        userOrEmail: email,
+      const response = await authService.adminLogin({
+        username: email,
         password: password,
       });
 
-      login(response.token);
-      toast.success('¡Bienvenido de nuevo!');
-      navigate('/');
+      adminLogin(response.token);
+      toast.success('¡Bienvenido al Panel de Administración!');
+      navigate('/admin');
     } catch (err: unknown) {
-      console.error('Login error:', err);
+      console.error('Admin Login error:', err);
       
       if (err instanceof Error && err.name === 'TypeError' && err.message.includes('fetch')) {
         toast.error('No se pudo conectar con el servidor. Verifica tu conexión.');
@@ -48,11 +48,11 @@ export function AdminLogin() {
       const error = err as { status?: number; data?: { message?: string } };
       
       if (error.status === 400) {
-        toast.error('Credenciales inválidas');
+        toast.error('Credenciales de administrador inválidas');
       } else if (error.status === 403) {
-        toast.error('No puedes usar credenciales de usuario en el panel de administración.');
+        toast.error('Acceso denegado: Estas credenciales no pertenecen a un administrador.');
       } else {
-        toast.error('Error al iniciar sesión. Inténtalo de nuevo.');
+        toast.error('Error al iniciar sesión en el panel. Inténtalo de nuevo.');
       }
     } finally {
       setIsLoading(false);
