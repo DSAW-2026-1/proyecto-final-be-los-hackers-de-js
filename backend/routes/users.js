@@ -3,6 +3,7 @@ const router = express.Router();
 const db = require("../dbManager");
 const tokenValidatorMiddleware = require('./../middleware/auth/tokenValidator');
 const userAuthMiddleware = require('./../middleware/auth/userValidator')
+const userEditorRouter = require("./user/edit")
 
 router.get('/:id', async function (req, res, next) {
     const UID = req.params.id
@@ -38,5 +39,6 @@ router.get('/', async function (req, res, next) {
             sales: user.sales || 0
         })
 });
+router.use('/', userEditorRouter)
 
 module.exports = router;
