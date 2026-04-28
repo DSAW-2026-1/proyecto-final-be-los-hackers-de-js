@@ -78,7 +78,8 @@ export function EditProfile() {
             setSelectedFaculty(faculty.id);
             setSelectedProgram(data.career);
           } else {
-            // Fallback or custom program
+            // unrecognized value: set program but keep faculty empty to maintain unset behavior
+            setSelectedFaculty("");
             setSelectedProgram(data.career);
           }
         }
@@ -236,6 +237,10 @@ export function EditProfile() {
                             {program}
                           </SelectItem>
                         ))}
+                        {/* Fallback for unrecognized or custom programs to ensure they are visible */}
+                        {selectedProgram && (!selectedFaculty || !FACULTIES.find(f => f.id === selectedFaculty)?.programs.includes(selectedProgram)) && (
+                          <SelectItem value={selectedProgram}>{selectedProgram}</SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
