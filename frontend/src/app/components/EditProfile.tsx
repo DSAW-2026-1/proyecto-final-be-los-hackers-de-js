@@ -25,8 +25,10 @@ import {
 } from 'lucide-react';
 import { Switch } from './ui/switch';
 import { Separator } from './ui/separator';
-import { userService, UserProfileResponse } from '../services/userService';
+import { userService, UserProfileResponse, UpdateProfileRequest } from '../services/userService';
 import { ConnectionError } from './ConnectionError';
+import { useAuth } from '../context/AuthContext';
+import { ApiError } from '../services/api';
 
 const FACULTIES = [
   {
@@ -58,16 +60,23 @@ const FACULTIES = [
 
 export function EditProfile() {
   const navigate = useNavigate();
+  const { setUserInfo } = useAuth();
   const [user, setUser] = useState<UserProfileResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [selectedFaculty, setSelectedFaculty] = useState<string>("");
   const [selectedProgram, setSelectedProgram] = useState<string>("");
+  const [username, setUsername] = useState<string>("");
+  const [photoBase64, setPhotoBase64] = useState<string | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         const data = await userService.getProfile();
         setUser(data);
+        setUsername(data.username);
+        setPhotoPreview(data.photo ? `data:image/jpeg;base64,${data.photo}` : null);
         
         // Find faculty based on career
         if (data.career) {
@@ -97,6 +106,88 @@ export function EditProfile() {
   const handleFacultyChange = (value: string) => {
     setSelectedFaculty(value);
     setSelectedProgram(""); // Reset program when faculty changes
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error('La imagen es muy grande. Máximo 2MB.');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setPhotoPreview(base64String);
+        // Remove prefix (data:image/jpeg;base64,) for API if needed, 
+        // but typically API expects the raw base64 or exactly as provided.
+        // Documentation says "User image encoded in base64". Usually it means the content parts.
+        const cleanBase64 = base64String.split(',')[1];
+        setPhotoBase64(cleanBase64);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!user) return;
+
+    // Validate username (alphanumeric)
+    const usernameRegex = /^[a-zA-Z0-9]+$/;
+    if (!usernameRegex.test(username)) {
+      toast.error('El nombre de usuario debe ser alfanumérico');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const updateData: UpdateProfileRequest = {};
+      
+      // Only send fields that changed to avoid 400 "cannot change to same username"
+      if (username !== user.username) {
+        updateData.username = username;
+      }
+      
+      const currentProgram = selectedProgram || "";
+      if (currentProgram !== (user.career || "")) {
+        updateData.career = currentProgram;
+      }
+      
+      if (photoBase64) {
+        updateData.photo = photoBase64;
+      }
+
+      if (Object.keys(updateData).length === 0) {
+        toast.info('No hay cambios para guardar');
+        setIsSaving(false);
+        return;
+      }
+
+      await userService.updateProfile(updateData);
+      
+      // Update context if username changed
+      if (updateData.username) {
+        setUserInfo({ username: updateData.username, email: user.email });
+      }
+
+      toast.success('Perfil actualizado correctamente');
+      navigate('/profile');
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      const apiError = error as ApiError;
+      
+      if (apiError.status === 409) {
+        toast.error('El nombre de usuario ya está en uso');
+      } else if (apiError.status === 400) {
+        // Detailed error messages from backend usually come in error.message or error response
+        toast.error('Error en la solicitud. Verifica los datos.');
+      } else {
+        toast.error('Ocurrió un error al guardar los cambios');
+      }
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (loading) {
@@ -162,14 +253,20 @@ export function EditProfile() {
               <div className="flex flex-col md:flex-row gap-8 items-center md:items-start text-center md:text-left">
                 <div className="relative">
                   <Avatar className="w-32 h-32 border-4 border-white shadow-xl ring-1 ring-border">
-                    {user.photo ? (
-                      <AvatarImage src={`data:image/jpeg;base64,${user.photo}`} alt={user.username} />
+                    {photoPreview ? (
+                      <AvatarImage src={photoPreview} alt={user.username} />
                     ) : null}
                     <AvatarFallback>{userInitial}</AvatarFallback>
                   </Avatar>
                   <label htmlFor="avatar-upload" className="absolute bottom-1 right-1 bg-primary text-white p-2 rounded-full shadow-lg cursor-pointer hover:bg-primary/90 transition-transform active:scale-95">
                     <Camera className="w-4 h-4" />
-                    <input id="avatar-upload" type="file" className="hidden" accept="image/*" />
+                    <input 
+                      id="avatar-upload" 
+                      type="file" 
+                      className="hidden" 
+                      accept="image/*" 
+                      onChange={handleFileChange}
+                    />
                   </label>
                 </div>
                 
@@ -196,7 +293,12 @@ export function EditProfile() {
               <div className="grid md:grid-cols-2 gap-6 mb-6">
                 <div className="space-y-2 col-span-2">
                   <Label htmlFor="username">Nombre de Usuario</Label>
-                  <Input id="username" defaultValue={user.username} />
+                  <Input 
+                    id="username" 
+                    value={username} 
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="Tu nombre de usuario"
+                  />
                 </div>
               </div>
 
@@ -320,9 +422,25 @@ export function EditProfile() {
 
             {/* Sticky Actions */}
             <div className="flex justify-end gap-4 pt-4">
-              <Button variant="outline" size="lg">Cancelar</Button>
-              <Button size="lg" className="bg-primary hover:bg-primary/90">
-                <Save className="w-5 h-5 mr-2" />
+              <Button 
+                variant="outline" 
+                size="lg" 
+                onClick={() => navigate('/profile')}
+                disabled={isSaving}
+              >
+                Cancelar
+              </Button>
+              <Button 
+                size="lg" 
+                className="bg-primary hover:bg-primary/90"
+                onClick={handleSave}
+                disabled={isSaving}
+              >
+                {isSaving ? (
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                ) : (
+                  <Save className="w-5 h-5 mr-2" />
+                )}
                 Guardar Todos los Cambios
               </Button>
             </div>

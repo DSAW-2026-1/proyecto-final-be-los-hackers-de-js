@@ -10,11 +10,23 @@ export interface UserProfileResponse {
   sales: number;
 }
 
+export interface UpdateProfileRequest {
+  username?: string;
+  career?: string;
+  photo?: string;
+}
+
 export const userService = {
   async getProfile(): Promise<UserProfileResponse> {
     return apiRequest<UserProfileResponse>('/api/users/');
   },
   async getProfileByUid(uid: string): Promise<UserProfileResponse> {
     return apiRequest<UserProfileResponse>(`/api/users/${uid}`);
+  },
+  async updateProfile(data: UpdateProfileRequest): Promise<{ message: string }> {
+    return apiRequest<{ message: string }>('/api/users', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
   }
 };
