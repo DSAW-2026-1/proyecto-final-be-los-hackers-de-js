@@ -70,7 +70,6 @@ class DbManager{
     }
     static async #findByID(database, id){
         try {
-            console.log(id)
             let db = await this.#openConnection()
             return await db.collection(database).findOne({_id: new ObjectId(id)})
         }
@@ -122,6 +121,25 @@ class DbManager{
             message,
             context
         })
+    }
+    static async #updateItem(collection, id, newData){
+        try {
+            let db = await this.#openConnection()
+            await db.collection(collection).updateOne(
+                {_id: new ObjectId(id)},
+                { $set: newData }
+            )
+            return true
+        }
+        catch (e){
+            return false
+        }
+        finally {
+            await this.#closeConnection()
+        }
+    }
+    static async updateUser(UID, newData){
+        return await this.#updateItem(USERS_DB, UID, newData)
     }
 }
 

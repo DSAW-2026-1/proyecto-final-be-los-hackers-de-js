@@ -21,6 +21,7 @@ router.get('/:id', async function (req, res, next) {
 });
 router.use('/', tokenValidatorMiddleware);
 router.use('/', userAuthMiddleware);
+//The router inherently requires the use of tokenValidator and userValidator, as otherwise there won't be any UID
 router.get('/', async function (req, res, next) {
     const UID = req.token.payload.UID
     const user = await db.findUserByUID(UID)
