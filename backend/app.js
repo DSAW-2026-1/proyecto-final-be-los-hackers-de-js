@@ -11,7 +11,7 @@ const registerRouter = require('./routes/auth/register');
 const tokenValidatorMiddleware = require('./middleware/auth/tokenValidator');
 const userAuthMiddleware = require('./middleware/auth/userValidator')
 const sellerRegisterRouter  = require('./routes/seller/register')
-const sellerAuthMiddleware = require("./middleware/auth/authVendedor")
+const sellerAuthMiddleware = require("./middleware/auth/sellerValidator")
 const testRouter = require('./routes/test')
 
 const app = express();
