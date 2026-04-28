@@ -27,6 +27,8 @@ import { EditProduct } from './components/EditProduct';
 import { MainLayout } from './components/MainLayout';
 import { AdminLogin } from  './components/AdminLogin.tsx'
 
+import { ProtectedRoute } from './components/ProtectedRoute';
+
 function Home() {
   return (
     <>
@@ -55,15 +57,15 @@ export default function App() {
         <Route path="/orders/:id/review" element={<LeaveReview />} />
         
         {/* Seller routes */}
-        <Route path="/seller" element={<SellerDashboard />} />
-        <Route path="/seller/products/create" element={<CreateProduct />} />
-        <Route path="/seller/products/edit/:id" element={<EditProduct />} />
-        <Route path="/seller/orders/:id/update" element={<SellerShippingUpdate />} />
+        <Route path="/seller" element={<ProtectedRoute><SellerDashboard /></ProtectedRoute>} />
+        <Route path="/seller/products/create" element={<ProtectedRoute><CreateProduct /></ProtectedRoute>} />
+        <Route path="/seller/products/edit/:id" element={<ProtectedRoute><EditProduct /></ProtectedRoute>} />
+        <Route path="/seller/orders/:id/update" element={<ProtectedRoute><SellerShippingUpdate /></ProtectedRoute>} />
         
         {/* User profile routes */}
-        <Route path="/profile" element={<UserProfile />} />
+        <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
         <Route path="/profile/:uid" element={<UserProfile />} />
-        <Route path="/profile/edit" element={<EditProfile />} />
+        <Route path="/profile/edit" element={<ProtectedRoute><EditProfile /></ProtectedRoute>} />
         
         {/* Communication & Utils */}
         <Route path="/chat" element={<ChatInterface />} />

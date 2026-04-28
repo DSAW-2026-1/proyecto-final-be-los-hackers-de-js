@@ -51,7 +51,7 @@ const REVIEWS = [
 ];
 
 export function UserProfile() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user: contextUser, setUserInfo } = useAuth();
   const { uid } = useParams<{ uid?: string }>();
   const navigate = useNavigate();
   const [user, setUser] = useState<UserProfileResponse | null>(null);
@@ -61,37 +61,52 @@ export function UserProfile() {
   const isOwnProfile = !uid;
 
   useEffect(() => {
-    if (!isAuthenticated && isOwnProfile) {
-      toast.error('Debes iniciar sesión para ver tu perfil');
-      navigate('/login');
-      return;
-    }
+    // Prevent multiple redirects and toasts in the same cycle
+    let isMounted = true;
 
     const fetchProfile = async () => {
+      if (!isMounted) return;
+      
       setLoading(true);
       setErrorStatus(null);
+      
       try {
         const data = isOwnProfile 
           ? await userService.getProfile() 
           : await userService.getProfileByUid(uid!);
-        setUser(data);
+        
+        if (isMounted) {
+          setUser(data);
+          // Sync with context if it's our own profile and we don't have the info there yet
+          if (isOwnProfile && (!contextUser || contextUser.username !== data.username)) {
+            setUserInfo({ username: data.username, email: data.email });
+          }
+        }
       } catch (error) {
+        if (!isMounted) return;
+        
         console.error('Error fetching profile:', error);
         const apiError = error as ApiError;
-        setErrorStatus(apiError.status || 500);
+        const status = apiError.status || 500;
+        setErrorStatus(status);
         
-        if (isOwnProfile) {
-          toast.error('Error al cargar tu perfil');
-        } else {
-          toast.error('Error al cargar el perfil del usuario');
+        if (status !== 404) {
+          const errorMsg = isOwnProfile ? 'Error al cargar tu perfil' : 'Error al cargar el perfil del usuario';
+          toast.error(errorMsg);
         }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchProfile();
-  }, [isAuthenticated, navigate, uid, isOwnProfile]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isAuthenticated, navigate, uid, isOwnProfile, contextUser, setUserInfo]);
 
   if (isOwnProfile && !isAuthenticated) return null;
 
