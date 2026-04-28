@@ -11,6 +11,7 @@ const registerRouter = require('./routes/auth/register');
 const tokenValidatorMiddleware = require('./middleware/auth/tokenValidator');
 const userAuthMiddleware = require('./middleware/auth/userValidator')
 const sellerAuthMiddleware = require("./middleware/auth/authVendedor")
+const testRouter = require('./routes/test')
 
 const app = express();
 
@@ -26,5 +27,9 @@ app.use('/api/auth/login', loginRouter);
 app.use('/api/auth/register', registerRouter);
 app.use('/api/admin/login', adminLoginRouter);
 app.use('/api/users', usersRouter);
+
+app.use('/api/test', tokenValidatorMiddleware)
+app.use('/api/test', sellerAuthMiddleware)
+app.use('/api/test', testRouter)
 
 module.exports = app;
