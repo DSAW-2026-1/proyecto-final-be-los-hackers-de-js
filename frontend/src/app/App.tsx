@@ -62,6 +62,7 @@ export default function App() {
         
         {/* User profile routes */}
         <Route path="/profile" element={<UserProfile />} />
+        <Route path="/profile/:uid" element={<UserProfile />} />
         <Route path="/profile/edit" element={<EditProfile />} />
         
         {/* Communication & Utils */}

@@ -13,5 +13,8 @@ export interface UserProfileResponse {
 export const userService = {
   async getProfile(): Promise<UserProfileResponse> {
     return apiRequest<UserProfileResponse>('/api/users/');
+  },
+  async getProfileByUid(uid: string): Promise<UserProfileResponse> {
+    return apiRequest<UserProfileResponse>(`/api/users/${uid}`);
   }
 };

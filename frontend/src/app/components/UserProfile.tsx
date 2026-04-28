@@ -1,16 +1,20 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Avatar } from './ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Star, MapPin, Calendar, Package, ShoppingBag, MessageCircle, Edit, Loader2 } from 'lucide-react';
+import { Star, MapPin, Calendar, Package, ShoppingBag, MessageCircle, Edit, Loader2, Flag } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { userService, UserProfileResponse } from '../services/userService';
+import { ApiError } from '../services/api';
+import { NotFound } from './NotFound';
+import { ConnectionError } from './ConnectionError';
 
 const USER_PRODUCTS = [
+  // Mock products for visual preview, in a real app these would be fetched by user UID
   {
     id: 1,
     title: 'iPad 9na Gen + Apple Pencil',
@@ -48,33 +52,48 @@ const REVIEWS = [
 
 export function UserProfile() {
   const { isAuthenticated } = useAuth();
+  const { uid } = useParams<{ uid?: string }>();
   const navigate = useNavigate();
   const [user, setUser] = useState<UserProfileResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [errorStatus, setErrorStatus] = useState<number | null>(null);
+
+  const isOwnProfile = !uid;
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated && isOwnProfile) {
       toast.error('Debes iniciar sesión para ver tu perfil');
       navigate('/login');
       return;
     }
 
     const fetchProfile = async () => {
+      setLoading(true);
+      setErrorStatus(null);
       try {
-        const data = await userService.getProfile();
+        const data = isOwnProfile 
+          ? await userService.getProfile() 
+          : await userService.getProfileByUid(uid!);
         setUser(data);
       } catch (error) {
         console.error('Error fetching profile:', error);
-        toast.error('Error al cargar el perfil');
+        const apiError = error as ApiError;
+        setErrorStatus(apiError.status || 500);
+        
+        if (isOwnProfile) {
+          toast.error('Error al cargar tu perfil');
+        } else {
+          toast.error('Error al cargar el perfil del usuario');
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchProfile();
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, uid, isOwnProfile]);
 
-  if (!isAuthenticated) return null;
+  if (isOwnProfile && !isAuthenticated) return null;
 
   if (loading) {
     return (
@@ -84,13 +103,12 @@ export function UserProfile() {
     );
   }
 
-  if (!user) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-        <p className="text-muted-foreground">No se pudo cargar la información del usuario.</p>
-        <Button onClick={() => window.location.reload()}>Reintentar</Button>
-      </div>
-    );
+  if (errorStatus === 404) {
+    return <NotFound />;
+  }
+
+  if (!user || errorStatus) {
+    return <ConnectionError onRetry={() => window.location.reload()} />;
   }
 
   const userInitial = user.username.charAt(0).toUpperCase();
@@ -141,14 +159,29 @@ export function UserProfile() {
               </div>
 
               <div className="flex gap-3 mt-4 md:mt-0 md:pb-2">
-                <Button variant="outline">
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  Mensajes
-                </Button>
-                <Button onClick={() => navigate('/profile/edit')}>
-                  <Edit className="w-4 h-4 mr-2" />
-                  Editar Perfil
-                </Button>
+                {isOwnProfile ? (
+                  <>
+                    <Button variant="outline" onClick={() => navigate('/chat')}>
+                      <MessageCircle className="w-4 h-4 mr-2" />
+                      Mensajes
+                    </Button>
+                    <Button onClick={() => navigate('/profile/edit')}>
+                      <Edit className="w-4 h-4 mr-2" />
+                      Editar Perfil
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button variant="outline" onClick={() => navigate(`/chat?user=${user.username}`)}>
+                      <MessageCircle className="w-4 h-4 mr-2" />
+                      Enviar Mensaje
+                    </Button>
+                    <Button variant="ghost" className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                      <Flag className="w-4 h-4 mr-2" />
+                      Reportar
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
 
@@ -175,7 +208,7 @@ export function UserProfile() {
               <Card className="p-4 text-center bg-primary/5">
                 <div className="flex items-center justify-center mb-2">
                   <ShoppingBag className="w-5 h-5 text-primary mr-2" />
-                  <span className="text-2xl font-bold">{USER_PRODUCTS.length}</span>
+                  <span className="text-2xl font-bold">2</span>
                 </div>
                 <p className="text-sm text-muted-foreground">Publicados</p>
               </Card>
@@ -228,10 +261,14 @@ export function UserProfile() {
                 ) : (
                   <div className="text-center py-12 bg-muted/20 rounded-lg">
                     <Package className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
-                    <p className="text-muted-foreground">No eres un vendedor activo todavía.</p>
-                    <Button variant="link" onClick={() => navigate('/seller/products/create')}>
-                      ¡Empieza a vender ahora!
-                    </Button>
+                    <p className="text-muted-foreground">
+                      {isOwnProfile ? 'No eres un vendedor activo todavía.' : 'Este usuario no tiene productos activos.'}
+                    </p>
+                    {isOwnProfile && (
+                      <Button variant="link" onClick={() => navigate('/seller/products/create')}>
+                        ¡Empieza a vender ahora!
+                      </Button>
+                    )}
                   </div>
                 )}
               </TabsContent>
@@ -263,7 +300,7 @@ export function UserProfile() {
                   ))}
                   {REVIEWS.length === 0 && (
                     <div className="text-center py-8">
-                      <p className="text-muted-foreground">Aún no tienes reseñas.</p>
+                      <p className="text-muted-foreground">Aún no hay reseñas.</p>
                     </div>
                   )}
                 </div>
@@ -271,7 +308,7 @@ export function UserProfile() {
 
               <TabsContent value="about" className="mt-6">
                 <Card className="p-6">
-                  <h3 className="font-semibold text-lg mb-4">Información Personal</h3>
+                  <h3 className="font-semibold text-lg mb-4">Información del Usuario</h3>
                   <div className="space-y-3 text-sm">
                     <div className="flex items-center justify-between py-2 border-b">
                       <span className="text-muted-foreground">Carrera</span>
