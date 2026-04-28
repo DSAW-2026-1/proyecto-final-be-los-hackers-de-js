@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 // Importamos el modelo de usuario para validar el UID contra la base de datos
-const User = require('../../../models/User'); 
+const User = require('../../models/User'); 
 
 /**
  * Middleware para validar que el usuario sea un vendedor autorizado.
