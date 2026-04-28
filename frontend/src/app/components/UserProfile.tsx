@@ -326,8 +326,8 @@ export function UserProfile() {
                   <h3 className="font-semibold text-lg mb-4">Información del Usuario</h3>
                   <div className="space-y-3 text-sm">
                     <div className="flex items-center justify-between py-2 border-b">
-                      <span className="text-muted-foreground">Carrera</span>
-                      <span className="font-medium">{user.career || 'No especificada'}</span>
+                      <span className="text-muted-foreground">Programa académico</span>
+                      <span className="font-medium">{user.career || 'No especificado'}</span>
                     </div>
                     <div className="flex items-center justify-between py-2 border-b">
                       <span className="text-muted-foreground">Universidad</span>
