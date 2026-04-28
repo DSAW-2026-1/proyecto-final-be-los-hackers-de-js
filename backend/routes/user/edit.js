@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const VALID_CAREERS = (process.env.VALID_CAREERS)? process.env.VALID_CAREERS.split(',') : [
     "Ingeniería Informática",
+    "Ingeniería Industrial",
     "Medicina",
     "etc idk"
 ]
@@ -41,7 +42,7 @@ router.patch('/', async function (req, res, next) {
             return res.status(500).json("Failed to query internal database")
         }
     }
-    if(!VALID_CAREERS.includes(career)) return res.status(400).json({error: errorMsg});
+    if(career && !VALID_CAREERS.includes(career)) return res.status(400).json({error: errorMsg});
 
     //TODO: Validate image as valid base64 image file. Is this even possible without actually creating the image somewhere in the server?
     
