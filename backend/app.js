@@ -17,7 +17,7 @@ const testRouter = require('./routes/test')
 const app = express();
 
 app.use(logger('dev'));
-app.use(express.json());
+app.use(express.json({limit: "10mb"})); //TODO: Figure out how to allocate different request size limits
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
