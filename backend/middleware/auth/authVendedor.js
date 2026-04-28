@@ -1,51 +1,38 @@
-const jwt = require('jsonwebtoken');
-// Importamos el modelo de usuario para validar el UID contra la base de datos
-const User = require('../../models/User'); 
+const db = require("../../dbManager");
 
-/**
- * Middleware para validar que el usuario sea un vendedor autorizado.
- * Ubicación: /middleware/auth/sellerCheck
- */
-const sellerCheck = async (req, res, next) => {
-    // 1. Validar que la petición tenga el header de Authorization
-    const authHeader = req.header('Authorization');
-
-    // Retorna 400 si no existe el token o no empieza con 'Bearer '
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(400).json({ error: "No JWT token provided" });
-    }
-
-    // Extraer el token eliminando el prefijo 'Bearer '
-    const token = authHeader.split(' ')[1];
-
+module.exports = async function (req, res, next) {
     try {
-        // 2. Validar la firma del token y su vigencia (JWT_SECRET debe estar en tu .env)
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        // 1. Extraemos el UID del token (esto asume que el tokenValidator ya pasó)
+        const { UID } = req.token.payload;
 
-        // 3. Verificar que el UID corresponda a un usuario real en la base de datos
-        // Usamos await porque la consulta a la BD es asíncrona
-        const existingUser = await User.findById(decoded.UID);
-        
-        if (!existingUser) {
-            return res.status(400).json({ error: "Invalid JWT token" });
+        // 2. Usamos el manager de Felipe para buscar si es vendedor
+        // IMPORTANTE: Asegúrate de que Felipe haya creado la función 'findVendedorByUID'
+        const vendedor = await db.findVendedorByUID(UID);
+
+        if (!vendedor) {
+            // Si no es vendedor, verificamos si es un usuario común para dar un mensaje claro
+            const user = await db.findUserByUID(UID);
+            if (user) {
+                const msg = "Acceso denegado: Se requiere rol de vendedor.";
+                console.warn(`[AUTH] ${msg} (UID: ${UID})`);
+                
+                // Usamos el sistema de logs de Felipe
+                await db.log("WARN", "AuthVendedor", msg, { 
+                    UID: user._id,
+                    username: user.username 
+                });
+                
+                return res.status(403).json({ error: msg });
+            }
+            return res.status(401).json({ error: "Token no asociado a un usuario válido." });
         }
 
-        // 4. Verificar que la propiedad isSeller sea true en el payload del token
-        if (decoded.isSeller !== true) {
-            return res.status(403).json({ error: "You are not allowed to do this" });
-        }
-
-        // Si todas las validaciones pasan, adjuntamos la info del usuario al request
-        req.user = decoded;
-        
-        // Permite el acceso al siguiente controlador (destino)
+        // 3. Si es vendedor, guardamos sus datos y continuamos
+        req.vendedor = vendedor; 
         next();
 
     } catch (error) {
-        // Si el token expiró o la firma es falsa, entra en este bloque
-        // Retorna 400 según los requisitos del tiquet
-        return res.status(400).json({ error: "Invalid JWT token" });
+        console.error("Error en authVendedor:", error);
+        res.status(500).json({ error: "Error interno de autenticación." });
     }
 };
-
-module.exports = sellerCheck;
