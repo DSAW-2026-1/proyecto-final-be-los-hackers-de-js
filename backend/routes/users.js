@@ -1,5 +1,5 @@
-var express = require('express');
-var router = express.Router();
+const express = require('express');
+const router = express.Router();
 const db = require("../dbManager");
 const tokenValidatorMiddleware = require('./../middleware/auth/tokenValidator');
 const userAuthMiddleware = require('./../middleware/auth/userValidator')
