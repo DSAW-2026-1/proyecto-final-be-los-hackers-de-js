@@ -18,27 +18,36 @@ router.post('/', [body('email').isEmail()], async(req, res) => {
     if (!username || !email || !password) return res.status(400).json({error: errorMsg});
     if (!email.endsWith("@unisabana.edu.co")) return res.status(400).json({error: errorMsg});
 
+    //Enforce alphanumeric users
+    if (!/^[a-zA-Z0-9]+$/.test(username)) return res.status(400).json({error: errorMsg});
+
     //Check that our new user doesn't use the same username or email as someone else
-    const existingUser = await db.findUser({$or: [{username: username}, {email: email}]})
-    if (existingUser) return res.status(409).json({error: 'User or email already exists'})
+    try {
+        const existingUser = await db.findUser({$or: [{username: username}, {email: email}]})
+        if (existingUser) return res.status(409).json({error: 'User or email already exists'})
 
-    const hashedPassword = await bcrypt.hash(password, saltRounds)
+        const hashedPassword = await bcrypt.hash(password, saltRounds)
 
-    //TODO: These are not all the variables a user may need. Check if we actually need to create them straight away or if we can get away with this
-    const user = {
-        username: username,
-        email: email,
-        password: hashedPassword,
-        isSeller: false,
-        isSuspended: false
+        //TODO: These are not all the variables a user may need. Check if we actually need to create them straight away or if we can get away with this
+        const user = {
+            username: username,
+            email: email,
+            password: hashedPassword,
+            isSeller: false,
+            isSuspended: false
+        }
+
+        await db.addUser(user)
+
+        const payload = {UID: user._id, isSeller: user.isSeller};
+        const token = jwt.sign(payload, JWT_SECRET, {expiresIn: '1h'});
+
+        res.json({token});
     }
-
-    await db.addUser(user)
-
-    const payload = {UID: user._id, isSeller: user.isSeller};
-    const token = jwt.sign(payload, JWT_SECRET, {expiresIn: '1h'});
-
-    res.json({token});
+    catch(e){
+        console.error(e)
+        return res.status(500).json()
+    }
 });
 
 module.exports = router;
