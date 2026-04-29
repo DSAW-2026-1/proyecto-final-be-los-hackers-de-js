@@ -30,7 +30,7 @@ export function HeroSection() {
               </Link>
               {isSeller && (
                 <Link to="/seller/products/create">
-                  <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-primary">
+                  <Button size="lg" variant="secondary" className="bg-white/10 border-none text-white hover:bg-white hover:text-primary transition-all shadow-none">
                     Publicar Producto
                   </Button>
                 </Link>
