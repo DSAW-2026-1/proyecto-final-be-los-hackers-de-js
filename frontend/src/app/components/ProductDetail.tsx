@@ -9,7 +9,6 @@ import {
   ShoppingCart,
   MessageCircle,
   Star,
-  MapPin,
   Shield,
   Package,
   Clock,
@@ -152,15 +151,11 @@ export function ProductDetail() {
               <h1 className="text-3xl lg:text-4xl font-bold text-primary mb-3">
                 {product.name}
               </h1>
-              <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                <div className="flex items-center gap-1">
-                  <MapPin className="w-4 h-4" />
-                  <span>Campus Principal</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Clock className="w-4 h-4" />
-                  <span>Publicado recientemente</span>
-                </div>
+                  <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-4 h-4" />
+                      <span>Publicado recientemente</span>
+                    </div>
                 {product.rating && (
                   <div className="flex items-center gap-1">
                     <Star className="w-4 h-4 fill-accent text-accent" />

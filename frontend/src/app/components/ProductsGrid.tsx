@@ -14,7 +14,6 @@ const MOCK_PRODUCTS = [
     category: 'Electrónica',
     seller: 'María García',
     rating: 4.8,
-    location: 'Edificio C'
   },
   {
     id: 2,
@@ -25,7 +24,6 @@ const MOCK_PRODUCTS = [
     category: 'Libros',
     seller: 'Juan Pérez',
     rating: 5.0,
-    location: 'Biblioteca'
   },
   {
     id: 3,
@@ -36,7 +34,6 @@ const MOCK_PRODUCTS = [
     category: 'Computadores',
     seller: 'Ana Rodríguez',
     rating: 4.9,
-    location: 'Campus Principal'
   },
   {
     id: 4,
@@ -47,7 +44,6 @@ const MOCK_PRODUCTS = [
     category: 'Deportes',
     seller: 'Carlos López',
     rating: 4.7,
-    location: 'Zona Deportiva'
   },
   {
     id: 5,
@@ -58,7 +54,6 @@ const MOCK_PRODUCTS = [
     category: 'Tablets',
     seller: 'Laura Martínez',
     rating: 5.0,
-    location: 'Campus Principal'
   },
   {
     id: 6,
@@ -69,7 +64,6 @@ const MOCK_PRODUCTS = [
     category: 'Audio',
     seller: 'Pedro Silva',
     rating: 4.6,
-    location: 'Edificio A'
   },
 ];
 

@@ -15,16 +15,6 @@ export const CONDITIONS = [
   "Aceptable"
 ];
 
-export const LOCATIONS = [
-  { value: "campus", label: "Campus Principal" },
-  { value: "edificio-a", label: "Edificio A" },
-  { value: "edificio-b", label: "Edificio B" },
-  { value: "edificio-c", label: "Edificio C" },
-  { value: "biblioteca", label: "Biblioteca" },
-  { value: "zona-deportiva", label: "Zona Deportiva" },
-  { value: "domicilio", label: "Envío a domicilio" }
-];
-
 export const FACULTIES = [
   {
     id: 'ingenieria',

@@ -29,7 +29,6 @@ const MOCK_PRODUCTS = [
     category: 'Electrónica',
     seller: 'María García',
     rating: 4.8,
-    location: 'Edificio C'
   },
   {
     id: 2,
@@ -40,7 +39,6 @@ const MOCK_PRODUCTS = [
     category: 'Libros',
     seller: 'Juan Pérez',
     rating: 5.0,
-    location: 'Biblioteca'
   },
   {
     id: 3,
@@ -51,7 +49,6 @@ const MOCK_PRODUCTS = [
     category: 'Computadores',
     seller: 'Ana Rodríguez',
     rating: 4.9,
-    location: 'Campus Principal'
   },
   {
     id: 4,
@@ -62,7 +59,6 @@ const MOCK_PRODUCTS = [
     category: 'Deportes',
     seller: 'Carlos López',
     rating: 4.7,
-    location: 'Zona Deportiva'
   },
   {
     id: 5,
@@ -73,7 +69,6 @@ const MOCK_PRODUCTS = [
     category: 'Tablets',
     seller: 'Laura Martínez',
     rating: 5.0,
-    location: 'Campus Principal'
   },
   {
     id: 6,
@@ -84,7 +79,6 @@ const MOCK_PRODUCTS = [
     category: 'Audio',
     seller: 'Pedro Silva',
     rating: 4.6,
-    location: 'Edificio A'
   },
   {
     id: 7,
@@ -95,7 +89,6 @@ const MOCK_PRODUCTS = [
     category: 'Accesorios',
     seller: 'Sofía Castro',
     rating: 4.9,
-    location: 'Edificio B'
   },
   {
     id: 8,
@@ -106,7 +99,6 @@ const MOCK_PRODUCTS = [
     category: 'Computadores',
     seller: 'Mateo Ruiz',
     rating: 4.7,
-    location: 'Campus Principal'
   },
   {
     id: 9,
@@ -117,7 +109,6 @@ const MOCK_PRODUCTS = [
     category: 'Ropa',
     seller: 'Valentina Mesa',
     rating: 4.5,
-    location: 'Zona Deportiva'
   },
   {
     id: 10,
@@ -128,7 +119,6 @@ const MOCK_PRODUCTS = [
     category: 'Electrónica',
     seller: 'Diego Herrera',
     rating: 4.8,
-    location: 'Edificio C'
   },
   {
     id: 11,
@@ -139,13 +129,11 @@ const MOCK_PRODUCTS = [
     category: 'Otros',
     seller: 'Camila Torres',
     rating: 5.0,
-    location: 'Edificio de Artes'
   },
   {
     description: 'Escritorio de Madera Compacto...',
     id: 12,
     image: 'https://images.unsplash.com/photo-1518455027359-f3f816b1a20a?w=400&h=300&fit=crop',
-    location: 'Residencias',
     price: 90000,
     rating: 4.2,
     seller: 'Santiago Gil',

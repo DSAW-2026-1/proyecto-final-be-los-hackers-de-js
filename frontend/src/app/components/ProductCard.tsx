@@ -1,6 +1,6 @@
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
-import { Star, MapPin } from 'lucide-react';
+import { Star } from 'lucide-react';
 import { Link } from 'react-router';
 
 interface ProductCardProps {
@@ -12,7 +12,6 @@ interface ProductCardProps {
   category: string;
   seller: string;
   rating: number;
-  location?: string;
 }
 
 export function ProductCard({
@@ -24,7 +23,6 @@ export function ProductCard({
   category,
   seller,
   rating,
-  location = 'Campus'
 }: ProductCardProps) {
   return (
     <Link to={`/product/${id}`}>
@@ -67,11 +65,6 @@ export function ProductCard({
                 <Star className="w-4 h-4 fill-accent text-accent" />
                 <span className="font-medium">{rating}</span>
               </div>
-            </div>
-
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <MapPin className="w-3 h-3" />
-              <span>{location}</span>
             </div>
           </div>
         </div>
