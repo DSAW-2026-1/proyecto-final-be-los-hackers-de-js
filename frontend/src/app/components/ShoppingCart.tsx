@@ -7,6 +7,7 @@ import { Separator } from './ui/separator';
 import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, Tag, Loader2 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { productService, Product } from '../services/productService';
+import { userService } from '../services/userService';
 import { useNavigate } from 'react-router';
 
 interface CartProductInfo extends Product {
@@ -17,52 +18,87 @@ interface CartProductInfo extends Product {
 export function ShoppingCart() {
   const { cart, removeFromCart, updateAmount, totalItems } = useCart();
   const [productDetails, setProductDetails] = useState<{ [id: string]: Product }>({});
+  const [sellerNames, setSellerNames] = useState<{ [id: string]: string }>({});
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    async function fetchMissingProducts() {
+    async function fetchMissingData() {
       const cartItems = Object.values(cart);
-      const missingIds = cartItems
+      
+      // 1. Check for missing product details
+      const missingProductIds = cartItems
         .map(item => item.productID)
         .filter(id => !productDetails[id]);
 
-      if (missingIds.length === 0) {
-        setLoading(false);
-        return;
-      }
-
-      // Only set loading if we actually have NO data yet for things in the cart
-      if (Object.keys(productDetails).length === 0) {
-        setLoading(true);
-      }
-
+      // 2. Once we have (or will have) product details, check for missing seller names
+      // We can only check for seller IDs if we have the product details
+      const currentProductDetails = { ...productDetails };
+      
       try {
-        const newDetails = { ...productDetails };
-        await Promise.all(
-          missingIds.map(async (id) => {
-            const product = await productService.getProduct(id);
-            newDetails[id] = product;
-          })
-        );
-        setProductDetails(newDetails);
+        let fetchNeeded = false;
+
+        // Fetch products if needed
+        if (missingProductIds.length > 0) {
+          fetchNeeded = true;
+          if (Object.keys(productDetails).length === 0) setLoading(true);
+          
+          await Promise.all(
+            missingProductIds.map(async (id) => {
+              const product = await productService.getProduct(id);
+              currentProductDetails[id] = product;
+            })
+          );
+          setProductDetails(currentProductDetails);
+        }
+
+        // Now check for missing seller names based on current + newly fetched products
+        const sellerIdsToFetch = cartItems
+          .map(item => currentProductDetails[item.productID]?.sellerID)
+          .filter((uid): uid is string => !!uid && !sellerNames[uid]);
+        
+        const uniqueSellerIds = Array.from(new Set(sellerIdsToFetch));
+
+        if (uniqueSellerIds.length > 0) {
+          fetchNeeded = true;
+          const newSellerNames = { ...sellerNames };
+          await Promise.all(
+            uniqueSellerIds.map(async (uid) => {
+              try {
+                const profile = await userService.getProfileByUid(uid);
+                newSellerNames[uid] = profile.username;
+              } catch (e) {
+                console.error(`Error fetching profile for ${uid}:`, e);
+                newSellerNames[uid] = uid; // Fallback
+              }
+            })
+          );
+          setSellerNames(newSellerNames);
+        }
+
+        if (!fetchNeeded && cartItems.length > 0) {
+          setLoading(false);
+        } else if (cartItems.length === 0) {
+          setLoading(false);
+        }
       } catch (error) {
-        console.error('Error fetching cart products:', error);
+        console.error('Error fetching cart data:', error);
       } finally {
-        setLoading(false);
+        // Only set loading false if we finished fetching everything
+        // Note: The parallel fetch logic means we might need multiple turns, 
+        // but setProductDetails/setSellerNames will trigger them.
       }
     }
 
-    fetchMissingProducts();
-  }, [cart, productDetails]);
+    fetchMissingData();
+  }, [cart, productDetails, sellerNames]);
 
   // Derive display list from cart + cached details
   const products = Object.entries(cart).map(([index, item]) => {
     const details = productDetails[item.productID];
-    //Add the productID to the details
-    if(details) details.productID = item.productID
     return details ? {
       ...details,
+      productID: item.productID,
       cartIndex: parseInt(index),
       amount: item.amount
     } : null;
@@ -135,7 +171,7 @@ export function ShoppingCart() {
                             {item.name}
                           </h3>
                           <p className="text-sm text-muted-foreground mb-2">
-                            Vendido por {item.sellerID}
+                            Vendido por {sellerNames[item.sellerID] || item.sellerID}
                           </p>
                           <Badge variant="secondary" className="text-xs">
                             {item.condition}
