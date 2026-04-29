@@ -1,8 +1,11 @@
 import { Button } from './ui/button';
 import { ArrowRight, Package, Users, Shield } from 'lucide-react';
 import { Link } from 'react-router';
+import { useAuth } from '../context/AuthContext';
 
 export function HeroSection() {
+  const { isSeller } = useAuth();
+
   return (
     <div className="relative bg-gradient-to-br from-primary via-primary to-[#1e4976] text-white overflow-hidden">
       <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiAxOGMzLjMxNCAwIDYgMi42ODYgNiA2cy0yLjY4NiA2LTYgNi02LTIuNjg2LTYtNiAyLjY4Ni02IDYtNiIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDUpIi8+PC9nPjwvc3ZnPg==')] opacity-10" />
@@ -25,11 +28,13 @@ export function HeroSection() {
                   <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
               </Link>
-              <Link to="/seller/products/create">
-                <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-primary">
-                  Publicar Producto
-                </Button>
-              </Link>
+              {isSeller && (
+                <Link to="/seller/products/create">
+                  <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-primary">
+                    Publicar Producto
+                  </Button>
+                </Link>
+              )}
             </div>
             <div className="grid grid-cols-3 gap-6">
               <div className="flex items-center gap-3">

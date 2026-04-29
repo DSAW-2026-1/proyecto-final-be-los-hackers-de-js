@@ -17,7 +17,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 
 export function Navigation() {
-  const { isAuthenticated, user, setUserInfo, logout } = useAuth();
+  const { isAuthenticated, user, setUserInfo, logout, isSeller } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -75,14 +75,16 @@ export function Navigation() {
               </NavLink>
               {isAuthenticated && (
                 <>
-                  <NavLink 
-                    to="/seller" 
-                    className={({ isActive }) => 
-                      `text-sm transition-colors ${isActive ? 'text-primary font-medium' : 'hover:text-primary'}`
-                    }
-                  >
-                    Mis Ventas
-                  </NavLink>
+                  {isSeller && (
+                    <NavLink 
+                      to="/seller" 
+                      className={({ isActive }) => 
+                        `text-sm transition-colors ${isActive ? 'text-primary font-medium' : 'hover:text-primary'}`
+                      }
+                    >
+                      Mis Ventas
+                    </NavLink>
+                  )}
                   <NavLink 
                     to="/chat" 
                     className={({ isActive }) => 

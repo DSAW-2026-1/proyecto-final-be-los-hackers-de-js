@@ -74,5 +74,16 @@ export const authService = {
 
   isAdminAuthenticated(): boolean {
     return !!this.getAdminToken();
+  },
+
+  isSeller(): boolean {
+    const token = this.getToken();
+    if (!token) return false;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return !!payload.isSeller;
+    } catch {
+      return false;
+    }
   }
 };

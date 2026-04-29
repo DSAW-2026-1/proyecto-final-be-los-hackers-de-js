@@ -9,6 +9,7 @@ interface UserInfo {
 interface AuthContextType {
   isAuthenticated: boolean;
   isAdminAuthenticated: boolean;
+  isSeller: boolean;
   user: UserInfo | null;
   login: (token: string) => void;
   logout: () => void;
@@ -22,6 +23,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(authService.isAuthenticated());
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(authService.isAdminAuthenticated());
+  const [isSeller, setIsSeller] = useState<boolean>(authService.isSeller());
   const [user, setUser] = useState<UserInfo | null>(null);
 
   useEffect(() => {
@@ -29,6 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const handleStorageChange = () => {
       setIsAuthenticated(authService.isAuthenticated());
       setIsAdminAuthenticated(authService.isAdminAuthenticated());
+      setIsSeller(authService.isSeller());
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
@@ -37,11 +40,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = (token: string) => {
     authService.setToken(token);
     setIsAuthenticated(true);
+    setIsSeller(authService.isSeller());
   };
 
   const logout = () => {
     authService.logout();
     setIsAuthenticated(false);
+    setIsSeller(false);
     setUser(null);
   };
 
@@ -63,6 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider value={{ 
       isAuthenticated, 
       isAdminAuthenticated, 
+      isSeller,
       user,
       login, 
       logout,
