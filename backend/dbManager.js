@@ -13,6 +13,7 @@ else console.log("Using MongoDB instance supplied by environment variable")
 const USERS_DB = "users"
 const ADMINS_DB = "admins"
 const LOGS_DB = "logs"
+const PRODUCTS_DB = "products"
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -140,6 +141,9 @@ class DbManager{
     }
     static async updateUser(UID, newData){
         return await this.#updateItem(USERS_DB, UID, newData)
+    }
+    static async addProduct(product){
+        await this.#addToCollection(PRODUCTS_DB, product)
     }
 }
 

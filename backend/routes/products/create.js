@@ -50,9 +50,9 @@ router.post('/', async(req, res) => {
         images: Object.assign({}, imageArray),
         stock: stockInt
     }
-    //TODO: Save product to db
-    console.log(product)
-    return res.json({productID: "placeholder"})
+    await db.addProduct(product)
+
+    return res.json({productID: product._id})
 });
 
 module.exports = router;
