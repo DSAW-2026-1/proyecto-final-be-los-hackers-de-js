@@ -15,22 +15,27 @@ import {
   AlertTriangle,
   Loader2,
   ChevronLeft,
-  Edit
+  Edit,
+  Minus,
+  Plus
 } from 'lucide-react';
 import { productService, Product } from '../services/productService';
 import { userService, UserProfileResponse } from '../services/userService';
 import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 import { NotFound } from './NotFound';
 
 export function ProductDetail() {
   const { id: productID } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { uid } = useAuth();
+  const { addToCart } = useCart();
   const [product, setProduct] = useState<Product | null>(null);
   const [seller, setSeller] = useState<UserProfileResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [selectedImage, setSelectedImage] = useState(0);
+  const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
     async function fetchData() {
@@ -51,6 +56,24 @@ export function ProductDetail() {
     }
     fetchData();
   }, [productID]);
+
+  const handleAddToCart = () => {
+    if (product && productID) {
+      addToCart(productID, quantity, product.stock);
+    }
+  };
+
+  const incrementQty = () => {
+    if (product && quantity < product.stock) {
+      setQuantity(prev => prev + 1);
+    }
+  };
+
+  const decrementQty = () => {
+    if (quantity > 1) {
+      setQuantity(prev => prev - 1);
+    }
+  };
 
   if (loading) {
     return (
@@ -209,6 +232,32 @@ export function ProductDetail() {
               </div>
             </Card>
 
+            {!isOwner && product.stock > 0 && (
+              <div className="flex items-center gap-4">
+                <span className="text-sm font-semibold text-muted-foreground">Cantidad:</span>
+                <div className="flex items-center border rounded-lg overflow-hidden bg-white">
+                  <button 
+                    className="p-2 hover:bg-muted transition-colors border-r disabled:opacity-50"
+                    onClick={decrementQty}
+                    disabled={quantity <= 1}
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
+                  <span className="w-12 text-center font-medium">{quantity}</span>
+                  <button 
+                    className="p-2 hover:bg-muted transition-colors border-l disabled:opacity-50"
+                    onClick={incrementQty}
+                    disabled={quantity >= product.stock}
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+                <span className="text-xs text-muted-foreground">
+                  ({product.stock} disponibles)
+                </span>
+              </div>
+            )}
+
             <div className="flex flex-col sm:flex-row gap-3">
               {isOwner ? (
                 <Button 
@@ -225,6 +274,7 @@ export function ProductDetail() {
                     size="lg" 
                     className="flex-1 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20"
                     disabled={product.stock <= 0}
+                    onClick={handleAddToCart}
                   >
                     <ShoppingCart className="w-5 h-5 mr-2" />
                     Agregar al Carrito

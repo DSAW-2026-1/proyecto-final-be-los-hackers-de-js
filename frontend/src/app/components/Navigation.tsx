@@ -5,6 +5,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
 import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 import { userService } from '../services/userService';
 import {
   DropdownMenu,
@@ -18,6 +19,7 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 
 export function Navigation() {
   const { isAuthenticated, user, setUserInfo, logout, isSeller } = useAuth();
+  const { totalItems } = useCart();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -110,9 +112,11 @@ export function Navigation() {
             <Link to="/cart">
               <Button variant="ghost" size="icon" className="relative">
                 <ShoppingCart className="w-5 h-5" />
-                <Badge className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center p-0 bg-accent text-xs">
-                  2
-                </Badge>
+                {totalItems > 0 && (
+                  <Badge className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center p-0 bg-accent text-xs">
+                    {totalItems}
+                  </Badge>
+                )}
               </Button>
             </Link>
 
