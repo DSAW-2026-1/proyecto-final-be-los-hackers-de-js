@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Card } from './ui/card';
-import { Avatar } from './ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Separator } from './ui/separator';
 import {
   ShoppingCart,
@@ -18,30 +18,36 @@ import {
   ChevronLeft
 } from 'lucide-react';
 import { productService, Product } from '../services/productService';
+import { userService, UserProfileResponse } from '../services/userService';
 import { NotFound } from './NotFound';
 
 export function ProductDetail() {
   const { id: productID } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [product, setProduct] = useState<Product | null>(null);
+  const [seller, setSeller] = useState<UserProfileResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [selectedImage, setSelectedImage] = useState(0);
 
   useEffect(() => {
-    async function fetchProduct() {
+    async function fetchData() {
       if (!productID) return;
       try {
-        const data = await productService.getProduct(productID);
-        setProduct(data);
+        const productData = await productService.getProduct(productID);
+        setProduct(productData);
+        
+        // Fetch seller info
+        const sellerData = await userService.getProfileByUid(productData.sellerID);
+        setSeller(sellerData);
       } catch (err) {
-        console.error('Error fetching product:', err);
+        console.error('Error fetching data:', err);
         setError(true);
       } finally {
         setLoading(false);
       }
     }
-    fetchProduct();
+    fetchData();
   }, [productID]);
 
   if (loading) {
@@ -174,21 +180,29 @@ export function ProductDetail() {
               </div>
             )}
 
-            <Card className="p-6 bg-secondary/5 border-primary/10">
+            <Card className="p-6 bg-secondary/50 border-primary/10">
               <div className="flex items-center gap-4">
-                <Avatar className="w-14 h-14 border-2 border-primary/10">
-                  <div className="w-full h-full bg-primary flex items-center justify-center text-white text-lg font-bold">
-                    {product.sellerID.substring(0, 2).toUpperCase()}
-                  </div>
+                <Avatar className="w-16 h-16">
+                  {seller?.photo ? (
+                    <AvatarImage src={seller.photo} alt={seller.username} />
+                  ) : (
+                    <AvatarFallback className="bg-primary text-white text-xl font-bold">
+                      {seller?.username.substring(0, 2).toUpperCase() || 'UN'}
+                    </AvatarFallback>
+                  )}
                 </Avatar>
                 <div className="flex-1">
-                  <h3 className="font-semibold">Vendedor Unisabana</h3>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <span>Estudiante</span>
-                    <span>•</span>
-                    <Button variant="link" className="p-0 h-auto text-primary text-xs font-medium">
-                      Ver perfil
-                    </Button>
+                  <h3 className="font-semibold">{seller?.username || 'Vendedor Unisabana'}</h3>
+                  <div className="flex flex-col gap-1 text-sm text-muted-foreground">
+                    <span>{seller?.career || 'Estudiante'}</span>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
+                        <Star className="w-4 h-4 fill-accent text-accent" />
+                        <span className="font-medium text-foreground">{seller?.reputation || 'N/A'}</span>
+                      </div>
+                      <span>•</span>
+                      <span>({seller?.sales || 0} ventas)</span>
+                    </div>
                   </div>
                 </div>
               </div>
