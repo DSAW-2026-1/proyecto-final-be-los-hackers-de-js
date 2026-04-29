@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
@@ -17,6 +18,13 @@ const productRouter = require('./routes/products/product')
 const jsonParseFailureHandler = require('./errorHandlers/jsonParseFailure')
 
 const app = express();
+
+const corsOptions = {
+    origin: process.env.CORS_ORIGIN || '*'
+};
+if(!process.env.CORS_ORIGIN) console.warn("Could not find CORS environment variable. Allowing all CORS requests...")
+
+app.use(cors(corsOptions));
 
 app.use(logger('dev'));
 app.use(express.json({limit: "10mb"})); //TODO: Figure out how to allocate different request size limits
