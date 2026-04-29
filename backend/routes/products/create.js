@@ -3,6 +3,22 @@ const router = express.Router();
 const db = require("../../dbManager")
 const tokenValidatorMiddleware = require("../../middleware/auth/tokenValidator");
 const sellerAuthMiddleware = require("../../middleware/auth/sellerValidator");
+const VALID_CATEGORIES = [
+    "Tecnología",
+    "Libros",
+    "Ropa",
+    "Deportes",
+    "Hogar",
+    "Accesorios",
+    "Otros"
+];
+
+const VALID_CONDITIONS = [
+    "Nuevo",
+    "Como nuevo",
+    "Usado",
+    "Aceptable" //TODO: This condition is vague AF, should probably replace
+];
 
 router.use('/api/test', tokenValidatorMiddleware)
 router.use('/api/test', sellerAuthMiddleware)
@@ -23,8 +39,8 @@ router.post('/', async(req, res) => {
     //TODO: Use bigInt to handle insanely large numbers. Not really necessary since MAX_SAFE_INTEGER is 9,007,199,254,740,991 but could be done theoretically.
     if(priceInt > Number.MAX_SAFE_INTEGER || stockInt > Number.MAX_SAFE_INTEGER) return res.status(400).json({error: (errorMsg + ". Reason: Price or stock higher than supported maximum.")});
 
-    //TODO: Validate categories
-    //TODO: Validate images as proper base64 encoded
+    if(!VALID_CATEGORIES.includes(category)) return res.status(400).json({error: errorMsg});
+    if(!VALID_CONDITIONS.includes(condition)) return res.status(400).json({error: errorMsg});
     const product = {
         name,
         category,
