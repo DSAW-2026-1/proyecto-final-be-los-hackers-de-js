@@ -16,32 +16,36 @@ interface CartProductInfo extends Product {
 
 export function ShoppingCart() {
   const { cart, removeFromCart, updateAmount, totalItems } = useCart();
-  const [products, setProducts] = useState<CartProductInfo[]>([]);
+  const [productDetails, setProductDetails] = useState<{ [id: string]: Product }>({});
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    async function fetchCartProducts() {
-      const cartEntries = Object.entries(cart);
-      if (cartEntries.length === 0) {
-        setProducts([]);
+    async function fetchMissingProducts() {
+      const cartItems = Object.values(cart);
+      const missingIds = cartItems
+        .map(item => item.productID)
+        .filter(id => !productDetails[id]);
+
+      if (missingIds.length === 0) {
         setLoading(false);
         return;
       }
 
-      setLoading(true);
-      try {
-        const productPromises = cartEntries.map(async ([index, item]) => {
-          const product = await productService.getProduct(item.productID);
-          return {
-            ...product,
-            cartIndex: parseInt(index),
-            amount: item.amount
-          };
-        });
+      // Only set loading if we actually have NO data yet for things in the cart
+      if (Object.keys(productDetails).length === 0) {
+        setLoading(true);
+      }
 
-        const fetchedProducts = await Promise.all(productPromises);
-        setProducts(fetchedProducts);
+      try {
+        const newDetails = { ...productDetails };
+        await Promise.all(
+          missingIds.map(async (id) => {
+            const product = await productService.getProduct(id);
+            newDetails[id] = product;
+          })
+        );
+        setProductDetails(newDetails);
       } catch (error) {
         console.error('Error fetching cart products:', error);
       } finally {
@@ -49,8 +53,18 @@ export function ShoppingCart() {
       }
     }
 
-    fetchCartProducts();
-  }, [cart]);
+    fetchMissingProducts();
+  }, [cart, productDetails]);
+
+  // Derive display list from cart + cached details
+  const products = Object.entries(cart).map(([index, item]) => {
+    const details = productDetails[item.productID];
+    return details ? {
+      ...details,
+      cartIndex: parseInt(index),
+      amount: item.amount
+    } : null;
+  }).filter((p): p is CartProductInfo => p !== null);
 
   const subtotal = products.reduce((acc, item) => acc + item.price * item.amount, 0);
   const shipping = 0;
