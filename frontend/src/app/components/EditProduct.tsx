@@ -6,41 +6,106 @@ import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Badge } from './ui/badge';
 import { Separator } from './ui/separator';
-import { Upload, X, MapPin, DollarSign, Package, Save, ArrowLeft, Trash2 } from 'lucide-react';
-import { useState } from 'react';
-
-const MOCK_PRODUCT = {
-  id: 'P-12345',
-  title: 'MacBook Air M1 2020 - 256GB',
-  category: 'computadores',
-  condition: 'como-nuevo',
-  description: 'MacBook Air en excelente estado, apenas 1 año de uso. Incluye cargador original y funda protectora. Batería en perfectas condiciones (92% de salud). Ideal para estudiantes de cualquier carrera. Sin golpes ni rayones.',
-  price: 3200000,
-  negotiable: 'si',
-  location: 'campus',
-  images: [
-    'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400&h=400&fit=crop',
-    'https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?w=400&h=400&fit=crop',
-  ]
-};
+import { Upload, X, MapPin, DollarSign, Package, Save, ArrowLeft, Trash2, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router';
+import { productService, Product } from '../services/productService';
+import { useAuth } from '../context/AuthContext';
+import { toast } from 'sonner';
+import { NotFound } from './NotFound';
+import { CATEGORIES, CONDITIONS, LOCATIONS } from '../constants';
 
 export function EditProduct() {
-  const [product] = useState(MOCK_PRODUCT);
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { uid } = useAuth();
+  
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [notFound, setNotFound] = useState(false);
+
+  useEffect(() => {
+    async function fetchProduct() {
+      if (!id) return;
+      try {
+        const data = await productService.getProduct(id);
+        
+        // Authorization check
+        if (uid && data.sellerID !== uid) {
+          toast.error('No tienes permiso para editar este producto');
+          navigate(`/product/${id}`);
+          return;
+        }
+        
+        setProduct(data);
+      } catch (err: unknown) {
+        console.error('Error fetching product:', err);
+        if (err instanceof Error && (err.message?.includes('404'))) {
+          setNotFound(true);
+        } else if (typeof err === 'object' && err !== null && 'status' in err && err.status === 404) {
+          setNotFound(true);
+        } else {
+          setError(true);
+          toast.error('Error al cargar el producto');
+        }
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchProduct();
+  }, [id, uid, navigate]);
+
+  if (loading) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
+        <Loader2 className="w-12 h-12 text-primary animate-spin" />
+        <p className="text-muted-foreground animate-pulse">Cargando información del producto...</p>
+      </div>
+    );
+  }
+
+  if (notFound) {
+    return <NotFound />;
+  }
+
+  if (error || !product) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 px-4 text-center">
+        <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mb-2">
+          <X className="w-8 h-8 text-destructive" />
+        </div>
+        <h2 className="text-2xl font-bold text-primary">Error al cargar</h2>
+        <p className="text-muted-foreground max-w-md">
+          Hubo un problema al intentar obtener la información del producto. Por favor intenta de nuevo más tarde.
+        </p>
+        <Button onClick={() => navigate('/seller')} variant="outline" className="mt-4">
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Volver al Panel
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-muted/30 py-12">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <Button variant="ghost" size="sm" className="pl-0 text-muted-foreground hover:text-primary">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="pl-0 text-muted-foreground hover:text-primary"
+                onClick={() => navigate('/seller')}
+              >
                 <ArrowLeft className="w-4 h-4 mr-1" />
                 Volver al Panel
               </Button>
             </div>
             <h1 className="text-4xl font-bold text-primary mb-2">Editar Producto</h1>
             <p className="text-muted-foreground">
-              ID de publicación: <span className="font-mono text-foreground font-medium">{product.id}</span>
+              ID de publicación: <span className="font-mono text-foreground font-medium">{id}</span>
             </p>
           </div>
           <div className="flex gap-3">
@@ -64,8 +129,8 @@ export function EditProduct() {
                 <div className="space-y-2">
                   <Label htmlFor="title">Título del Producto *</Label>
                   <Input
-                    id="title"
-                    defaultValue={product.title}
+                    id="name"
+                    defaultValue={product.name}
                     placeholder="Ej: MacBook Air M1 2020 - 256GB"
                     className="text-lg"
                   />
@@ -84,13 +149,9 @@ export function EditProduct() {
                           <SelectValue placeholder="Selecciona una categoría" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="electronica">Electrónica</SelectItem>
-                          <SelectItem value="computadores">Computadores</SelectItem>
-                          <SelectItem value="libros">Libros</SelectItem>
-                          <SelectItem value="deportes">Deportes</SelectItem>
-                          <SelectItem value="ropa">Ropa</SelectItem>
-                          <SelectItem value="accesorios">Accesorios</SelectItem>
-                          <SelectItem value="otros">Otros</SelectItem>
+                          {CATEGORIES.map(cat => (
+                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
@@ -103,10 +164,9 @@ export function EditProduct() {
                         <SelectValue placeholder="Selecciona el estado" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="nuevo">Nuevo</SelectItem>
-                        <SelectItem value="como-nuevo">Usado - Como Nuevo</SelectItem>
-                        <SelectItem value="buen-estado">Usado - Buen Estado</SelectItem>
-                        <SelectItem value="aceptable">Usado - Aceptable</SelectItem>
+                        {CONDITIONS.map(cond => (
+                          <SelectItem key={cond} value={cond}>{cond}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -139,7 +199,7 @@ export function EditProduct() {
 
                   <div className="space-y-2">
                     <Label htmlFor="negotiable">Negociable</Label>
-                    <Select defaultValue={product.negotiable}>
+                    <Select defaultValue={product.negotiable ? 'si' : 'no'}>
                       <SelectTrigger>
                         <SelectValue placeholder="¿El precio es negociable?" />
                       </SelectTrigger>
@@ -160,13 +220,9 @@ export function EditProduct() {
                         <SelectValue placeholder="Selecciona dónde entregarás" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="campus">Campus Principal</SelectItem>
-                        <SelectItem value="edificio-a">Edificio A</SelectItem>
-                        <SelectItem value="edificio-b">Edificio B</SelectItem>
-                        <SelectItem value="edificio-c">Edificio C</SelectItem>
-                        <SelectItem value="biblioteca">Biblioteca</SelectItem>
-                        <SelectItem value="zona-deportiva">Zona Deportiva</SelectItem>
-                        <SelectItem value="domicilio">Envío a domicilio</SelectItem>
+                        {LOCATIONS.map(loc => (
+                          <SelectItem key={loc.value} value={loc.value}>{loc.label}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -178,10 +234,14 @@ export function EditProduct() {
               <h2 className="text-xl font-semibold mb-6">Imágenes del Producto</h2>
 
               <div className="space-y-4">
-                <div className="grid grid-cols-3 gap-4">
-                  {product.images.map((img, i) => (
-                    <div key={i} className="relative aspect-square rounded-lg border-2 border-border bg-muted overflow-hidden group">
-                      <img src={img} alt="" className="w-full h-full object-cover" />
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                  {Object.entries(product.images).map(([key, img]) => (
+                    <div key={key} className="relative aspect-square rounded-lg border-2 border-border bg-muted overflow-hidden group">
+                      <img 
+                        src={img.startsWith('data:') ? img : `data:image/jpeg;base64,${img}`} 
+                        alt="" 
+                        className="w-full h-full object-cover" 
+                      />
                       <Button
                         variant="destructive"
                         size="icon"
@@ -189,17 +249,19 @@ export function EditProduct() {
                       >
                         <X className="w-4 h-4" />
                       </Button>
-                      {i === 0 && (
+                      {key === '0' && (
                         <Badge className="absolute bottom-2 left-2 bg-primary">
                           Principal
                         </Badge>
                       )}
                     </div>
                   ))}
-                  <div className="border-2 border-dashed border-border rounded-lg aspect-square flex flex-col items-center justify-center hover:bg-muted/50 transition-colors cursor-pointer text-center p-4">
-                    <Upload className="w-6 h-6 text-primary mb-2" />
-                    <span className="text-xs text-muted-foreground font-medium">Agregar más</span>
-                  </div>
+                  {Object.keys(product.images).length < 6 && (
+                    <div className="border-2 border-dashed border-border rounded-lg aspect-square flex flex-col items-center justify-center hover:bg-muted/50 transition-colors cursor-pointer text-center p-4">
+                      <Upload className="w-6 h-6 text-primary mb-2" />
+                      <span className="text-xs text-muted-foreground font-medium">Agregar más</span>
+                    </div>
+                  )}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   PNG, JPG hasta 5MB (máx. 6 imágenes)
@@ -215,20 +277,16 @@ export function EditProduct() {
               <div className="space-y-6">
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Fecha publicación:</span>
-                    <span className="font-medium">18 Abr 2026</span>
+                    <span className="text-muted-foreground">Vendedor ID:</span>
+                    <span className="font-medium truncate ml-2 max-w-[120px]">{product.sellerID}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Última edición:</span>
-                    <span className="font-medium">Hace 2 días</span>
+                    <span className="text-muted-foreground">Stock actual:</span>
+                    <span className="font-medium text-primary">{product.stock}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Total visitas:</span>
-                    <span className="font-medium text-primary">156</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Contactos:</span>
-                    <span className="font-medium text-primary">8</span>
+                    <span className="text-muted-foreground">Ventas:</span>
+                    <span className="font-medium">{product.sales || 0}</span>
                   </div>
                 </div>
 
@@ -239,11 +297,7 @@ export function EditProduct() {
                   <ul className="text-xs text-muted-foreground space-y-2">
                     <li className="flex gap-2">
                        <span className="text-green-500 font-bold">✓</span>
-                       Tu descripción generó 20% más visitas que el promedio.
-                    </li>
-                    <li className="flex gap-2">
-                       <span className="text-amber-500 font-bold">!</span>
-                       Considera bajar un 5% el precio para vender más rápido.
+                       Tu publicación está activa y disponible para compradores.
                     </li>
                   </ul>
                 </div>
@@ -253,7 +307,12 @@ export function EditProduct() {
                     <Save className="w-5 h-5 mr-2" />
                     Guardar Cambios
                   </Button>
-                  <Button variant="outline" className="w-full text-muted-foreground" size="lg">
+                  <Button 
+                    variant="outline" 
+                    className="w-full text-muted-foreground" 
+                    size="lg"
+                    onClick={() => navigate(`/product/${id}`)}
+                  >
                     Descartar
                   </Button>
                 </div>
@@ -265,3 +324,4 @@ export function EditProduct() {
     </div>
   );
 }
+

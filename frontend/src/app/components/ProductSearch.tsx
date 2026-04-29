@@ -17,6 +17,7 @@ import {
   Star
 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
+import { CATEGORIES, CONDITIONS } from '../constants';
 
 const MOCK_PRODUCTS = [
   {
@@ -141,27 +142,15 @@ const MOCK_PRODUCTS = [
     location: 'Edificio de Artes'
   },
   {
+    description: 'Escritorio de Madera Compacto...',
     id: 12,
-    title: 'Escritorio de Madera Compacto',
-    price: 90000,
     image: 'https://images.unsplash.com/photo-1518455027359-f3f816b1a20a?w=400&h=300&fit=crop',
-    condition: 'Usado' as const,
-    category: 'Hogar',
-    seller: 'Santiago Gil',
+    location: 'Residencias',
+    price: 90000,
     rating: 4.2,
-    location: 'Residencias'
+    seller: 'Santiago Gil',
+    title: 'Escritorio de Madera Compacto',
   },
-];
-
-const CATEGORIES = [
-  'Electrónica',
-  'Libros',
-  'Computadores',
-  'Deportes',
-  'Ropa',
-  'Accesorios',
-  'Audio',
-  'Tablets'
 ];
 
 export function ProductSearch() {
@@ -238,7 +227,7 @@ export function ProductSearch() {
                 <div>
                   <h4 className="font-semibold mb-4">Estado</h4>
                   <div className="space-y-3">
-                    {['Nuevo', 'Usado - Como Nuevo', 'Usado - Buen Estado', 'Para repuestos'].map((cond) => (
+                    {CONDITIONS.map((cond) => (
                       <div key={cond} className="flex items-center gap-3">
                         <Checkbox id={`cond-${cond}`} />
                         <Label htmlFor={`cond-${cond}`} className="text-sm cursor-pointer">

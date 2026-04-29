@@ -10,23 +10,7 @@ import { Badge } from './ui/badge';
 import { Upload, X, DollarSign, Package, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { productService, CreateProductRequest } from '../services/productService';
 import { toast } from 'sonner';
-
-const CATEGORIES = [
-  "Tecnología",
-  "Libros",
-  "Ropa",
-  "Deportes",
-  "Hogar",
-  "Accesorios",
-  "Otros"
-];
-
-const CONDITIONS = [
-  "Nuevo",
-  "Como nuevo",
-  "Usado",
-  "Aceptable"
-];
+import { CATEGORIES, CONDITIONS } from '../constants';
 
 export function CreateProduct() {
   const navigate = useNavigate();
