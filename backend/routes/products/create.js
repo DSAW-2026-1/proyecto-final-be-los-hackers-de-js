@@ -20,6 +20,11 @@ router.post('/', async(req, res) => {
     if(!priceInt || !stockInt) return res.status(400).json({error: errorMsg});
     if(priceInt <= 0 || stockInt < 1) return res.status(400).json({error: errorMsg});
 
+    //TODO: Use bigInt to handle insanely large numbers. Not really necessary since MAX_SAFE_INTEGER is 9,007,199,254,740,991 but could be done theoretically.
+    if(priceInt > Number.MAX_SAFE_INTEGER || stockInt > Number.MAX_SAFE_INTEGER) return res.status(400).json({error: (errorMsg + ". Reason: Price or stock higher than supported maximum.")});
+
+    //TODO: Validate categories
+    //TODO: Validate images as proper base64 encoded
     const product = {
         name,
         category,
@@ -29,7 +34,6 @@ router.post('/', async(req, res) => {
         images: Object.assign({}, imageArray),
         stock: stockInt
     }
-    //TODO: Validate images as proper base64 encoded
     //TODO: Save product to db
     console.log(product)
     return res.json({productID: "placeholder"})
