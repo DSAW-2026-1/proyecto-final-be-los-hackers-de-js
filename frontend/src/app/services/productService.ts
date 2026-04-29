@@ -44,5 +44,11 @@ export const productService = {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
+  },
+
+  async deleteProduct(productID: string): Promise<void> {
+    return apiRequest<void>(`/api/products/${productID}`, {
+      method: 'DELETE',
+    });
   }
 };

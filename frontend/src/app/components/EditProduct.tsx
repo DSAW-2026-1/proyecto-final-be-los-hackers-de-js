@@ -6,6 +6,17 @@ import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Badge } from './ui/badge';
 import { Separator } from './ui/separator';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "./ui/alert-dialog";
 import { Upload, X, DollarSign, Package, Save, ArrowLeft, Trash2, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router';
@@ -40,6 +51,7 @@ export function EditProduct() {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState(false);
   const [notFound, setNotFound] = useState(false);
 
@@ -106,6 +118,21 @@ export function EditProduct() {
       toast.error('Error al actualizar el producto');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!id) return;
+    setDeleting(true);
+    try {
+      await productService.deleteProduct(id);
+      toast.success('Producto eliminado exitosamente');
+      navigate('/seller');
+    } catch (err) {
+      console.error('Error deleting product:', err);
+      toast.error('Error al eliminar el producto');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -201,18 +228,44 @@ export function EditProduct() {
             </p>
           </div>
           <div className="flex gap-3">
-            <Button 
-              variant="outline" 
-              className="text-destructive border-destructive hover:bg-destructive/10"
-              disabled={saving}
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Eliminar
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  className="text-destructive border-destructive hover:bg-destructive/10"
+                  disabled={saving || deleting}
+                >
+                  {deleting ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Trash2 className="w-4 h-4 mr-2" />
+                  )}
+                  Eliminar
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>¿Estás completamente seguro?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta acción no se puede deshacer. Esto eliminará permanentemente tu
+                    producto "{product.name}" y lo quitará de nuestro mercado institucional.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={handleDelete}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Eliminar Producto
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
             <Button 
               className="bg-primary hover:bg-primary/90"
               onClick={handleSave}
-              disabled={saving}
+              disabled={saving || deleting}
             >
               {saving ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
