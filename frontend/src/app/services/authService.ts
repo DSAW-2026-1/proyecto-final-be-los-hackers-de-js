@@ -85,5 +85,17 @@ export const authService = {
     } catch {
       return false;
     }
+  },
+
+  getUid(): string | null {
+    const token = this.getToken();
+    if (!token) return null;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.UID || null;
+      //Not 100% sure why IDEA complains about UID in caps not being real, but it most definitely is and has to be used in caps so that the value is actually found since the token has it in caps
+    } catch {
+      return null;
+    }
   }
 };

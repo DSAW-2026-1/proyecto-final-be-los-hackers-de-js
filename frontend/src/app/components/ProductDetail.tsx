@@ -15,15 +15,18 @@ import {
   Clock,
   AlertTriangle,
   Loader2,
-  ChevronLeft
+  ChevronLeft,
+  Edit
 } from 'lucide-react';
 import { productService, Product } from '../services/productService';
 import { userService, UserProfileResponse } from '../services/userService';
+import { useAuth } from '../context/AuthContext';
 import { NotFound } from './NotFound';
 
 export function ProductDetail() {
   const { id: productID } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { uid } = useAuth();
   const [product, setProduct] = useState<Product | null>(null);
   const [seller, setSeller] = useState<UserProfileResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -73,6 +76,7 @@ export function ProductDetail() {
   };
 
   const status = stockStatus();
+  const isOwner = uid === product?.sellerID;
 
   return (
     <div className="bg-muted/30 py-8 lg:py-12">
@@ -211,18 +215,31 @@ export function ProductDetail() {
             </Card>
 
             <div className="flex flex-col sm:flex-row gap-3">
-              <Button 
-                size="lg" 
-                className="flex-1 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20"
-                disabled={product.stock <= 0}
-              >
-                <ShoppingCart className="w-5 h-5 mr-2" />
-                Agregar al Carrito
-              </Button>
-              <Button size="lg" variant="outline" className="flex-1 border-primary/20 hover:bg-primary/5">
-                <MessageCircle className="w-5 h-5 mr-2" />
-                Contactar
-              </Button>
+              {isOwner ? (
+                <Button 
+                  size="lg" 
+                  className="flex-1 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20"
+                  onClick={() => navigate(`/seller/products/edit/${productID}`)}
+                >
+                  <Edit className="w-5 h-5 mr-2" />
+                  Editar Producto
+                </Button>
+              ) : (
+                <>
+                  <Button 
+                    size="lg" 
+                    className="flex-1 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20"
+                    disabled={product.stock <= 0}
+                  >
+                    <ShoppingCart className="w-5 h-5 mr-2" />
+                    Agregar al Carrito
+                  </Button>
+                  <Button size="lg" variant="outline" className="flex-1 border-primary/20 hover:bg-primary/5">
+                    <MessageCircle className="w-5 h-5 mr-2" />
+                    Contactar
+                  </Button>
+                </>
+              )}
             </div>
 
             <Separator />
@@ -249,12 +266,14 @@ export function ProductDetail() {
               </div>
             </div>
 
-            <div className="flex justify-center pt-8">
-              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive transition-colors">
-                <AlertTriangle className="w-4 h-4 mr-2" />
-                Reportar publicación
-              </Button>
-            </div>
+            {!isOwner && (
+              <div className="flex justify-center pt-8">
+                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive transition-colors">
+                  <AlertTriangle className="w-4 h-4 mr-2" />
+                  Reportar publicación
+                </Button>
+              </div>
+            )}
           </div>
         </div>
 
