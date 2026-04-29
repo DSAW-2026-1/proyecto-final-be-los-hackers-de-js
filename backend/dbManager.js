@@ -15,6 +15,7 @@ const ADMINS_DB = "admins"
 const LOGS_DB = "logs"
 const PRODUCTS_DB = "products"
 const PRODUCT_IMAGES_KEY = "images"
+const MAIN_DB = "marketplace"
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -26,25 +27,21 @@ const client = new MongoClient(uri, {
 });
 
 class DbManager{
-    static async #openConnection() {
+    /*static async #openConnection() {
         // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
         return client.db("marketplace");
-    }
+    }*/
+    
     static async #closeConnection(){
         await client.close();
     }
     static async #addToCollection(collection, object){
-        try {
-            let db = await this.#openConnection()
-            await db.collection(collection).insertOne(object, function(err, res) {
-                if (err) throw err;
-            });
-            console.log("1 document inserted");
-        }
-        finally {
-            await this.#closeConnection()
-        }
+        //let db = await this.#openConnection()
+        await client.db(MAIN_DB).collection(collection).insertOne(object, function(err, res) {
+            if (err) throw err;
+        });
+        console.log("1 document inserted");
     }
     static async addUser(user){
         await this.#addToCollection(USERS_DB, user)
@@ -53,33 +50,21 @@ class DbManager{
         await this.#addToCollection(ADMINS_DB, user)
     }
     static async #findInDb(database, query){
-        try {
-            let db = await this.#openConnection()
-            return await db.collection(database).find(query).toArray()
-        }
-        finally {
-            await this.#closeConnection()
-        }
+        //let db = await this.#openConnection()
+        return await client.db(MAIN_DB).collection(database).find(query).toArray()
     }
     static async #findOneInDb(database, query){
-        try {
-            let db = await this.#openConnection()
-            return await db.collection(database).findOne(query)
-        }
-        finally {
-            await this.#closeConnection()
-        }
+        //let db = await this.#openConnection()
+        return await client.db(MAIN_DB).collection(database).findOne(query)
+
     }
     static async #findByID(database, id){
         try {
-            let db = await this.#openConnection()
-            return await db.collection(database).findOne({_id: new ObjectId(id)})
+            //let db = await this.#openConnection()
+            return await client.db(MAIN_DB).collection(database).findOne({_id: new ObjectId(id)})
         }
         catch (e){
             return null
-        }
-        finally {
-            await this.#closeConnection()
         }
     }
     static async findUser(query){
@@ -124,26 +109,16 @@ class DbManager{
             context
         })
     }
-    static async #updateItem(collection, id, newData, keepConnectionAlive){
-        let result = null
-        let db = null
+    static async #updateItem(collection, id, newData){
         try {
-            db = await this.#openConnection()
-            await db.collection(collection).updateOne(
+            await client.db(MAIN_DB).collection(collection).updateOne(
                 {_id: new ObjectId(id)},
                 { $set: newData }
             )
-            result = true
+            return true
         }
         catch (e){
-            result = false
-        }
-        finally {
-            if(!keepConnectionAlive || !(keepConnectionAlive === true)) {
-                await this.#closeConnection()
-                return result
-            }
-            else return db
+            return false
         }
     }
     static async updateUser(UID, newData){
@@ -152,14 +127,13 @@ class DbManager{
     static async addProduct(product){
         await this.#addToCollection(PRODUCTS_DB, product)
     }
-    static async #updateItemsInsideItem(collection, id, key, newData, db){
+    static async #updateItemsInsideItem(collection, id, key, newData){
         try {
-          if(!db) db = await this.#openConnection()
             let temp = {}
             for (let internalKey in newData) {
                 temp[key+"."+internalKey] = newData[internalKey]
             }
-            await db.collection(collection).updateOne(
+            await client.db(MAIN_DB).collection(collection).updateOne(
                 {_id: new ObjectId(id)},
                 { $set: temp }
             )
@@ -168,22 +142,19 @@ class DbManager{
         catch (e){
             return false
         }
-        finally {
-            await this.#closeConnection()
-        }
     }
     static async updateProduct(ID, newData, newImages){
-        let db = null
-        if(newData) db = await this.#updateItem(PRODUCTS_DB, ID, newData, true)
-        if((db && newImages) || !newData){
-            let result = await this.#updateItemsInsideItem(PRODUCTS_DB, ID, PRODUCT_IMAGES_KEY, newImages, db)
+        let success = null
+        if(newData) success = await this.#updateItem(PRODUCTS_DB, ID, newData)
+        if((success && newImages) || !newData){
+            let result = await this.#updateItemsInsideItem(PRODUCTS_DB, ID, PRODUCT_IMAGES_KEY, newImages)
             if(result) return true
         }
         else if(!newImages) return true
         return false
     }
     static async findProductByID(ID){
-        return this.#findByID(PRODUCTS_DB, ID)
+        return await this.#findByID(PRODUCTS_DB, ID)
     }
 }
 
