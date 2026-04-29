@@ -59,6 +59,8 @@ export function ShoppingCart() {
   // Derive display list from cart + cached details
   const products = Object.entries(cart).map(([index, item]) => {
     const details = productDetails[item.productID];
+    //Add the productID to the details
+    if(details) details.productID = item.productID
     return details ? {
       ...details,
       cartIndex: parseInt(index),

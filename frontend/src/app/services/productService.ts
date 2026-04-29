@@ -15,6 +15,7 @@ export interface ProductResponse {
 }
 
 export interface Product {
+  productID?: string;
   name: string;
   category: string;
   condition: string;
