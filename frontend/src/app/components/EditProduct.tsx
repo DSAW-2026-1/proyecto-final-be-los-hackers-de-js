@@ -6,14 +6,14 @@ import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Badge } from './ui/badge';
 import { Separator } from './ui/separator';
-import { Upload, X, MapPin, DollarSign, Package, Save, ArrowLeft, Trash2, Loader2 } from 'lucide-react';
+import { Upload, X, DollarSign, Package, Save, ArrowLeft, Trash2, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { productService, Product } from '../services/productService';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
 import { NotFound } from './NotFound';
-import { CATEGORIES, CONDITIONS, LOCATIONS } from '../constants';
+import { CATEGORIES, CONDITIONS } from '../constants';
 
 export function EditProduct() {
   const { id } = useParams<{ id: string }>();
@@ -21,7 +21,25 @@ export function EditProduct() {
   const { uid } = useAuth();
   
   const [product, setProduct] = useState<Product | null>(null);
+  const [formData, setFormData] = useState<{
+    name: string;
+    category: string;
+    condition: string;
+    price: number;
+    description: string;
+    stock: number;
+    images: { [key: number]: string };
+  }>({
+    name: '',
+    category: '',
+    condition: '',
+    price: 0,
+    description: '',
+    stock: 0,
+    images: {},
+  });
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState(false);
   const [notFound, setNotFound] = useState(false);
 
@@ -39,6 +57,15 @@ export function EditProduct() {
         }
         
         setProduct(data);
+        setFormData({
+          name: data.name,
+          category: data.category,
+          condition: data.condition,
+          price: data.price,
+          description: data.description,
+          stock: data.stock,
+          images: { ...data.images },
+        });
       } catch (err: unknown) {
         console.error('Error fetching product:', err);
         if (err instanceof Error && (err.message?.includes('404'))) {
@@ -55,6 +82,71 @@ export function EditProduct() {
     }
     fetchProduct();
   }, [id, uid, navigate]);
+
+  const handleSave = async () => {
+    if (!id) return;
+    setSaving(true);
+    try {
+      // API expects these specific fields according to instructions
+      const updateData = {
+        name: formData.name,
+        category: formData.category,
+        condition: formData.condition,
+        price: Number(formData.price),
+        description: formData.description,
+        images: formData.images,
+        stock: Number(formData.stock)
+      };
+      
+      await productService.updateProduct(id, updateData);
+      toast.success('Producto actualizado exitosamente');
+      navigate(`/product/${id}`);
+    } catch (err) {
+      console.error('Error updating product:', err);
+      toast.error('Error al actualizar el producto');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleImageDelete = (key: string) => {
+    const newImages = { ...formData.images };
+    delete newImages[Number(key)];
+    
+    // Re-index images to ensure they are continuous 0, 1, 2...
+    const indexedImages: { [key: number]: string } = {};
+    Object.values(newImages).forEach((img, index) => {
+      indexedImages[index] = img;
+    });
+    
+    setFormData(prev => ({ ...prev, images: indexedImages }));
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (Object.keys(formData.images).length >= 6) {
+      toast.error('Máximo 6 imágenes permitidas');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      const base64Data = base64String.split(',')[1]; // Get only the base64 part
+      
+      const newIndex = Object.keys(formData.images).length;
+      setFormData(prev => ({
+        ...prev,
+        images: {
+          ...prev.images,
+          [newIndex]: base64Data
+        }
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
 
   if (loading) {
     return (
@@ -109,13 +201,25 @@ export function EditProduct() {
             </p>
           </div>
           <div className="flex gap-3">
-            <Button variant="outline" className="text-destructive border-destructive hover:bg-destructive/10">
+            <Button 
+              variant="outline" 
+              className="text-destructive border-destructive hover:bg-destructive/10"
+              disabled={saving}
+            >
               <Trash2 className="w-4 h-4 mr-2" />
               Eliminar
             </Button>
-            <Button className="bg-primary hover:bg-primary/90">
-              <Save className="w-4 h-4 mr-2" />
-              Guardar Cambios
+            <Button 
+              className="bg-primary hover:bg-primary/90"
+              onClick={handleSave}
+              disabled={saving}
+            >
+              {saving ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4 mr-2" />
+              )}
+              {saving ? 'Guardando...' : 'Guardar Cambios'}
             </Button>
           </div>
         </div>
@@ -127,10 +231,11 @@ export function EditProduct() {
 
               <div className="space-y-5">
                 <div className="space-y-2">
-                  <Label htmlFor="title">Título del Producto *</Label>
+                  <Label htmlFor="name">Título del Producto *</Label>
                   <Input
                     id="name"
-                    defaultValue={product.name}
+                    value={formData.name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                     placeholder="Ej: MacBook Air M1 2020 - 256GB"
                     className="text-lg"
                   />
@@ -144,7 +249,10 @@ export function EditProduct() {
                     <Label htmlFor="category">Categoría *</Label>
                     <div className="relative">
                       <Package className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10" />
-                      <Select defaultValue={product.category}>
+                      <Select 
+                        value={formData.category} 
+                        onValueChange={(val) => setFormData(prev => ({ ...prev, category: val }))}
+                      >
                         <SelectTrigger className="pl-11">
                           <SelectValue placeholder="Selecciona una categoría" />
                         </SelectTrigger>
@@ -159,7 +267,10 @@ export function EditProduct() {
 
                   <div className="space-y-2">
                     <Label htmlFor="condition">Estado *</Label>
-                    <Select defaultValue={product.condition}>
+                    <Select 
+                      value={formData.condition} 
+                      onValueChange={(val) => setFormData(prev => ({ ...prev, condition: val }))}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecciona el estado" />
                       </SelectTrigger>
@@ -176,7 +287,8 @@ export function EditProduct() {
                   <Label htmlFor="description">Descripción *</Label>
                   <Textarea
                     id="description"
-                    defaultValue={product.description}
+                    value={formData.description}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                     placeholder="Describe tu producto..."
                     className="min-h-32 resize-none"
                   />
@@ -190,7 +302,8 @@ export function EditProduct() {
                       <Input
                         id="price"
                         type="number"
-                        defaultValue={product.price}
+                        value={formData.price}
+                        onChange={(e) => setFormData(prev => ({ ...prev, price: Number(e.target.value) }))}
                         placeholder="0"
                         className="pl-11"
                       />
@@ -198,33 +311,14 @@ export function EditProduct() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="negotiable">Negociable</Label>
-                    <Select defaultValue={product.negotiable ? 'si' : 'no'}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="¿El precio es negociable?" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="si">Sí, acepto ofertas</SelectItem>
-                        <SelectItem value="no">No, precio fijo</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="location">Ubicación de Entrega *</Label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10" />
-                    <Select defaultValue={product.location}>
-                      <SelectTrigger className="pl-11">
-                        <SelectValue placeholder="Selecciona dónde entregarás" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {LOCATIONS.map(loc => (
-                          <SelectItem key={loc.value} value={loc.value}>{loc.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Label htmlFor="stock">Unidades Disponibles *</Label>
+                    <Input 
+                      id="stock"
+                      type="number" 
+                      value={formData.stock}
+                      onChange={(e) => setFormData(prev => ({ ...prev, stock: Number(e.target.value) }))}
+                      placeholder="1"
+                    />
                   </div>
                 </div>
               </div>
@@ -235,7 +329,7 @@ export function EditProduct() {
 
               <div className="space-y-4">
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                  {Object.entries(product.images).map(([key, img]) => (
+                  {Object.entries(formData.images).map(([key, img]) => (
                     <div key={key} className="relative aspect-square rounded-lg border-2 border-border bg-muted overflow-hidden group">
                       <img 
                         src={img.startsWith('data:') ? img : `data:image/jpeg;base64,${img}`} 
@@ -246,6 +340,7 @@ export function EditProduct() {
                         variant="destructive"
                         size="icon"
                         className="absolute top-2 right-2 w-6 h-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => handleImageDelete(key)}
                       >
                         <X className="w-4 h-4" />
                       </Button>
@@ -256,11 +351,17 @@ export function EditProduct() {
                       )}
                     </div>
                   ))}
-                  {Object.keys(product.images).length < 6 && (
-                    <div className="border-2 border-dashed border-border rounded-lg aspect-square flex flex-col items-center justify-center hover:bg-muted/50 transition-colors cursor-pointer text-center p-4">
+                  {Object.keys(formData.images).length < 6 && (
+                    <label className="border-2 border-dashed border-border rounded-lg aspect-square flex flex-col items-center justify-center hover:bg-muted/50 transition-colors cursor-pointer text-center p-4">
                       <Upload className="w-6 h-6 text-primary mb-2" />
                       <span className="text-xs text-muted-foreground font-medium">Agregar más</span>
-                    </div>
+                      <input 
+                        type="file" 
+                        className="hidden" 
+                        accept="image/*" 
+                        onChange={handleImageUpload}
+                      />
+                    </label>
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -281,8 +382,8 @@ export function EditProduct() {
                     <span className="font-medium truncate ml-2 max-w-[120px]">{product.sellerID}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Stock actual:</span>
-                    <span className="font-medium text-primary">{product.stock}</span>
+                    <span className="text-muted-foreground">Unidades Disponibles:</span>
+                    <span className="font-medium text-primary">{formData.stock}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Ventas:</span>
@@ -303,9 +404,18 @@ export function EditProduct() {
                 </div>
 
                 <div className="pt-2 space-y-3">
-                  <Button className="w-full bg-primary hover:bg-primary/90" size="lg">
-                    <Save className="w-5 h-5 mr-2" />
-                    Guardar Cambios
+                  <Button 
+                    className="w-full bg-primary hover:bg-primary/90" 
+                    size="lg"
+                    onClick={handleSave}
+                    disabled={saving}
+                  >
+                    {saving ? (
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    ) : (
+                      <Save className="w-5 h-5 mr-2" />
+                    )}
+                    {saving ? 'Guardando...' : 'Guardar Cambios'}
                   </Button>
                   <Button 
                     variant="outline" 

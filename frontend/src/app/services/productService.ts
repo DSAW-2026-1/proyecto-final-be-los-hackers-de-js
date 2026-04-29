@@ -24,6 +24,7 @@ export interface Product {
   sellerID: string;
   stock: number;
   rating: number | null;
+  sales?: number;
 }
 
 export const productService = {
@@ -36,5 +37,12 @@ export const productService = {
 
   async getProduct(productID: string): Promise<Product> {
     return apiRequest<Product>(`/api/products/${productID}`);
+  },
+
+  async updateProduct(productID: string, data: Partial<CreateProductRequest>): Promise<void> {
+    return apiRequest<void>(`/api/products/${productID}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
   }
 };
