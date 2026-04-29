@@ -159,7 +159,6 @@ class DbManager{
             for (let internalKey in newData) {
                 temp[key+"."+internalKey] = newData[internalKey]
             }
-            console.log(temp)
             await db.collection(collection).updateOne(
                 {_id: new ObjectId(id)},
                 { $set: temp }
