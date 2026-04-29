@@ -30,34 +30,7 @@ import { userService, UserProfileResponse, UpdateProfileRequest } from '../servi
 import { ConnectionError } from './ConnectionError';
 import { useAuth } from '../context/AuthContext';
 import { ApiError } from '../services/api';
-
-const FACULTIES = [
-  {
-    id: 'ingenieria',
-    name: 'Facultad de Ingeniería',
-    programs: ['Ingeniería Informática', 'Ingeniería Industrial', 'Ingeniería Civil', 'Ingeniería Mecánica', 'Ingeniería Química']
-  },
-  {
-    id: 'medicina',
-    name: 'Facultad de Medicina',
-    programs: ['Medicina', 'Enfermería', 'Fisioterapia']
-  },
-  {
-    id: 'comunicacion',
-    name: 'Facultad de Comunicación',
-    programs: ['Comunicación Social', 'Comunicación Audiovisual', 'Periodismo']
-  },
-  {
-    id: 'derecho',
-    name: 'Facultad de Derecho',
-    programs: ['Derecho', 'Ciencias Políticas']
-  },
-  {
-    id: 'economicas',
-    name: 'Facultad de Ciencias Económicas y Administrativas',
-    programs: ['Administración de Empresas', 'Economía', 'Negocios Internacionales', 'Administración de Instituciones de Servicio']
-  }
-];
+import { FACULTIES } from '../constants';
 
 export function EditProfile() {
   const navigate = useNavigate();
