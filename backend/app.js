@@ -14,6 +14,7 @@ const sellerRegisterRouter  = require('./routes/seller/register')
 const sellerAuthMiddleware = require("./middleware/auth/sellerValidator")
 const testRouter = require('./routes/test')
 const productRouter = require('./routes/products/product')
+const jsonParseFailureHandler = require('./errorHandlers/jsonParseFailure')
 
 const app = express();
 
@@ -36,5 +37,7 @@ app.use('/api/test', sellerAuthMiddleware)
 app.use('/api/test', testRouter)
 
 app.use('/api/products', productRouter)
+
+app.use(jsonParseFailureHandler)
 
 module.exports = app;
