@@ -144,17 +144,27 @@ class DbManager{
         }
     }
     static async updateProduct(ID, newData, newImages){
-        let success = null
-        if(newData) success = await this.#updateItem(PRODUCTS_DB, ID, newData)
-        if((success && newImages) || !newData){
-            let result = await this.#updateItemsInsideItem(PRODUCTS_DB, ID, PRODUCT_IMAGES_KEY, newImages)
-            if(result) return true
+        if(await this.#isSoftDeleted(PRODUCTS_DB, ID)) return false
+        else {
+            let success = null
+            if (newData) success = await this.#updateItem(PRODUCTS_DB, ID, newData)
+            if ((success && newImages) || !newData) {
+                let result = await this.#updateItemsInsideItem(PRODUCTS_DB, ID, PRODUCT_IMAGES_KEY, newImages)
+                if (result) return true
+            } else if (!newImages) return true
+            return false
         }
-        else if(!newImages) return true
-        return false
     }
     static async findProductByID(ID){
-        return await this.#findByID(PRODUCTS_DB, ID)
+        const item =  await this.#findByID(PRODUCTS_DB, ID)
+        return (!item.deleted) ? item : null
+    }
+    static async softDeleteProduct(ID) {
+        await this.#updateItem(PRODUCTS_DB, ID, { deleted: true })
+    }
+    static async #isSoftDeleted(collection, id){
+        const item = await this.#findByID(collection, id)
+        return item.deleted || false
     }
 }
 
