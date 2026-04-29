@@ -1,8 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const db = require("../../dbManager")
-const tokenValidatorMiddleware = require("../../middleware/auth/tokenValidator");
-const sellerAuthMiddleware = require("../../middleware/auth/sellerValidator");
 const VALID_CATEGORIES = [
     "Tecnología",
     "Libros",
@@ -20,8 +18,6 @@ const VALID_CONDITIONS = [
     "Aceptable" //TODO: This condition is vague AF, should probably replace
 ];
 
-router.use('/', tokenValidatorMiddleware)
-router.use('/', sellerAuthMiddleware)
 router.post('/', async(req, res) => {
     const UID = req.token.payload.UID
     const errorMsg = "Incomplete or malformed request"

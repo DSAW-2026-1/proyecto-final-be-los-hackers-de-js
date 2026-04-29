@@ -14,6 +14,7 @@ const USERS_DB = "users"
 const ADMINS_DB = "admins"
 const LOGS_DB = "logs"
 const PRODUCTS_DB = "products"
+const PRODUCT_IMAGES_KEY = "images"
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -123,12 +124,45 @@ class DbManager{
             context
         })
     }
-    static async #updateItem(collection, id, newData){
+    static async #updateItem(collection, id, newData, keepConnectionAlive){
+        let result = null
+        let db = null
         try {
-            let db = await this.#openConnection()
+            db = await this.#openConnection()
             await db.collection(collection).updateOne(
                 {_id: new ObjectId(id)},
                 { $set: newData }
+            )
+            result = true
+        }
+        catch (e){
+            result = false
+        }
+        finally {
+            if(!keepConnectionAlive || !(keepConnectionAlive === true)) {
+                await this.#closeConnection()
+                return result
+            }
+            else return db
+        }
+    }
+    static async updateUser(UID, newData){
+        return await this.#updateItem(USERS_DB, UID, newData)
+    }
+    static async addProduct(product){
+        await this.#addToCollection(PRODUCTS_DB, product)
+    }
+    static async #updateItemsInsideItem(collection, id, key, newData, db){
+        try {
+          if(!db) db = await this.#openConnection()
+            let temp = {}
+            for (let internalKey in newData) {
+                temp[key+"."+internalKey] = newData[internalKey]
+            }
+            console.log(temp)
+            await db.collection(collection).updateOne(
+                {_id: new ObjectId(id)},
+                { $set: temp }
             )
             return true
         }
@@ -139,11 +173,18 @@ class DbManager{
             await this.#closeConnection()
         }
     }
-    static async updateUser(UID, newData){
-        return await this.#updateItem(USERS_DB, UID, newData)
+    static async updateProduct(ID, newData, newImages){
+        let db = null
+        if(newData) db = await this.#updateItem(PRODUCTS_DB, ID, newData, true)
+        if((db && newImages) || !newData){
+            let result = await this.#updateItemsInsideItem(PRODUCTS_DB, ID, PRODUCT_IMAGES_KEY, newImages, db)
+            if(result) return true
+        }
+        else if(!newImages) return true
+        return false
     }
-    static async addProduct(product){
-        await this.#addToCollection(PRODUCTS_DB, product)
+    static async findProductByID(ID){
+        return this.#findByID(PRODUCTS_DB, ID)
     }
 }
 
