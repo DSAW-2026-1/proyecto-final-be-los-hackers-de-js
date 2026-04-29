@@ -20,9 +20,10 @@ const VALID_CONDITIONS = [
     "Aceptable" //TODO: This condition is vague AF, should probably replace
 ];
 
-router.use('/api/test', tokenValidatorMiddleware)
-router.use('/api/test', sellerAuthMiddleware)
+router.use('/', tokenValidatorMiddleware)
+router.use('/', sellerAuthMiddleware)
 router.post('/', async(req, res) => {
+    const UID = req.token.payload.UID
     const errorMsg = "Incomplete or malformed request"
     const {name, category, condition, price, description, images, stock} = req.body || {};
 
@@ -48,7 +49,8 @@ router.post('/', async(req, res) => {
         price: priceInt,
         description,
         images: Object.assign({}, imageArray),
-        stock: stockInt
+        stock: stockInt,
+        sellerID: UID
     }
     await db.addProduct(product)
 
