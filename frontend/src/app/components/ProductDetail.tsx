@@ -160,7 +160,9 @@ export function ProductDetail() {
                 {product.rating && (
                   <div className="flex items-center gap-1">
                     <Star className="w-4 h-4 fill-accent text-accent" />
-                    <span className="font-medium text-foreground">{product.rating.toFixed(1)}</span>
+                    <span className="font-medium text-foreground">
+                      {Number(product.rating.toFixed(1))}
+                    </span>
                   </div>
                 )}
               </div>
@@ -263,7 +265,9 @@ export function ProductDetail() {
           {product.rating ? (
             <div className="space-y-8">
               <div className="flex items-center gap-4 sm:gap-6 px-1">
-                <span className="text-4xl font-bold text-primary">{product.rating.toFixed(1)}/5</span>
+                <span className="text-4xl font-bold text-primary">
+                  {Number(product.rating.toFixed(1))}/5
+                </span>
                 <div className="flex gap-1">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <Star 
