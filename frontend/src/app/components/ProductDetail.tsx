@@ -255,6 +255,62 @@ export function ProductDetail() {
             </div>
           </div>
         </div>
+
+        {/* Reviews Section */}
+        <div className="mt-16 sm:mt-24 max-w-2xl border-t pt-12">
+          <h2 className="text-xl font-bold text-primary mb-8 px-1">Reviews</h2>
+          
+          {product.rating ? (
+            <div className="space-y-8">
+              <div className="flex items-center gap-4 sm:gap-6 px-1">
+                <span className="text-4xl font-bold text-primary">{product.rating.toFixed(1)}/5</span>
+                <div className="flex gap-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star 
+                      key={star} 
+                      className={`w-8 h-8 ${star <= Math.round(product.rating || 0) ? 'fill-accent text-accent' : 'text-muted-foreground'}`} 
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Sample Review */}
+              <div className="space-y-4 pt-8 mt-8 border-t border-border/50">
+                <div className="flex items-center gap-4">
+                  <Avatar className="w-12 h-12">
+                    <AvatarFallback className="bg-[#102a43] text-white font-bold">GV</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <div className="flex gap-0.5 mb-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star 
+                          key={star} 
+                          className={`w-3.5 h-3.5 ${star <= 4 ? 'fill-accent text-accent' : 'text-muted-foreground'}`} 
+                        />
+                      ))}
+                    </div>
+                    <h4 className="font-bold text-sm text-primary">No incluye el cargador en la caja</h4>
+                    <p className="text-xs text-muted-foreground">Gabriel Vega • 2026-04-20</p>
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground leading-relaxed max-w-prose">
+                  El macbook me llegó en buen estado, pero el vendedor no incluyó el cargador en la caja. 
+                  Afortunadamente le servía el de mi macbook anterior y todo lo demás funciona bien, 
+                  pero el vendedor debería mencionar eso en la descripción.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-6 px-1">
+              <div className="flex gap-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star key={star} className="w-10 h-10 text-muted-foreground" />
+                ))}
+              </div>
+              <p className="text-muted-foreground italic text-sm">Este producto no tiene reviews.</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
