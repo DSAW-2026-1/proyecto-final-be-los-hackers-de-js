@@ -157,13 +157,15 @@ class DbManager{
     }
     static async findProductByID(ID){
         const item =  await this.#findByID(PRODUCTS_DB, ID)
-        return (!item.deleted) ? item : null
+        if(!item) return null
+        return (!(item.deleted)) ? item : null
     }
     static async softDeleteProduct(ID) {
         await this.#updateItem(PRODUCTS_DB, ID, { deleted: true })
     }
     static async #isSoftDeleted(collection, id){
         const item = await this.#findByID(collection, id)
+        if(!item) return true //Technically not the case but makes sure stuff doesn't explode and lets the caller know the item is 'deleted' in some way
         return item.deleted || false
     }
 }
