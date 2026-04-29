@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { Input } from './ui/input';
 import { Separator } from './ui/separator';
 import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, Tag, Loader2 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
