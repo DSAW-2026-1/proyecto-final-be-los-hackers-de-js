@@ -1,10 +1,9 @@
 import React from "react";
 
-import {
-  Card,
-} from "./ui/card";
+import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
+import { Link } from "react-router";
 import {
   Table,
   TableHeader,
@@ -186,7 +185,11 @@ export function SellerDashboard() {
             <Card className="p-6">
               <h3 className="font-semibold text-lg mb-2">Accesos rápidos</h3>
               <div className="grid gap-2">
-                <Button variant="secondary" size="sm">Publicar nuevo producto</Button>
+                <Link to="/seller/products/create">
+                  <Button variant="default" size="sm" className="w-full bg-primary hover:bg-primary/90 text-white text-sm">
+                    Publicar nuevo producto
+                  </Button>
+                </Link>
                 <Button variant="outline" size="sm">Ver mensajes ({unreadMessages})</Button>
                 <Button variant="ghost" size="sm">Ajustes de envío</Button>
               </div>
