@@ -28,5 +28,10 @@ export const userService = {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
+  },
+  async registerAsSeller(): Promise<{ token: string }> {
+    return apiRequest<{ token: string }>('/api/seller/register', {
+      method: 'PATCH',
+    });
   }
 };

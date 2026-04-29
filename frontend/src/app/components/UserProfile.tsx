@@ -132,10 +132,10 @@ export function UserProfile() {
     <div className="bg-background py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <Card className="overflow-hidden">
-          <div className="h-32 bg-gradient-to-r from-primary to-primary/80" />
+          <div className="h-28 bg-gradient-to-r from-primary to-primary/80" />
 
           <div className="px-8 pb-8">
-            <div className="flex flex-col md:flex-row md:items-end md:justify-between -mt-16 mb-6">
+            <div className="flex flex-col md:flex-row md:items-end md:justify-between -mt-12 mb-6">
               <div className="flex items-end gap-6">
                 <Avatar className="w-32 h-32 border-4 border-white shadow-lg">
                   {user.photo ? (

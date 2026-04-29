@@ -21,7 +21,8 @@ import {
   Save,
   Building,
   GraduationCap,
-  Loader2
+  Loader2,
+  Store
 } from 'lucide-react';
 import { Switch } from './ui/switch';
 import { Separator } from './ui/separator';
@@ -60,7 +61,7 @@ const FACULTIES = [
 
 export function EditProfile() {
   const navigate = useNavigate();
-  const { setUserInfo } = useAuth();
+  const { setUserInfo, login } = useAuth();
   const [user, setUser] = useState<UserProfileResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -69,6 +70,8 @@ export function EditProfile() {
   const [username, setUsername] = useState<string>("");
   const [photoBase64, setPhotoBase64] = useState<string | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [isSeller, setIsSeller] = useState<boolean>(false);
+  const [initialIsSeller, setInitialIsSeller] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -77,6 +80,8 @@ export function EditProfile() {
         setUser(data);
         setUsername(data.username);
         setPhotoPreview(data.photo ? `data:image/jpeg;base64,${data.photo}` : null);
+        setIsSeller(data.isSeller);
+        setInitialIsSeller(data.isSeller);
         
         // Find faculty based on career
         if (data.career) {
@@ -158,13 +163,37 @@ export function EditProfile() {
         updateData.photo = photoBase64;
       }
 
-      if (Object.keys(updateData).length === 0) {
+      // Handle seller registration separately if toggled to true
+      let newToken = null;
+      if (!initialIsSeller && isSeller) {
+        try {
+          const response = await userService.registerAsSeller();
+          newToken = response.token;
+        } catch (sellerError) {
+          console.error('Error registering as seller:', sellerError);
+          // If this fails, we should probably stop the whole process or inform the user
+          // For now, we'll continue with profile updates but toast the error
+          toast.error('No se pudo activar la cuenta de vendedor');
+          setIsSaving(false);
+          return;
+        }
+      }
+
+      if (Object.keys(updateData).length === 0 && !newToken) {
         toast.info('No hay cambios para guardar');
         setIsSaving(false);
         return;
       }
 
-      await userService.updateProfile(updateData);
+      // Update regular profile data if any
+      if (Object.keys(updateData).length > 0) {
+        await userService.updateProfile(updateData);
+      }
+      
+      // Update context and token if needed
+      if (newToken) {
+        login(newToken);
+      }
       
       // Update context if username changed
       if (updateData.username) {
@@ -382,6 +411,52 @@ export function EditProfile() {
                     <Input id="location" defaultValue="Edificio de Ingeniería / Biblioteca" className="pl-11" />
                   </div>
                 </div>
+              </div>
+            </Card>
+
+            {/* Seller Account Section */}
+            <Card className="p-8">
+              <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
+                <Store className="w-5 h-5 text-primary" />
+                Cuenta de Vendedor
+              </h3>
+              
+              <div className="space-y-6">
+                <div className="flex items-center justify-between text-left">
+                  <div className="max-w-[75%]">
+                    <p className="font-medium">Modo Vendedor</p>
+                    <p className="text-sm text-muted-foreground">
+                      {initialIsSeller 
+                        ? "Ya eres un vendedor oficial en el campus. Esta opción no se puede desactivar."
+                        : "Al activarlo, podrás publicar tus propios productos y servicios en el Marketplace Unisabana."
+                      }
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {initialIsSeller && (
+                      <Badge className="bg-primary/10 text-primary border-primary/20 h-6">
+                        Activo
+                      </Badge>
+                    )}
+                    <Switch 
+                      checked={isSeller} 
+                      onCheckedChange={(checked) => {
+                        if (!initialIsSeller) {
+                          setIsSeller(checked);
+                        }
+                      }}
+                      disabled={initialIsSeller}
+                    />
+                  </div>
+                </div>
+                
+                {!initialIsSeller && isSeller && (
+                  <div className="mt-2 p-4 bg-amber-50 border border-amber-100 rounded-lg animate-in fade-in slide-in-from-top-2">
+                    <p className="text-sm text-amber-800 font-medium">
+                      ⚠️ Una vez guardes los cambios, te convertirás en vendedor y no podrás revertir esta acción de forma directa.
+                    </p>
+                  </div>
+                )}
               </div>
             </Card>
 
