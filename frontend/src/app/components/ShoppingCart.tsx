@@ -226,22 +226,7 @@ export function ShoppingCart() {
               ))
             )}
 
-            {products.length > 0 && (
-              <Card className="p-6 bg-accent/10 border-accent/20">
-                <div className="flex items-center gap-3">
-                  <Tag className="w-5 h-5 text-accent" />
-                  <div className="flex-1">
-                    <Input
-                      placeholder="¿Tienes un código de descuento?"
-                      className="bg-white"
-                    />
-                  </div>
-                  <Button variant="outline">
-                    Aplicar
-                  </Button>
-                </div>
-              </Card>
-            )}
+
           </div>
 
           <div className="lg:col-span-1">
@@ -295,29 +280,7 @@ export function ShoppingCart() {
                 </Button>
               </div>
 
-              <div className="mt-6 pt-6 border-t">
-                <h4 className="font-semibold text-sm mb-3">Métodos de pago aceptados</h4>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <div className="px-3 py-2 bg-muted rounded border text-xs font-medium">
-                    Efectivo
-                  </div>
-                  <div className="px-3 py-2 bg-muted rounded border text-xs font-medium">
-                    Transferencia
-                  </div>
-                  <div className="px-3 py-2 bg-muted rounded border text-xs font-medium">
-                    Nequi
-                  </div>
-                  <div className="px-3 py-2 bg-muted rounded border text-xs font-medium">
-                    Daviplata
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-6 pt-6 border-t text-xs text-muted-foreground space-y-2">
-                <p>✓ Compra segura entre estudiantes verificados</p>
-                <p>✓ Soporte de la universidad</p>
-                <p>✓ Entrega en campus o domicilio</p>
-              </div>
+              
             </Card>
           </div>
         </div>
