@@ -13,13 +13,11 @@ import {
   TableCell,
 } from "./ui/table";
 import { ChartContainer } from "./ui/chart";
-import { ShoppingCart, Package, MessageSquare, Star } from "lucide-react";
-
-const sampleProducts = [
-  { id: "P-001", title: "Libro de Cálculo (Usado)", price: 25000, stock: 3, status: "active" },
-  { id: "P-002", title: "Calculadora Graficadora", price: 550000, stock: 5, status: "active" },
-  { id: "P-003", title: "Sobrecolchón para Residencia", price: 40000, stock: 0, status: "sold" },
-];
+import { useState, useEffect, useCallback } from "react";
+import { useAuth } from "../context/AuthContext";
+import { productService, SearchResultItem } from "../services/productService";
+import { userService, UserProfileResponse } from "../services/userService";
+import { ShoppingCart, Package, MessageSquare, Star, Loader2, Trash2, Edit } from "lucide-react";
 
 const recentOrders = [
   { id: "O-1001", buyer: "María G.", total: 25000, status: "Entregada" },
@@ -27,10 +25,52 @@ const recentOrders = [
 ];
 
 export function SellerDashboard() {
-  const totalProducts = sampleProducts.length;
+  const { uid } = useAuth();
+  const [user, setUser] = useState<UserProfileResponse | null>(null);
+  const [products, setProducts] = useState<SearchResultItem[]>([]);
+  const [count, setCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [loadingProducts, setLoadingProducts] = useState(false);
+
+  const fetchDashboardData = useCallback(async () => {
+    if (!uid) return;
+    
+    setLoading(true);
+    try {
+      const data = await userService.getProfile();
+      setUser(data);
+      
+      setLoadingProducts(true);
+      const productResp = await productService.searchProducts({ 
+        sellerID: uid,
+        includeOutOfStock: true,
+        page: 1 
+      });
+      setProducts(Object.values(productResp.results));
+      setCount(productResp.count);
+    } catch (err) {
+      console.error("Error fetching dashboard data:", err);
+    } finally {
+      setLoading(false);
+      setLoadingProducts(false);
+    }
+  }, [uid]);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
+
   const activeOrders = recentOrders.filter((o) => o.status !== "Entregada").length;
   const unreadMessages = 4; // placeholder
-  const rating = 4.6;
+  const rating = user?.reputation ? parseFloat(user.reputation) : 0;
+
+  if (loading && !products.length) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="bg-muted/30 py-12">
@@ -44,7 +84,7 @@ export function SellerDashboard() {
           <Card className="p-6">
             <div className="flex items-start justify-between mb-4">
               <div>
-                <p className="text-3xl font-bold mb-1">{totalProducts}</p>
+                <p className="text-3xl font-bold mb-1">{loadingProducts ? "..." : count}</p>
                 <p className="text-sm text-muted-foreground">Productos</p>
               </div>
               <div className="w-12 h-12 rounded-lg bg-indigo-50 flex items-center justify-center">
@@ -109,32 +149,64 @@ export function SellerDashboard() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {sampleProducts.map((p) => (
-                        <TableRow key={p.id} className="hover:bg-muted/50">
-                          <TableCell>
-                            <div className="flex items-center gap-4">
-                              <div className="w-16 h-16 bg-muted rounded-lg" />
-                              <div>
-                                <h4 className="font-medium mb-1">{p.title}</h4>
-                                <p className="text-sm text-muted-foreground">{p.id}</p>
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>${p.price.toLocaleString()}</TableCell>
-                          <TableCell>{p.stock}</TableCell>
-                          <TableCell>
-                            <Badge variant={p.status === "active" ? "default" : "secondary"}>
-                              {p.status === "active" ? "Activo" : "Vendido"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Button variant="ghost" size="sm">Editar</Button>
-                              <Button variant="destructive" size="sm">Eliminar</Button>
-                            </div>
+                      {loadingProducts ? (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center py-8">
+                            <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" />
                           </TableCell>
                         </TableRow>
-                      ))}
+                      ) : products.length > 0 ? (
+                        products.map((p) => (
+                          <TableRow key={p.productID} className="hover:bg-muted/50">
+                            <TableCell>
+                              <div className="flex items-center gap-4">
+                                <div className="w-16 h-16 bg-muted rounded-lg overflow-hidden flex items-center justify-center">
+                                  {p.image ? (
+                                    <img 
+                                      src={p.image.startsWith('data:') ? p.image : `data:image/jpeg;base64,${p.image}`} 
+                                      alt={p.name} 
+                                      className="w-full h-full object-cover" 
+                                    />
+                                  ) : (
+                                    <Package className="w-6 h-6 text-muted-foreground" />
+                                  )}
+                                </div>
+                                <div>
+                                  <h4 className="font-medium mb-1 truncate max-w-[200px]">{p.name}</h4>
+                                  <p className="text-xs text-muted-foreground font-mono">{p.productID}</p>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>${p.price.toLocaleString()}</TableCell>
+                            <TableCell>
+                              <span className="text-sm font-medium text-center block w-full">
+                                {p.stock}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={p.stock > 0 ? "default" : "secondary"}>
+                                {p.stock > 0 ? "Activo" : "Sin stock/Inactivo"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <Button variant="ghost" size="sm">
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                                <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10">
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                            No tienes productos publicados.
+                          </TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
                 </div>
