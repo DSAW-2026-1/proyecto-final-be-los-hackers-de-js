@@ -27,7 +27,7 @@ import { AdminReportView } from './components/AdminReportView';
 import { EditProduct } from './components/EditProduct';
 import { MainLayout } from './components/MainLayout';
 import { AdminLogin } from  './components/AdminLogin.tsx'
-import { ScrollToTop } from './components/ScrollToTop';
+import { ScrollToTop } from './components/ScrollToTop.tsx';
 
 import { ProtectedRoute } from './components/ProtectedRoute';
 
