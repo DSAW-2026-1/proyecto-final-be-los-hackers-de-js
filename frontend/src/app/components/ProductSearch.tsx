@@ -101,8 +101,10 @@ export function ProductSearch() {
   }, [searchParams]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchProducts();
+    const timeoutId = setTimeout(() => {
+      fetchProducts();
+    }, 0);
+    return () => clearTimeout(timeoutId);
   }, [fetchProducts]);
 
   const updateFilters = (newParams: Record<string, string | null>) => {
