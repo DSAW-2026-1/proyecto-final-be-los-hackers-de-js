@@ -28,6 +28,32 @@ export interface Product {
   sales?: number;
 }
 
+export interface SearchParams {
+  page?: number;
+  query?: string;
+  categories?: string;
+  fromPrice?: number;
+  toPrice?: number;
+  conditions?: string;
+  minRating?: number;
+  searchDescription?: boolean;
+}
+
+export interface SearchResultItem {
+  productID: string;
+  name: string;
+  price: number;
+  rating: number;
+  image: string;
+}
+
+export interface SearchResponse {
+  count: number;
+  pages: number;
+  page: number;
+  results: { [key: number]: SearchResultItem };
+}
+
 export const productService = {
   async createProduct(data: CreateProductRequest): Promise<ProductResponse> {
     return apiRequest<ProductResponse>('/api/products/', {
@@ -51,5 +77,16 @@ export const productService = {
     return apiRequest<void>(`/api/products/${productID}`, {
       method: 'DELETE',
     });
+  },
+
+  async searchProducts(params: SearchParams): Promise<SearchResponse> {
+    const queryParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        queryParams.append(key, value.toString());
+      }
+    });
+
+    return apiRequest<SearchResponse>(`/api/products/search?${queryParams.toString()}`);
   }
 };
