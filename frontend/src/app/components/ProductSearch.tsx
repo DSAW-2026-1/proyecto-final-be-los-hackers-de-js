@@ -170,6 +170,9 @@ export function ProductSearch() {
   };
 
   const currentPage = Number(searchParams.get('page')) || 1;
+  const itemsPerPage = 12;
+  const startItem = count > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0;
+  const endItem = (currentPage - 1) * itemsPerPage + results.length;
 
   return (
     <div className="bg-background py-12 border-t">
@@ -314,7 +317,7 @@ export function ProductSearch() {
             <div className="flex items-center justify-between">
               <p className="text-sm text-muted-foreground">
                 {loading ? 'Buscando...' : (
-                  <>Mostrando <span className="font-bold text-foreground">{count}</span> resultados</>
+                  <>Mostrando <span className="font-bold text-foreground">{startItem}-{endItem}</span> de <span className="font-bold text-foreground">{count}</span> resultados</>
                 )}
               </p>
 
@@ -381,32 +384,50 @@ export function ProductSearch() {
                         <span className="hidden sm:inline">Anterior</span>
                       </Button>
                       
-                      {Array.from({ length: Math.min(pages, 5) }).map((_, i) => {
-                        const pageNum = i + 1;
-                        return (
-                          <Button 
-                            key={pageNum} 
-                            variant={pageNum === currentPage ? 'default' : 'outline'} 
-                            size="sm"
-                            className="w-10 h-10 p-0"
-                            onClick={() => updateFilters({ page: pageNum.toString() })}
-                          >
-                            {pageNum}
-                          </Button>
-                        );
-                      })}
-                      
-                      {pages > 5 && <span className="px-2 text-muted-foreground">...</span>}
-                      {pages > 5 && (
-                        <Button 
-                          variant={currentPage === pages ? 'default' : 'outline'} 
-                          size="sm"
-                          className="w-10 h-10 p-0"
-                          onClick={() => updateFilters({ page: pages.toString() })}
-                        >
-                          {pages}
-                        </Button>
-                      )}
+                      {(() => {
+                        const pageNumbers = [];
+                        const range = 2; // Two pages on each side
+                        
+                        // Always include page 1
+                        pageNumbers.push(1);
+                        
+                        if (currentPage > range + 2) {
+                          pageNumbers.push(null); // Ellipsis
+                        }
+                        
+                        const start = Math.max(2, currentPage - range);
+                        const end = Math.min(pages - 1, currentPage + range);
+                        
+                        for (let i = start; i <= end; i++) {
+                          pageNumbers.push(i);
+                        }
+                        
+                        if (currentPage < pages - range - 1) {
+                          pageNumbers.push(null); // Ellipsis
+                        }
+                        
+                        // Always include last page
+                        if (pages > 1) {
+                          pageNumbers.push(pages);
+                        }
+                        
+                        return pageNumbers.map((pageNum, idx) => {
+                          if (pageNum === null) {
+                            return <span key={`ellipsis-${idx}`} className="px-2 text-muted-foreground">...</span>;
+                          }
+                          return (
+                            <Button 
+                              key={pageNum} 
+                              variant={pageNum === currentPage ? 'default' : 'outline'} 
+                              size="sm"
+                              className="w-10 h-10 p-0"
+                              onClick={() => updateFilters({ page: pageNum.toString() })}
+                            >
+                              {pageNum}
+                            </Button>
+                          );
+                        });
+                      })()}
 
                       <Button 
                         variant="outline" 
