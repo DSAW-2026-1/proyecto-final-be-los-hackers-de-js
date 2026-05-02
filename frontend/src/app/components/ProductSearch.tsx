@@ -45,6 +45,9 @@ export function ProductSearch() {
   const [minRating, setMinRating] = useState<number | null>(
     searchParams.get('minRating') ? Number(searchParams.get('minRating')) : null
   );
+  const [searchDescription, setSearchDescription] = useState(
+    searchParams.get('searchDescription') === 'true'
+  );
 
   const fetchProducts = useCallback(async () => {
     try {
@@ -59,6 +62,7 @@ export function ProductSearch() {
         fromPrice: Number(searchParams.get('fromPrice')) || undefined,
         toPrice: Number(searchParams.get('toPrice')) || undefined,
         minRating: Number(searchParams.get('minRating')) || undefined,
+        searchDescription: searchParams.get('searchDescription') === 'true' || undefined,
       };
 
       const resp = await productService.searchProducts(params);
@@ -123,6 +127,7 @@ export function ProductSearch() {
     setSelectedCategories([]);
     setSelectedConditions([]);
     setMinRating(null);
+    setSearchDescription(false);
   };
 
   const handleCategoryChange = (category: string, checked: boolean) => {
@@ -145,6 +150,11 @@ export function ProductSearch() {
     const newVal = checked ? rating : null;
     setMinRating(newVal);
     updateFilters({ minRating: newVal ? newVal.toString() : null });
+  };
+
+  const handleSearchDescriptionChange = (checked: boolean) => {
+    setSearchDescription(checked);
+    updateFilters({ searchDescription: checked ? 'true' : null });
   };
 
   const handlePriceChange = (val: number[]) => {
@@ -270,6 +280,23 @@ export function ProductSearch() {
                         </Label>
                       </div>
                     ))}
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Advanced */}
+                <div>
+                  <h4 className="font-semibold mb-4">Avanzado</h4>
+                  <div className="flex items-center gap-3">
+                    <Checkbox 
+                      id="searchDescription" 
+                      checked={searchDescription}
+                      onCheckedChange={(checked) => handleSearchDescriptionChange(!!checked)}
+                    />
+                    <Label htmlFor="searchDescription" className="text-sm cursor-pointer">
+                      Incluir descripción en búsqueda
+                    </Label>
                   </div>
                 </div>
               </div>
