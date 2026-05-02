@@ -38,6 +38,7 @@ export interface SearchParams {
   minRating?: number;
   searchDescription?: boolean;
   sellerID?: string;
+  includeOutOfStock?: boolean;
 }
 
 export interface SearchResultItem {
@@ -46,6 +47,7 @@ export interface SearchResultItem {
   price: number;
   rating: number;
   image: string;
+  stock: number;
 }
 
 export interface SearchResponse {
