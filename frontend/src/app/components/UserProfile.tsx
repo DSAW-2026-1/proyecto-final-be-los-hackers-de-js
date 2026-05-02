@@ -40,8 +40,11 @@ export function UserProfile() {
   const [user, setUser] = useState<UserProfileResponse | null>(null);
   const [products, setProducts] = useState<SearchResultItem[]>([]);
   const [count, setCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [loadingProducts, setLoadingProducts] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [errorStatus, setErrorStatus] = useState<number | null>(null);
 
   const isOwnProfile = !uid;
@@ -81,6 +84,8 @@ export function UserProfile() {
                 if (isMounted) {
                   setProducts(Object.values(productResp.results));
                   setCount(productResp.count);
+                  setTotalPages(productResp.pages);
+                  setCurrentPage(1);
                 }
               }
             } catch (err) {
@@ -118,6 +123,29 @@ export function UserProfile() {
       isMounted = false;
     };
   }, [isAuthenticated, navigate, uid, isOwnProfile, contextUser, setUserInfo]);
+
+  const loadMoreProducts = async () => {
+    if (loadingMore || currentPage >= totalPages) return;
+    
+    const profileUid = uid || authService.getUid();
+    if (!profileUid) return;
+
+    setLoadingMore(true);
+    try {
+      const nextPage = currentPage + 1;
+      const productResp = await productService.searchProducts({ 
+        sellerID: profileUid,
+        page: nextPage 
+      });
+      setProducts(prev => [...prev, ...Object.values(productResp.results)]);
+      setCurrentPage(nextPage);
+    } catch (err) {
+      console.error('Error loading more products:', err);
+      toast.error('Error al cargar más productos');
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   if (isOwnProfile && !isAuthenticated) return null;
 
@@ -263,19 +291,41 @@ export function UserProfile() {
                         <Loader2 className="w-8 h-8 animate-spin text-primary" />
                       </div>
                     ) : products.length > 0 ? (
-                      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {products.map((product) => (
-                          <ProductCard 
-                            key={product.productID}
-                            id={product.productID}
-                            title={product.name}
-                            price={product.price}
-                            image={product.image}
-                            rating={product.rating}
-                            seller={user.username}
-                          />
-                        ))}
-                      </div>
+                      <>
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                          {products.map((product) => (
+                            <ProductCard 
+                              key={product.productID}
+                              id={product.productID}
+                              title={product.name}
+                              price={product.price}
+                              image={product.image}
+                              rating={product.rating}
+                              seller={user.username}
+                            />
+                          ))}
+                        </div>
+                        
+                        {currentPage < totalPages && (
+                          <div className="flex justify-center mt-12">
+                            <Button 
+                              variant="outline" 
+                              size="lg" 
+                              onClick={loadMoreProducts}
+                              disabled={loadingMore}
+                            >
+                              {loadingMore ? (
+                                <>
+                                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                  Cargando...
+                                </>
+                              ) : (
+                                'Cargar más productos'
+                              )}
+                            </Button>
+                          </div>
+                        )}
+                      </>
                     ) : (
                       <div className="text-center py-12 bg-muted/20 rounded-lg">
                         <Package className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
