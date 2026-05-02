@@ -5,7 +5,7 @@ const ITEMS_PER_PAGE = 12
 
 router.get('/', async function (req, res, next) {
     let {
-        page, query, categories, fromPrice, toPrice, conditions, searchDescription, minRating, sellerID
+        page, query, categories, fromPrice, toPrice, conditions, searchDescription, minRating, sellerID, includeOutOfStock
     } = req.query
     const fullQuery = {}
     if(!page) page = 1;
@@ -36,7 +36,7 @@ router.get('/', async function (req, res, next) {
         else fullQuery["name"] = {$regex: query}
     }
     if(sellerID) fullQuery["sellerID"] = sellerID
-    fullQuery["stock"] = {$gt: 0}
+    if(!includeOutOfStock) fullQuery["stock"] = {$gt: 0}
     //TODO: Probably not the quickest way of paginating
     const search = await db.findProducts(fullQuery, (pageInt-1), ITEMS_PER_PAGE)
     let products = search.result
@@ -56,7 +56,7 @@ router.get('/', async function (req, res, next) {
                 //description: products[i].description,
                 rating: products[i].rating || null,
                 image: products[i].images["0"],
-                //stock: products[i].stock,
+                stock: products[i].stock,
                 //sellerID: products[i].sellerID,
 
             })
