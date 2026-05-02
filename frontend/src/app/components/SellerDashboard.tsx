@@ -42,8 +42,11 @@ export function SellerDashboard() {
   const [user, setUser] = useState<UserProfileResponse | null>(null);
   const [products, setProducts] = useState<SearchResultItem[]>([]);
   const [count, setCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [loadingProducts, setLoadingProducts] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const fetchDashboardData = useCallback(async () => {
@@ -62,6 +65,8 @@ export function SellerDashboard() {
       });
       setProducts(Object.values(productResp.results));
       setCount(productResp.count);
+      setTotalPages(productResp.pages);
+      setCurrentPage(1);
     } catch (err) {
       console.error("Error fetching dashboard data:", err);
     } finally {
@@ -73,6 +78,27 @@ export function SellerDashboard() {
   useEffect(() => {
     fetchDashboardData();
   }, [fetchDashboardData]);
+
+  const loadMoreProducts = async () => {
+    if (loadingMore || currentPage >= totalPages || !uid) return;
+
+    setLoadingMore(true);
+    try {
+      const nextPage = currentPage + 1;
+      const productResp = await productService.searchProducts({ 
+        sellerID: uid,
+        includeOutOfStock: true,
+        page: nextPage 
+      });
+      setProducts(prev => [...prev, ...Object.values(productResp.results)]);
+      setCurrentPage(nextPage);
+    } catch (err) {
+      console.error("Error loading more products:", err);
+      toast.error("Error al cargar más productos");
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   const handleDeleteProduct = async (id: string) => {
     setDeletingId(id);
@@ -274,6 +300,26 @@ export function SellerDashboard() {
                       )}
                     </TableBody>
                   </Table>
+
+                  {currentPage < totalPages && (
+                    <div className="flex justify-center mt-6">
+                      <Button 
+                        variant="outline" 
+                        size="lg" 
+                        onClick={loadMoreProducts}
+                        disabled={loadingMore}
+                      >
+                        {loadingMore ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Cargando...
+                          </>
+                        ) : (
+                          'Cargar más productos'
+                        )}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
             </Card>
