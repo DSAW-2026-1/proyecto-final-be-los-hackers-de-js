@@ -8,30 +8,13 @@ import { Avatar } from './ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Star, MapPin, Calendar, Package, ShoppingBag, MessageCircle, Edit, Loader2, Flag } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { authService } from '../services/authService';
 import { userService, UserProfileResponse } from '../services/userService';
+import { productService, SearchResultItem } from '../services/productService';
 import { ApiError } from '../services/api';
 import { NotFound } from './NotFound';
+import { ProductCard } from './ProductCard';
 import { ConnectionError } from './ConnectionError';
-
-const USER_PRODUCTS = [
-  // Mock products for visual preview, in a real app these would be fetched by user UID
-  {
-    id: 1,
-    title: 'iPad 9na Gen + Apple Pencil',
-    price: 1500000,
-    image: 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=300&h=300&fit=crop',
-    status: 'Activo',
-    views: 156
-  },
-  {
-    id: 2,
-    title: 'Auriculares Sony WH-1000XM4',
-    price: 650000,
-    image: 'https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=300&h=300&fit=crop',
-    status: 'Activo',
-    views: 89
-  },
-];
 
 const REVIEWS = [
   {
@@ -55,7 +38,13 @@ export function UserProfile() {
   const { uid } = useParams<{ uid?: string }>();
   const navigate = useNavigate();
   const [user, setUser] = useState<UserProfileResponse | null>(null);
+  const [products, setProducts] = useState<SearchResultItem[]>([]);
+  const [count, setCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [loadingProducts, setLoadingProducts] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [errorStatus, setErrorStatus] = useState<number | null>(null);
 
   const isOwnProfile = !uid;
@@ -80,6 +69,33 @@ export function UserProfile() {
           // Sync with context if it's our own profile and we don't have the info there yet
           if (isOwnProfile && (!contextUser || contextUser.username !== data.username)) {
             setUserInfo({ username: data.username, email: data.email });
+          }
+
+          // Fetch products if user is a seller
+          if (data.isSeller) {
+            setLoadingProducts(true);
+            try {
+              const profileUid = uid || authService.getUid();
+              if (profileUid) {
+                const productResp = await productService.searchProducts({ 
+                  sellerID: profileUid,
+                  page: 1 
+                });
+                if (isMounted) {
+                  setProducts(Object.values(productResp.results));
+                  setCount(productResp.count);
+                  setTotalPages(productResp.pages);
+                  setCurrentPage(1);
+                }
+              }
+            } catch (err) {
+              console.error('Error fetching seller products:', err);
+              setCount(0);
+            } finally {
+              if (isMounted) {
+                setLoadingProducts(false);
+              }
+            }
           }
         }
       } catch (error) {
@@ -107,6 +123,29 @@ export function UserProfile() {
       isMounted = false;
     };
   }, [isAuthenticated, navigate, uid, isOwnProfile, contextUser, setUserInfo]);
+
+  const loadMoreProducts = async () => {
+    if (loadingMore || currentPage >= totalPages) return;
+    
+    const profileUid = uid || authService.getUid();
+    if (!profileUid) return;
+
+    setLoadingMore(true);
+    try {
+      const nextPage = currentPage + 1;
+      const productResp = await productService.searchProducts({ 
+        sellerID: profileUid,
+        page: nextPage 
+      });
+      setProducts(prev => [...prev, ...Object.values(productResp.results)]);
+      setCurrentPage(nextPage);
+    } catch (err) {
+      console.error('Error loading more products:', err);
+      toast.error('Error al cargar más productos');
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   if (isOwnProfile && !isAuthenticated) return null;
 
@@ -223,7 +262,7 @@ export function UserProfile() {
               <Card className="p-4 text-center bg-primary/5">
                 <div className="flex items-center justify-center mb-2">
                   <ShoppingBag className="w-5 h-5 text-primary mr-2" />
-                  <span className="text-2xl font-bold">2</span>
+                  <span className="text-2xl font-bold">{loadingProducts ? '...' : count}</span>
                 </div>
                 <p className="text-sm text-muted-foreground">Publicados</p>
               </Card>
@@ -246,33 +285,56 @@ export function UserProfile() {
 
               <TabsContent value="products" className="mt-6">
                 {user.isSeller ? (
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {USER_PRODUCTS.map((product) => (
-                      <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                        <div className="relative h-48 bg-muted">
-                          <img
-                            src={product.image}
-                            alt={product.title}
-                            className="w-full h-full object-cover"
-                          />
-                          <Badge className="absolute top-3 right-3 bg-green-600">
-                            {product.status}
-                          </Badge>
+                  <>
+                    {loadingProducts ? (
+                      <div className="flex justify-center py-12">
+                        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                      </div>
+                    ) : products.length > 0 ? (
+                      <>
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                          {products.map((product) => (
+                            <ProductCard 
+                              key={product.productID}
+                              id={product.productID}
+                              title={product.name}
+                              price={product.price}
+                              image={product.image}
+                              rating={product.rating}
+                              seller={user.username}
+                            />
+                          ))}
                         </div>
-                        <div className="p-4">
-                          <h3 className="font-semibold mb-2 line-clamp-2">{product.title}</h3>
-                          <div className="flex items-center justify-between">
-                            <span className="text-xl font-bold text-primary">
-                              ${product.price.toLocaleString('es-CO')}
-                            </span>
-                            <span className="text-sm text-muted-foreground">
-                              {product.views} vistas
-                            </span>
+                        
+                        {currentPage < totalPages && (
+                          <div className="flex justify-center mt-12">
+                            <Button 
+                              variant="outline" 
+                              size="lg" 
+                              onClick={loadMoreProducts}
+                              disabled={loadingMore}
+                            >
+                              {loadingMore ? (
+                                <>
+                                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                  Cargando...
+                                </>
+                              ) : (
+                                'Cargar más productos'
+                              )}
+                            </Button>
                           </div>
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="text-center py-12 bg-muted/20 rounded-lg">
+                        <Package className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
+                        <p className="text-muted-foreground">
+                          Este usuario no tiene productos activos actualmente.
+                        </p>
+                      </div>
+                    )}
+                  </>
                 ) : (
                   <div className="text-center py-12 bg-muted/20 rounded-lg">
                     <Package className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />

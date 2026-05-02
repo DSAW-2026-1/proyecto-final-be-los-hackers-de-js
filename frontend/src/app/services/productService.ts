@@ -37,6 +37,7 @@ export interface SearchParams {
   conditions?: string;
   minRating?: number;
   searchDescription?: boolean;
+  sellerID?: string;
 }
 
 export interface SearchResultItem {

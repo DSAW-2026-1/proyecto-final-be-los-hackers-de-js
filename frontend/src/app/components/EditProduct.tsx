@@ -248,7 +248,7 @@ export function EditProduct() {
                   <AlertDialogTitle>¿Estás completamente seguro?</AlertDialogTitle>
                   <AlertDialogDescription>
                     Esta acción no se puede deshacer. Esto eliminará permanentemente tu
-                    producto "{product.name}" y lo quitará de nuestro mercado institucional.
+                    producto &quot;{product.name}&quot; y lo quitará de nuestro mercado institucional.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

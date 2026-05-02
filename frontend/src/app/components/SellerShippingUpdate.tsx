@@ -56,7 +56,6 @@ export function SellerShippingUpdate() {
 
   function handleSave() {
     // In a real app, call an API here. For the prototype we'll just log.
-    // eslint-disable-next-line no-console
     console.log('Saved shipping update', item)
     alert('Estado guardado (prototipo)')
   }
