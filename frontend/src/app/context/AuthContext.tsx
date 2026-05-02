@@ -14,7 +14,7 @@ interface AuthContextType {
   uid: string | null;
   user: UserInfo | null;
   login: (token: string) => void;
-  logout: () => void;
+  logout: (showToast?: boolean) => void;
   adminLogin: (token: string) => void;
   adminLogout: () => void;
   setUserInfo: (user: UserInfo) => void;
@@ -29,12 +29,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [uid, setUid] = useState<string | null>(authService.getUid());
   const [user, setUser] = useState<UserInfo | null>(null);
 
-  const logout = useCallback(() => {
+  const logout = useCallback((showToast: boolean = true) => {
     authService.logout();
     setIsAuthenticated(false);
     setIsSeller(false);
     setUid(null);
     setUser(null);
+    if (showToast) {
+      toast.success('Sesión cerrada correctamente');
+    }
   }, []);
 
   useEffect(() => {
@@ -48,7 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.addEventListener('storage', handleStorageChange);
 
     const handleAuthExpired = () => {
-      logout();
+      logout(false);
       toast.error('Tu sesión ha expirado. Por favor, ingresa de nuevo.');
     };
     window.addEventListener('auth-token-expired', handleAuthExpired);
