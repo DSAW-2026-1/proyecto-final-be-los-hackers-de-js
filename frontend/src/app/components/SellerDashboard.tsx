@@ -3,7 +3,7 @@ import React from "react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { Link } from "react-router";
+import { useNavigate, Link } from "react-router";
 import {
   Table,
   TableHeader,
@@ -12,12 +12,24 @@ import {
   TableHead,
   TableCell,
 } from "./ui/table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "./ui/alert-dialog";
 import { ChartContainer } from "./ui/chart";
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../context/AuthContext";
 import { productService, SearchResultItem } from "../services/productService";
 import { userService, UserProfileResponse } from "../services/userService";
 import { ShoppingCart, Package, MessageSquare, Star, Loader2, Trash2, Edit } from "lucide-react";
+import { toast } from "sonner";
 
 const recentOrders = [
   { id: "O-1001", buyer: "María G.", total: 25000, status: "Entregada" },
@@ -26,11 +38,13 @@ const recentOrders = [
 
 export function SellerDashboard() {
   const { uid } = useAuth();
+  const navigate = useNavigate();
   const [user, setUser] = useState<UserProfileResponse | null>(null);
   const [products, setProducts] = useState<SearchResultItem[]>([]);
   const [count, setCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadingProducts, setLoadingProducts] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const fetchDashboardData = useCallback(async () => {
     if (!uid) return;
@@ -59,6 +73,21 @@ export function SellerDashboard() {
   useEffect(() => {
     fetchDashboardData();
   }, [fetchDashboardData]);
+
+  const handleDeleteProduct = async (id: string) => {
+    setDeletingId(id);
+    try {
+      await productService.deleteProduct(id);
+      toast.success("Producto eliminado exitosamente");
+      // Refresh the list after deletion
+      fetchDashboardData();
+    } catch (err) {
+      console.error("Error deleting product:", err);
+      toast.error("Error al eliminar el producto");
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const activeOrders = recentOrders.filter((o) => o.status !== "Entregada").length;
   const unreadMessages = 4; // placeholder
@@ -190,12 +219,48 @@ export function SellerDashboard() {
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center gap-2">
-                                <Button variant="ghost" size="sm">
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => navigate(`/seller/products/edit/${p.productID}`)}
+                                >
                                   <Edit className="w-4 h-4" />
                                 </Button>
-                                <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10">
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
+                                
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm" 
+                                      className="text-destructive hover:bg-destructive/10"
+                                      disabled={deletingId === p.productID}
+                                    >
+                                      {deletingId === p.productID ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                      ) : (
+                                        <Trash2 className="w-4 h-4" />
+                                      )}
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>¿Está seguro?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Esta acción no se puede deshacer. Esto eliminará permanentemente el
+                                        producto &quot;{p.name}&quot; del catálogo institucional.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                      <AlertDialogAction 
+                                        onClick={() => handleDeleteProduct(p.productID)}
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                      >
+                                        Eliminar
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
                               </div>
                             </TableCell>
                           </TableRow>
