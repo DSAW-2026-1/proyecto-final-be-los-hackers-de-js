@@ -21,6 +21,7 @@ import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
 import { CATEGORIES, CONDITIONS } from '../constants';
 import { useSearchParams } from 'react-router';
 import { productService, SearchResultItem } from '../services/productService';
+import { ApiError } from '../services/api';
 
 export function ProductSearch() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -46,10 +47,10 @@ export function ProductSearch() {
   );
 
   const fetchProducts = useCallback(async () => {
-    // We update state inside an async function to avoid synchronous cascading renders
-    setLoading(true);
-    setError(null);
     try {
+      setLoading(true);
+      setError(null);
+
       const params = {
         query: searchParams.get('query') || undefined,
         page: Number(searchParams.get('page')) || 1,
@@ -65,14 +66,30 @@ export function ProductSearch() {
       setCount(resp.count);
       setPages(resp.pages);
     } catch (err: unknown) {
-      const errorMsg = err instanceof Error ? err.message : String(err);
-      if (errorMsg.includes('404')) {
+      const apiError = err as ApiError;
+      if (apiError.status === 404) {
         setResults([]);
         setCount(0);
         setPages(0);
       } else {
-        setError('Error al buscar productos. Intenta de nuevo más tarde.');
-        console.error(err);
+        // Handle network errors or generic errors more gracefully
+        let message = 'Error al buscar productos. Intenta de nuevo más tarde.';
+        
+        const isNetworkError = 
+          !apiError.status || 
+          apiError.message?.toLowerCase().includes('networkerror') || 
+          apiError.message?.toLowerCase().includes('failed to fetch');
+
+        if (isNetworkError) {
+          message = 'No se pudo conectar con el servidor. Revisa tu conexión a internet.';
+        } else if (apiError.data && typeof apiError.data === 'string') {
+          message = apiError.data;
+        } else if (apiError.message) {
+          message = apiError.message;
+        }
+
+        setError(message);
+        console.error('Search error:', err);
       }
     } finally {
       setLoading(false);
@@ -80,6 +97,7 @@ export function ProductSearch() {
   }, [searchParams]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchProducts();
   }, [fetchProducts]);
 
