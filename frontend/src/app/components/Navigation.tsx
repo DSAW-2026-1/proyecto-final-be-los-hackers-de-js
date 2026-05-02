@@ -37,7 +37,6 @@ export function Navigation() {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
   };
 
   return (
