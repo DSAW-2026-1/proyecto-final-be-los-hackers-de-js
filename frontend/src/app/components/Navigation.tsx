@@ -101,13 +101,25 @@ export function Navigation() {
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="hidden lg:flex items-center relative w-80">
+            <form 
+              className="hidden lg:flex items-center relative w-80"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                const query = formData.get('query') as string;
+                if (query.trim()) {
+                  navigate(`/search?query=${encodeURIComponent(query)}`);
+                }
+              }}
+            >
               <Search className="absolute left-3 w-4 h-4 text-muted-foreground" />
               <Input
+                name="query"
                 placeholder="Buscar productos..."
                 className="pl-10"
               />
-            </div>
+              <button type="submit" className="hidden" />
+            </form>
 
             <Link to="/cart">
               <Button variant="ghost" size="icon" className="relative">
