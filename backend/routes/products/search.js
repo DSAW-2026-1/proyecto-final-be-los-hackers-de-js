@@ -1,12 +1,16 @@
 const express = require('express');
 const router = express.Router();
 const db = require("../../dbManager");
+const ITEMS_PER_PAGE = 12
 
 router.get('/', async function (req, res, next) {
-    const {
+    let {
         page, query, categories, fromPrice, toPrice, conditions, searchDescription, minRating
     } = req.query
     const fullQuery = {}
+    if(!page) page = 1;
+    let pageInt = parseInt(page) || 1
+    if(isNaN(pageInt)) pageInt = 1
     //if(!query && !categories && !fromPrice && !toPrice && !conditions && !minRating) return res.status("400")
     const minRatingVal = parseInt(minRating) || NaN
     if(categories) fullQuery["category"] = { $in: categories.split(',') }
@@ -32,8 +36,14 @@ router.get('/', async function (req, res, next) {
         else fullQuery["name"] = {$regex: query}
     }
     fullQuery["stock"] = {$gt: 0}
-    const products = await db.findProducts(fullQuery)
-    if (!products || products.length === 0) return res.status(404).json({error: 'No results found. Try broader search terms.'})
+    //TODO: Probably not the quickest way of paginating
+    const search = await db.findProducts(fullQuery, (pageInt-1), ITEMS_PER_PAGE)
+    let products = search.result
+    console.log(search)
+    if (!products || products.length === 0) {
+        if(search.count === 0)return res.status(404).json({error: 'No results found. Try broader search terms.'})
+        else return res.status(400).json({error: 'Result page out of range.'})
+    }
     else {
         let returnProducts = []
         for (let i = 0; i < products.length; i++) {
@@ -52,6 +62,9 @@ router.get('/', async function (req, res, next) {
             })
         }
         return res.json({
+            count: search.count,
+            pages: Math.ceil(search.count/ITEMS_PER_PAGE),
+            page: pageInt,
             results: Object.assign({}, returnProducts)
         })
     }
