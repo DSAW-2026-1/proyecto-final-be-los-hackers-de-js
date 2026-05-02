@@ -189,6 +189,7 @@ class DbManager{
     }
     static async findProducts(query, page, limit){
         try{
+            query["deleted"] = {$ne: true}
             return this.#findLimitedInDb(PRODUCTS_DB, query, page, limit)
         }
         catch (e){
