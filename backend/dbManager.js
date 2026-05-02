@@ -168,6 +168,14 @@ class DbManager{
         if(!item) return true //Technically not the case but makes sure stuff doesn't explode and lets the caller know the item is 'deleted' in some way
         return item.deleted || false
     }
+    static async findProducts(query){
+        try{
+            return this.#findInDb(PRODUCTS_DB, query)
+        }
+        catch (e){
+            return null
+        }
+    }
 }
 
 module.exports = DbManager

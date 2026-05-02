@@ -135,3 +135,4 @@ dist
 .pnp.*
 backend/.env
 backend/.env.production
+frontend/.env.expose
