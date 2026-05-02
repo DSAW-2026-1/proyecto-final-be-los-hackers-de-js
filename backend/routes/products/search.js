@@ -39,7 +39,6 @@ router.get('/', async function (req, res, next) {
     //TODO: Probably not the quickest way of paginating
     const search = await db.findProducts(fullQuery, (pageInt-1), ITEMS_PER_PAGE)
     let products = search.result
-    console.log(search)
     if (!products || products.length === 0) {
         if(search.count === 0)return res.status(404).json({error: 'No results found. Try broader search terms.'})
         else return res.status(400).json({error: 'Result page out of range.'})
@@ -54,10 +53,10 @@ router.get('/', async function (req, res, next) {
                 //condition: products[i].condition,
                 price: products[i].price,
                 //description: products[i].description,
+                rating: products[i].rating || null,
                 image: products[i].images["0"],
                 //stock: products[i].stock,
                 //sellerID: products[i].sellerID,
-                //rating: products[i].rating || null,
 
             })
         }
