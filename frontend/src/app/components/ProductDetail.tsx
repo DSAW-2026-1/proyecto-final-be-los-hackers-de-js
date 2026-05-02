@@ -208,7 +208,10 @@ export function ProductDetail() {
               <div className="flex items-center gap-4">
                 <Avatar className="w-16 h-16">
                   {seller?.photo ? (
-                    <AvatarImage src={seller.photo} alt={seller.username} />
+                    <AvatarImage 
+                      src={seller.photo.startsWith('data:') ? seller.photo : `data:image/jpeg;base64,${seller.photo}`} 
+                      alt={seller.username} 
+                    />
                   ) : (
                     <AvatarFallback className="bg-primary text-white text-xl font-bold">
                       {seller?.username.substring(0, 2).toUpperCase() || 'UN'}

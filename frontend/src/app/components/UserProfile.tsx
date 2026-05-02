@@ -179,7 +179,7 @@ export function UserProfile() {
                 <Avatar className="w-32 h-32 border-4 border-white shadow-lg">
                   {user.photo ? (
                     <img 
-                      src={`data:image/jpeg;base64,${user.photo}`} 
+                      src={user.photo.startsWith('data:') ? user.photo : `data:image/jpeg;base64,${user.photo}`} 
                       alt={user.username} 
                       className="w-full h-full object-cover"
                     />
