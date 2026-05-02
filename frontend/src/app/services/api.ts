@@ -32,9 +32,19 @@ export async function apiRequest<T = unknown>(
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    const error = new Error(errorData.message || response.statusText) as ApiError;
+
+    const errorMsg = errorData.message || errorData.error || response.statusText
+    const error = new Error(errorMsg) as ApiError;
+
     error.status = response.status;
     error.data = errorData;
+
+    // Detect expired JWT or invalid token
+    if (response.status === 400 && errorMsg?.includes('Invalid JWT token')) {
+      console.error(error)
+      window.dispatchEvent(new CustomEvent('auth-token-expired'));
+    }
+
     throw error;
   }
 

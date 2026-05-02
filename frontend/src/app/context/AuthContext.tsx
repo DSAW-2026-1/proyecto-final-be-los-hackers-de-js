@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { toast } from 'sonner';
 import { authService } from '../services/authService';
 
 interface UserInfo {
@@ -13,7 +14,7 @@ interface AuthContextType {
   uid: string | null;
   user: UserInfo | null;
   login: (token: string) => void;
-  logout: () => void;
+  logout: (showToast?: boolean) => void;
   adminLogin: (token: string) => void;
   adminLogout: () => void;
   setUserInfo: (user: UserInfo) => void;
@@ -28,6 +29,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [uid, setUid] = useState<string | null>(authService.getUid());
   const [user, setUser] = useState<UserInfo | null>(null);
 
+  const logout = useCallback((showToast: boolean = true) => {
+    authService.logout();
+    setIsAuthenticated(false);
+    setIsSeller(false);
+    setUid(null);
+    setUser(null);
+    if (showToast) {
+      toast.success('Sesión cerrada correctamente');
+    }
+  }, []);
+
   useEffect(() => {
     // Sync state if token changes elsewhere (e.g. storage event)
     const handleStorageChange = () => {
@@ -37,22 +49,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUid(authService.getUid());
     };
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+
+    const handleAuthExpired = () => {
+      logout(false);
+      toast.error('Tu sesión ha expirado. Por favor, ingresa de nuevo.');
+    };
+    window.addEventListener('auth-token-expired', handleAuthExpired);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('auth-token-expired', handleAuthExpired);
+    };
+  }, [logout]);
 
   const login = (token: string) => {
     authService.setToken(token);
     setIsAuthenticated(true);
     setIsSeller(authService.isSeller());
     setUid(authService.getUid());
-  };
-
-  const logout = () => {
-    authService.logout();
-    setIsAuthenticated(false);
-    setIsSeller(false);
-    setUid(null);
-    setUser(null);
   };
 
   const adminLogin = (token: string) => {
