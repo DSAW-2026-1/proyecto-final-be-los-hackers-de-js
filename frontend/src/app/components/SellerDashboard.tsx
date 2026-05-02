@@ -240,7 +240,7 @@ export function SellerDashboard() {
                             </TableCell>
                             <TableCell>
                               <Badge variant={p.stock > 0 ? "default" : "secondary"}>
-                                {p.stock > 0 ? "Activo" : "Sin stock/Inactivo"}
+                                {p.stock > 0 ? "Activo" : "Inactivo"}
                               </Badge>
                             </TableCell>
                             <TableCell>
