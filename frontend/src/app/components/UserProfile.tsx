@@ -330,8 +330,13 @@ export function UserProfile() {
                       <div className="text-center py-12 bg-muted/20 rounded-lg">
                         <Package className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
                         <p className="text-muted-foreground">
-                          Este usuario no tiene productos activos actualmente.
+                          {isOwnProfile ? 'No tienes productos activos.' : 'Este usuario no tiene productos activos.'}
                         </p>
+                        {isOwnProfile && (
+                          <Button variant="link" onClick={() => navigate('/seller/products/create')}>
+                            Publica un nuevo producto
+                          </Button>
+                        )}
                       </div>
                     )}
                   </>
@@ -342,7 +347,7 @@ export function UserProfile() {
                       {isOwnProfile ? 'No eres un vendedor activo todavía.' : 'Este usuario no tiene productos activos.'}
                     </p>
                     {isOwnProfile && (
-                      <Button variant="link" onClick={() => navigate('/seller/products/create')}>
+                      <Button variant="link" onClick={() => navigate('/profile/edit#seller-section')}>
                         ¡Empieza a vender ahora!
                       </Button>
                     )}

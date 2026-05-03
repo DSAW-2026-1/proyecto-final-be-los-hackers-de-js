@@ -79,6 +79,17 @@ export function EditProfile() {
     };
 
     fetchProfile();
+
+    // Scroll to section if hash exists
+    if (window.location.hash) {
+      setTimeout(() => {
+        const id = window.location.hash.substring(1);
+        const element = document.getElementById(id);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 500); // Wait for content to load
+    }
   }, []);
 
   const handleFacultyChange = (value: string) => {
@@ -388,7 +399,7 @@ export function EditProfile() {
             </Card>
 
             {/* Seller Account Section */}
-            <Card className="p-8">
+            <Card className="p-8 scroll-mt-24" id="seller-section">
               <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
                 <Store className="w-5 h-5 text-primary" />
                 Cuenta de Vendedor

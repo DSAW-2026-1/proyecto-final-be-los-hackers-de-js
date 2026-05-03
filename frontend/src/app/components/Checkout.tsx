@@ -7,7 +7,7 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Separator } from './ui/separator';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
-import { ShoppingCart, Package, CreditCard, Lock, CheckCircle, Loader2 } from 'lucide-react';
+import { ShoppingCart, Package, CreditCard, Lock, Loader2 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { productService, Product } from '../services/productService';
