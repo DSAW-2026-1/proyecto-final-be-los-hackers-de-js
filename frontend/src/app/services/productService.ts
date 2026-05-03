@@ -91,5 +91,12 @@ export const productService = {
     });
 
     return apiRequest<SearchResponse>(`/api/products/search?${queryParams.toString()}`);
+  },
+
+  async checkout(data: { products: { [key: number]: { productID: string, amount: number } }, shippingAddress: string }): Promise<void> {
+    return apiRequest<void>('/api/sales/checkout', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   }
 };
