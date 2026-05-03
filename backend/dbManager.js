@@ -16,6 +16,7 @@ const LOGS_DB = "logs"
 const PRODUCTS_DB = "products"
 const PRODUCT_IMAGES_KEY = "images"
 const MAIN_DB = "marketplace"
+const ORDERS_DB = "orders"
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -121,6 +122,18 @@ class DbManager{
             return false
         }
     }
+    static async #appendToArrays(collection, id, newData){
+        try {
+            await client.db(MAIN_DB).collection(collection).updateOne(
+                {_id: new ObjectId(id)},
+                { $push: newData }
+            )
+            return true
+        }
+        catch (e){
+            return false
+        }
+    }
     static async updateUser(UID, newData){
         return await this.#updateItem(USERS_DB, UID, newData)
     }
@@ -194,6 +207,26 @@ class DbManager{
         }
         catch (e){
             return null
+        }
+    }
+    static async addOrder(order) {
+        const {sellerID, buyerID} = order
+        if(!sellerID || !buyerID) return false
+        else {
+            let seller = await this.findUserByUID(sellerID)
+            let buyer = await this.findUserByUID(buyerID)
+            if(!buyer || !seller || buyer.isSuspended || seller.isSuspended) return false
+            else {
+                //if(!buyer.orders) await this.updateUser(order.sellerID, {orders: []})
+                //if(!seller.sales) await this.updateUser(order.buyerID, {sales: []})
+                await this.#addToCollection(ORDERS_DB, order)
+                //await this.updateUser(order.buyerID, {$push: {orders: order._id}})
+                //await this.updateUser(order.sellerID, {$push: {sales: order._id}})
+                await this.#appendToArrays(USERS_DB, sellerID, {saleData: order._id})
+                await this.updateUser(sellerID, {sales: (seller.sales || 0) + 1})
+                await this.#appendToArrays(USERS_DB, buyerID, {orders: order._id})
+                return true
+            }
         }
     }
 }
