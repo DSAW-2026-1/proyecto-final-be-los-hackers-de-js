@@ -13,11 +13,6 @@ import { useAuth } from '../context/AuthContext';
 import { productService, Product } from '../services/productService';
 import { userService } from '../services/userService';
 
-// Error in my thought: useCart is in CartContext, but I imported it from AuthContext above. 
-// Let me double check CartContext export.
-// Yes, useCart is exported from CartContext.tsx.
-// Also useAuth is from AuthContext.tsx.
-
 export function Checkout() {
   const { cart, clearCart } = useCart();
   const { isAuthenticated } = useAuth();
