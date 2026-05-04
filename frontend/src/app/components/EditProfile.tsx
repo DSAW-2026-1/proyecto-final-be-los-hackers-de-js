@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
 import { Card } from './ui/card';
@@ -45,6 +45,7 @@ export function EditProfile() {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [isSeller, setIsSeller] = useState<boolean>(false);
   const [initialIsSeller, setInitialIsSeller] = useState<boolean>(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -276,6 +277,7 @@ export function EditProfile() {
                     <input 
                       id="avatar-upload" 
                       type="file" 
+                      ref={fileInputRef}
                       className="hidden" 
                       accept="image/*" 
                       onChange={handleFileChange}
@@ -289,8 +291,12 @@ export function EditProfile() {
                     <p className="text-sm text-muted-foreground">Esta foto será visible para compradores y vendedores en el campus.</p>
                   </div>
                   <div className="flex flex-wrap justify-center md:justify-start gap-3">
-                    <Button size="sm">Actualizar Foto</Button>
-                    <Button variant="outline" size="sm" className="text-destructive border-destructive hover:bg-destructive/10">Eliminar</Button>
+                    <Button 
+                      size="sm" 
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      Actualizar Foto
+                    </Button>
                   </div>
                 </div>
               </div>
