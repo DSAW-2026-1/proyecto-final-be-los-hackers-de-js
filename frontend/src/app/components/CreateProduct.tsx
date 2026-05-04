@@ -24,17 +24,20 @@ export function CreateProduct() {
   const [stock, setStock] = useState<string>('1');
   const [images, setImages] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
-
+  const processFiles = (files: FileList | File[]) => {
     if (images.length + files.length > 6) {
       toast.error('Máximo 6 imágenes permitidas');
       return;
     }
 
     Array.from(files).forEach(file => {
+      if (!file.type.startsWith('image/')) {
+        toast.error(`${file.name} no es una imagen válida`);
+        return;
+      }
+
       if (file.size > 5 * 1024 * 1024) {
         toast.error(`${file.name} es muy grande (máx 5MB)`);
         return;
@@ -47,6 +50,29 @@ export function CreateProduct() {
       };
       reader.readAsDataURL(file);
     });
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    processFiles(files);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      processFiles(e.dataTransfer.files);
+    }
   };
 
   const removeImage = (index: number) => {
@@ -220,8 +246,15 @@ export function CreateProduct() {
                   multiple
                 />
                 <div 
-                  className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:bg-muted/50 transition-colors cursor-pointer"
+                  className={`border-2 border-dashed rounded-lg p-8 text-center transition-all cursor-pointer ${
+                    isDragging 
+                      ? "border-primary bg-primary/10 scale-[1.02]" 
+                      : "border-border hover:bg-muted/50"
+                  }`}
                   onClick={() => fileInputRef.current?.click()}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
                 >
                   <div className="flex flex-col items-center gap-3">
                     <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
