@@ -54,6 +54,7 @@ export function EditProduct() {
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState(false);
   const [notFound, setNotFound] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
     async function fetchProduct() {
@@ -149,30 +150,67 @@ export function EditProduct() {
     setFormData(prev => ({ ...prev, images: indexedImages }));
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (Object.keys(formData.images).length >= 6) {
+  const processFiles = (files: FileList | File[]) => {
+    const currentCount = Object.keys(formData.images).length;
+    if (currentCount + files.length > 6) {
       toast.error('Máximo 6 imágenes permitidas');
       return;
     }
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64String = reader.result as string;
-      const base64Data = base64String.split(',')[1]; // Get only the base64 part
-      
-      const newIndex = Object.keys(formData.images).length;
-      setFormData(prev => ({
-        ...prev,
-        images: {
-          ...prev.images,
-          [newIndex]: base64Data
-        }
-      }));
-    };
-    reader.readAsDataURL(file);
+    Array.from(files).forEach((file) => {
+      if (!file.type.startsWith('image/')) {
+        toast.error(`${file.name} no es una imagen válida`);
+        return;
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(`${file.name} es muy grande (máx 5MB)`);
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        const base64Data = base64String.split(',')[1];
+        
+        setFormData(prev => {
+          const newImages = { ...prev.images };
+          const keys = Object.keys(newImages).map(Number);
+          const nextIndex = keys.length > 0 ? Math.max(...keys) + 1 : 0;
+          
+          return {
+            ...prev,
+            images: {
+              ...newImages,
+              [nextIndex]: base64Data
+            }
+          };
+        });
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) processFiles(files);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      processFiles(e.dataTransfer.files);
+    }
   };
 
   if (loading) {
@@ -377,10 +415,15 @@ export function EditProduct() {
               </div>
             </Card>
 
-            <Card className="p-6">
+            <Card className={`p-6 transition-all ${isDragging ? 'bg-primary/5 ring-2 ring-primary ring-inset' : ''}`}>
               <h2 className="text-xl font-semibold mb-6">Imágenes del Producto</h2>
 
-              <div className="space-y-4">
+              <div 
+                className="space-y-4"
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+              >
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                   {Object.entries(formData.images).map(([key, img]) => (
                     <div key={key} className="relative aspect-square rounded-lg border-2 border-border bg-muted overflow-hidden group">
@@ -412,6 +455,7 @@ export function EditProduct() {
                         type="file" 
                         className="hidden" 
                         accept="image/*" 
+                        multiple
                         onChange={handleImageUpload}
                       />
                     </label>
