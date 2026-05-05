@@ -1,82 +1,49 @@
+import { useEffect, useState } from 'react';
 import { ProductCard } from './ProductCard';
 import { Button } from './ui/button';
-import { Grid3x3, List } from 'lucide-react';
+import { Grid3x3, List, Loader2, PackageX } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
 import { Link } from 'react-router';
-
-const MOCK_PRODUCTS = [
-  {
-    id: 1,
-    title: 'Calculadora Científica TI-84 Plus',
-    price: 250000,
-    image: 'https://images.unsplash.com/photo-1611193412775-1f0f77dfe98e?w=400&h=300&fit=crop',
-    condition: 'Usado' as const,
-    category: 'Electrónica',
-    seller: 'María García',
-    rating: 4.8,
-  },
-  {
-    id: 2,
-    title: 'Libro Cálculo III - Stewart',
-    price: 80000,
-    image: 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=400&h=300&fit=crop',
-    condition: 'Nuevo' as const,
-    category: 'Libros',
-    seller: 'Juan Pérez',
-    rating: 5.0,
-  },
-  {
-    id: 3,
-    title: 'MacBook Air M1 2020 - 256GB',
-    price: 3200000,
-    image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400&h=300&fit=crop',
-    condition: 'Usado' as const,
-    category: 'Computadores',
-    seller: 'Ana Rodríguez',
-    rating: 4.9,
-  },
-  {
-    id: 4,
-    title: 'Bicicleta de Montaña Trek',
-    price: 1200000,
-    image: 'https://images.unsplash.com/photo-1576435728678-68d0fbf94e91?w=400&h=300&fit=crop',
-    condition: 'Usado' as const,
-    category: 'Deportes',
-    seller: 'Carlos López',
-    rating: 4.7,
-  },
-  {
-    id: 5,
-    title: 'iPad 9na Gen + Apple Pencil',
-    price: 1500000,
-    image: 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=400&h=300&fit=crop',
-    condition: 'Nuevo' as const,
-    category: 'Tablets',
-    seller: 'Laura Martínez',
-    rating: 5.0,
-  },
-  {
-    id: 6,
-    title: 'Auriculares Sony WH-1000XM4',
-    price: 650000,
-    image: 'https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=400&h=300&fit=crop',
-    condition: 'Usado' as const,
-    category: 'Audio',
-    seller: 'Pedro Silva',
-    rating: 4.6,
-  },
-];
+import { productService, SearchResultItem } from '../services/productService';
 
 export function ProductsGrid() {
+  const [products, setProducts] = useState<SearchResultItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchRecommendations = async () => {
+      try {
+        setLoading(true);
+        // Categories to recommend: Libros, Tecnología, Papelería, Accesorios
+        // Min rating: 4
+        const response = await productService.searchProducts({
+          categories: 'Libros,Tecnología,Papelería,Accesorios',
+          minRating: 4,
+          page: 1,
+        });
+        
+        // Convert the results object to an array
+        const resultItems = Object.values(response.results);
+        setProducts(resultItems);
+      } catch (error) {
+        console.error('Error fetching recommendations:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecommendations();
+  }, []);
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h2 className="text-3xl font-bold text-primary mb-2">
-            Productos Destacados
+          <h2 className="text-3xl font-bold text-primary mb-2 font-display">
+            Productos Recomendados
           </h2>
           <p className="text-muted-foreground">
-            Los artículos más populares de la semana
+            Sugerencias basadas en tus intereses y calidad de los vendedores
           </p>
         </div>
 
@@ -94,15 +61,32 @@ export function ProductsGrid() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {MOCK_PRODUCTS.slice(0, 3).map((product) => (
-          <ProductCard 
-            key={product.id} 
-            {...product} 
-            id={product.id.toString()} 
-          />
-        ))}
-      </div>
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-20 gap-4">
+          <Loader2 className="w-10 h-10 animate-spin text-primary" />
+          <p className="text-muted-foreground">Cargando recomendaciones...</p>
+        </div>
+      ) : products.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {products.slice(0, 6).map((product) => (
+            <ProductCard 
+              key={product.productID} 
+              id={product.productID}
+              title={product.name}
+              price={product.price}
+              image={product.image}
+              rating={product.rating}
+              // These fields aren't in SearchResultItem directly, but ProductCard might expect them
+              // We'll pass what we have and maybe adjust ProductCard if needed
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
+          <PackageX className="w-12 h-12 text-muted-foreground/50" />
+          <p className="text-muted-foreground">No encontramos recomendaciones en este momento.</p>
+        </div>
+      )}
 
       <div className="flex justify-center mt-12">
         <Link to="/search">
