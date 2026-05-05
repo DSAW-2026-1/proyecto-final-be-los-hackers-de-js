@@ -5,7 +5,7 @@ const dns = require("dns");
 dns.setServers(["1.1.1.1"]);
 
 const { MongoClient, ServerApiVersion, Db, ObjectId} = require('mongodb');
-const uri = process.env.DB_HOST || "mongodb://localhost";
+const uri = process.env.MONGODB_URI || "mongodb://localhost";
 if(!process.env.DB_HOST){
     console.log("Using local MongoDB instance")
 }
