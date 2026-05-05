@@ -1,7 +1,8 @@
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost';
-const PORT = import.meta.env.VITE_API_PORT || '8080';
+const PORT = import.meta.env.VITE_API_PORT || null;
 
-export const API_URL = `${BASE_URL}:${PORT}/api`;
+const FULL_URL = (PORT)? `${BASE_URL}:${PORT}` : `${BASE_URL}`;
+export const API_URL = (PORT)? `${BASE_URL}:${PORT}/api` : `${BASE_URL}/api`;
 
 export interface ApiError extends Error {
   status?: number;
@@ -12,7 +13,7 @@ export async function apiRequest<T = unknown>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const url = `${BASE_URL}:${PORT}${endpoint}`;
+  const url = `${FULL_URL}${endpoint}`;
   
   const token = localStorage.getItem('token');
   
