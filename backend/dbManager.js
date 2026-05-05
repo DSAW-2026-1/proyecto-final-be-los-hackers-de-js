@@ -229,6 +229,26 @@ class DbManager{
             }
         }
     }
+    static async #findLimitedByIDs(database, IDs, page, limit) {
+        try {
+            //let db = await this.#openConnection()
+            const result = await client.db(MAIN_DB).collection(database).find({_id: {$in: IDs}})
+                .sort({_id: -1})
+                .skip(page * limit)
+                .limit(limit)
+            const count = await client.db(MAIN_DB).collection(database).countDocuments({_id: {$in: IDs}})
+            return {
+                result: await result.toArray(),
+                count: count
+            }
+        }
+        catch (e){
+            return null
+        }
+    }
+    static async getOrders(ordersArray, page, limit){
+        return await this.#findLimitedByIDs(ORDERS_DB, ordersArray, page, limit)
+    }
 }
 
 module.exports = DbManager
