@@ -26,11 +26,27 @@ router.get('/', async function (req, res, next) {
             else return res.status(400).json({error: 'Result page out of range.'})
         }
         else {
+            let returnOrders = []
+            for (let i = 0; i < orders.length; i++) {
+                returnOrders.push({
+                    saleID: orders[i]._id,
+                    productID: orders[i].productID,
+                    //category: products[i].category,
+                    //condition: products[i].condition,
+                    sellerID: orders[i].sellerID,
+                    //description: products[i].description,
+                    shippingAddress: orders[i].shippingAddress,
+                    amount: orders[i].amount,
+                    status: orders[i].status,
+                    //sellerID: products[i].sellerID,
+
+                })
+            }
             return res.json({
                 count: search.count,
                 pages: Math.ceil(search.count/ITEMS_PER_PAGE),
                 page: pageInt,
-                results: Object.assign({}, orders)
+                results: Object.assign({}, returnOrders)
             })
         }
     }

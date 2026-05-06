@@ -48,6 +48,8 @@ app.use('/api/test', testRouter)
 
 app.use('/api/products', productRouter)
 
+app.use('/api/sales', salesRouter)
+
 app.use('/api/shipping', ordersRouter)
 
 

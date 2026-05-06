@@ -9,3 +9,12 @@ router.use('/', userAuthMiddleware)
 router.use('/status', orders)
 
 module.exports = router;
+
+/*
+POSSIBLE SHIPPING STATUS:
+Pending
+Confirmed
+In transit
+Delivered
+Cancelled
+*/
