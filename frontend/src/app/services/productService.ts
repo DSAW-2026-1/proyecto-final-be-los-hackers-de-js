@@ -56,6 +56,20 @@ export interface SearchResponse {
   page: number;
   results: { [key: number]: SearchResultItem };
 }
+export interface ShippingResponseItem{
+  saleID: string;
+  productID: string;
+  sellerID: string;
+  shippingAddress: string;
+  amount: number;
+  status: string;
+}
+export interface ShippingResponse{
+  count: number;
+  pages: number;
+  page: number;
+  results: { [key: number]: ShippingResponseItem };
+}
 
 export const productService = {
   async createProduct(data: CreateProductRequest): Promise<ProductResponse> {
@@ -98,5 +112,9 @@ export const productService = {
       method: 'POST',
       body: JSON.stringify(data),
     });
-  }
+  },
+
+  async getShippingStatus(page: number = 1): Promise<ShippingResponse> {
+    return apiRequest<ShippingResponse>(`/api/shipping/status?page=${page}`);
+  },
 };

@@ -195,13 +195,13 @@ export function Register() {
                 />
                 <label htmlFor="terms" className="text-sm cursor-pointer leading-relaxed">
                   Acepto los{' '}
-                  <a href="#" className="text-primary hover:underline">
+                  <Link to="#" className="text-primary hover:underline">
                     Términos y Condiciones
-                  </a>{' '}
+                  </Link>{' '}
                   y la{' '}
-                  <a href="#" className="text-primary hover:underline">
+                  <Link to="#" className="text-primary hover:underline">
                     Política de Privacidad
-                  </a>
+                  </Link>
                 </label>
               </div>
             </div>

@@ -17,6 +17,7 @@ const testRouter = require('./routes/test')
 const productRouter = require('./routes/products/product')
 const jsonParseFailureHandler = require('./errorHandlers/jsonParseFailure')
 const salesRouter = require('./routes/sales/sale')
+const ordersRouter = require('./routes/orders/order')
 
 const app = express();
 
@@ -48,6 +49,9 @@ app.use('/api/test', testRouter)
 app.use('/api/products', productRouter)
 
 app.use('/api/sales', salesRouter)
+
+app.use('/api/shipping', ordersRouter)
+
 
 app.use(jsonParseFailureHandler)
 

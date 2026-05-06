@@ -4,6 +4,7 @@ import { Button } from './ui/button'
 import { Badge } from './ui/badge'
 import { Avatar } from './ui/avatar'
 import { Star } from 'lucide-react'
+import { Link } from 'react-router'
 
 type ShippingStatus = 'Pendiente' | 'Confirmado' | 'En tránsito' | 'Entregado' | 'Cancelado'
 
@@ -129,11 +130,11 @@ export function BuyerShippingStatus() {
 
               <div className="flex gap-2">
                 <Button asChild size="sm">
-                  <a href="#">Ver producto</a>
+                  <Link to={`/product/${item.id}`}>Ver producto</Link>
                 </Button>
 
                 <Button asChild variant="outline" size="sm">
-                  <a href="#">Dejar reseña</a>
+                  <Link to={`/orders/${item.id}/review`}>Dejar reseña</Link>
                 </Button>
               </div>
             </div>
