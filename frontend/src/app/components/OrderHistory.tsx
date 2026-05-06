@@ -6,6 +6,7 @@ import { Loader2, Package, ShoppingBag } from 'lucide-react'
 import { productService, Product } from '../services/productService'
 import { toast } from 'sonner'
 import { Link, useNavigate } from 'react-router'
+import Base64ImageLoader from './Base64ImageLoader'
 
 interface OrderItem {
     saleID: string;
@@ -127,8 +128,8 @@ export function OrderHistory() {
                                                 {/* Product Image */}
                                                 <div className="w-24 h-24 rounded-lg bg-muted flex-shrink-0 overflow-hidden border">
                                                     {order.productDetails?.images?.[0] ? (
-                                                        <img
-                                                            src={order.productDetails.images[0].startsWith('data:') ? order.productDetails.images[0] : `data:image/jpeg;base64,${order.productDetails.images[0]}`}
+                                                        <Base64ImageLoader
+                                                            data={order.productDetails.images[0]}
                                                             alt={order.productDetails.name}
                                                             className="w-full h-full object-cover"
                                                         />

@@ -138,3 +138,5 @@ backend/.env.production
 frontend/.env.expose
 frontend/.env.normal
 frontend/.env
+
+/frontend/src/imports
