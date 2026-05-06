@@ -126,4 +126,11 @@ export const productService = {
   async getShippingDetail(saleID: string): Promise<ShippingResponseItem> {
     return apiRequest<ShippingResponseItem>(`/api/shipping/${saleID}`);
   },
+
+  async updateShippingStatus(saleID: string, status: string): Promise<void> {
+    return apiRequest<void>(`/api/seller/shipping/${saleID}/`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+  },
 };

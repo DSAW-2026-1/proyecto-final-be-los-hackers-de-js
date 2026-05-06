@@ -18,7 +18,7 @@ export function SellerShippingUpdate() {
   const [product, setProduct] = useState<Product | null>(null);
   const [buyer, setBuyer] = useState<UserProfileResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -26,7 +26,11 @@ export function SellerShippingUpdate() {
       try {
         setLoading(true);
         const shippingData = await productService.getShippingDetail(id);
-        setShipping(shippingData);
+        const normalizedShipping = {
+          ...shippingData,
+          status: normalizeStatus(shippingData.status)
+        };
+        setShipping(normalizedShipping);
 
         const [productData, buyerData] = await Promise.all([
           productService.getProduct(shippingData.productID),
@@ -49,6 +53,7 @@ export function SellerShippingUpdate() {
   function getStatusBadge(status: string) {
     const s = status.toLowerCase();
     const baseClasses = "gap-1.5 py-1 px-3 text-sm";
+    
     if (s.includes('delivered') || s.includes('entregado')) 
       return <Badge variant="default" className={`${baseClasses} bg-green-600`}>Entregado</Badge>;
     if (s.includes('in transit') || s.includes('tránsito') || s.includes('transito') || s.includes('enviado') || s.includes('shipped')) 
@@ -59,7 +64,19 @@ export function SellerShippingUpdate() {
       return <Badge variant="outline" className={baseClasses}>Pendiente</Badge>;
     if (s.includes('cancelled') || s.includes('cancelado') || s.includes('rechazado')) 
       return <Badge variant="destructive" className={baseClasses}>Cancelado</Badge>;
+    
     return <Badge variant="outline" className={baseClasses}>{status}</Badge>;
+  }
+
+  // Normalizes status to English canonical values for the backend
+  function normalizeStatus(status: string): string {
+    const s = status.toLowerCase();
+    if (s.includes('delivered') || s.includes('entregado')) return 'Delivered';
+    if (s.includes('in transit') || s.includes('tránsito') || s.includes('transito') || s.includes('enviado') || s.includes('shipped')) return 'In transit';
+    if (s.includes('confirmed') || s.includes('confirmado')) return 'Confirmed';
+    if (s.includes('pending') || s.includes('pendiente')) return 'Pending';
+    if (s.includes('cancelled') || s.includes('cancelado') || s.includes('rechazado')) return 'Cancelled';
+    return status;
   }
 
   function getProgress(status: string) {
@@ -72,8 +89,19 @@ export function SellerShippingUpdate() {
   }
 
   async function handleSave() {
-    // This will be implemented in the next step when we have the update API
-    toast.info('La funcionaliad de actualización se completará pronto');
+    if (!shipping) return;
+
+    try {
+      setSaving(true);
+      await productService.updateShippingStatus(shipping.saleID, shipping.status);
+      toast.success('Estado del envío actualizado correctamente');
+      navigate('/seller');
+    } catch (error) {
+      console.error('Error updating shipping status:', error);
+      toast.error('No se pudo actualizar el estado del envío');
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (loading) {
@@ -215,11 +243,11 @@ export function SellerShippingUpdate() {
                           <SelectValue placeholder="Seleccionar estado" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Pendiente">Pendiente</SelectItem>
-                          <SelectItem value="Confirmado">Confirmado</SelectItem>
-                          <SelectItem value="En tránsito">En tránsito</SelectItem>
-                          <SelectItem value="Entregado">Entregado</SelectItem>
-                          <SelectItem value="Cancelado">Cancelado</SelectItem>
+                          <SelectItem value="Pending">Pendiente</SelectItem>
+                          <SelectItem value="Confirmed">Confirmado</SelectItem>
+                          <SelectItem value="In transit">En tránsito</SelectItem>
+                          <SelectItem value="Delivered">Entregado</SelectItem>
+                          <SelectItem value="Cancelled">Cancelado</SelectItem>
                         </SelectContent>
                       </Select>
                       <p className="text-[11px] text-muted-foreground leading-relaxed">
