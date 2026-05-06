@@ -6,7 +6,7 @@ dns.setServers(["1.1.1.1"]);
 
 const { MongoClient, ServerApiVersion, Db, ObjectId} = require('mongodb');
 const uri = process.env.MONGODB_URI || "mongodb://localhost";
-if(!process.env.DB_HOST){
+if(!process.env.MONGODB_URI){
     console.log("Using local MongoDB instance")
 }
 else console.log("Using MongoDB instance supplied by environment variable")
@@ -228,6 +228,34 @@ class DbManager{
                 return true
             }
         }
+    }
+    static async #findLimitedByIDs(database, IDs, page, limit) {
+        try {
+            //let db = await this.#openConnection()
+            const result = await client.db(MAIN_DB).collection(database).find({_id: {$in: IDs}})
+                .sort({_id: -1})
+                .skip(page * limit)
+                .limit(limit)
+            const count = await client.db(MAIN_DB).collection(database).countDocuments({_id: {$in: IDs}})
+            return {
+                result: await result.toArray(),
+                count: count
+            }
+        }
+        catch (e){
+            return null
+        }
+    }
+    static async getOrders(ordersArray, page, limit){
+        return await this.#findLimitedByIDs(ORDERS_DB, ordersArray, page, limit)
+    }
+    static async findOrderByID(ID){
+        const item = await this.#findByID(ORDERS_DB, ID)
+        if(!item) return null
+        return item
+    }
+    static async updateOrder(ID, newData){
+        return await this.#updateItem(ORDERS_DB, ID, newData)
     }
 }
 

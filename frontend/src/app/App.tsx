@@ -56,9 +56,9 @@ export default function App() {
               <Route path="/product/:id" element={<ProductDetail />} />
               <Route path="/cart" element={<ShoppingCart />} />
               <Route path="/checkout" element={<Checkout />} />
-              <Route path="/orders" element={<OrderHistory />} />
-              <Route path="/orders/:id/status" element={<BuyerShippingStatus />} />
-              <Route path="/orders/:id/review" element={<LeaveReview />} />
+              <Route path="/orders" element={<ProtectedRoute><OrderHistory /></ProtectedRoute>} />
+              <Route path="/orders/:id/status" element={<ProtectedRoute><BuyerShippingStatus /></ProtectedRoute>} />
+              <Route path="/orders/:id/review" element={<ProtectedRoute><LeaveReview /></ProtectedRoute>} />
 
               {/* Seller routes */}
               <Route path="/seller" element={<ProtectedRoute><SellerDashboard /></ProtectedRoute>} />

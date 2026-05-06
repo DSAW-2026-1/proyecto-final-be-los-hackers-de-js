@@ -7,6 +7,7 @@ import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { Checkbox } from './ui/checkbox';
 import { Badge } from './ui/badge';
 import { AlertTriangle, FileText, Upload, X } from 'lucide-react';
+import { Link } from 'react-router';
 
 export function ReportView() {
   return (
@@ -243,19 +244,19 @@ export function ReportView() {
                   <h4 className="font-medium mb-2">Preguntas Frecuentes</h4>
                   <ul className="space-y-2 text-muted-foreground">
                     <li>
-                      <a href="#" className="hover:text-primary transition-colors">
+                      <Link to="#" className="hover:text-primary transition-colors">
                         ¿Qué productos están prohibidos?
-                      </a>
+                      </Link>
                     </li>
                     <li>
-                      <a href="#" className="hover:text-primary transition-colors">
+                      <Link to="#" className="hover:text-primary transition-colors">
                         ¿Cómo identificar un fraude?
-                      </a>
+                      </Link>
                     </li>
                     <li>
-                      <a href="#" className="hover:text-primary transition-colors">
+                      <Link to="#" className="hover:text-primary transition-colors">
                         ¿Qué pasa después de reportar?
-                      </a>
+                      </Link>
                     </li>
                   </ul>
                 </div>

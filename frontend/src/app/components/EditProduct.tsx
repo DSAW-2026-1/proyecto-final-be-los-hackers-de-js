@@ -25,6 +25,7 @@ import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
 import { NotFound } from './NotFound';
 import { CATEGORIES, CONDITIONS } from '../constants';
+import Base64ImageLoader from './Base64ImageLoader';
 
 export function EditProduct() {
   const { id } = useParams<{ id: string }>();
@@ -427,10 +428,10 @@ export function EditProduct() {
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                   {Object.entries(formData.images).map(([key, img]) => (
                     <div key={key} className="relative aspect-square rounded-lg border-2 border-border bg-muted overflow-hidden group">
-                      <img 
-                        src={img.startsWith('data:') ? img : `data:image/jpeg;base64,${img}`} 
-                        alt="" 
-                        className="w-full h-full object-cover" 
+                      <Base64ImageLoader
+                        data={img}
+                        alt={`Preview ${key}`}
+                        className="w-full h-full object-cover"
                       />
                       <Button
                         variant="destructive"

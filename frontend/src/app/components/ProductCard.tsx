@@ -2,6 +2,7 @@ import { Card } from './ui/card';
 import { Badge } from './ui/badge';
 import { Star } from 'lucide-react';
 import { Link } from 'react-router';
+import Base64ImageLoader from './Base64ImageLoader';
 
 interface ProductCardProps {
   id: string;
@@ -24,16 +25,13 @@ export function ProductCard({
   seller,
   rating,
 }: ProductCardProps) {
-  // Handle base64 images
-  const imgSrc = image?.startsWith('data:') ? image : (image ? `data:image/jpeg;base64,${image}` : '');
-
   return (
     <Link to={`/product/${id}`}>
       <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group h-full flex flex-col">
         <div className="relative h-48 bg-muted overflow-hidden">
-          {imgSrc ? (
-            <img
-              src={imgSrc}
+          {image ? (
+            <Base64ImageLoader
+              data={image}
               alt={title}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />

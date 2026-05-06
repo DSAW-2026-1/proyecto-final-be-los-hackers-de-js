@@ -27,8 +27,9 @@ export async function apiRequest<T = unknown>(
   }
 
   const response = await fetch(url, {
+    credentials: 'include',
     ...options,
-    headers,
+    headers
   });
 
   if (!response.ok) {

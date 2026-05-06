@@ -23,18 +23,17 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "./ui/alert-dialog";
-import { ChartContainer } from "./ui/chart";
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../context/AuthContext";
-import { productService, SearchResultItem } from "../services/productService";
+import { productService, SearchResultItem, Product, ShippingResponseItem } from "../services/productService";
 import { userService, UserProfileResponse } from "../services/userService";
 import { ShoppingCart, Package, MessageSquare, Star, Loader2, Trash2, Edit } from "lucide-react";
 import { toast } from "sonner";
+import Base64ImageLoader from "./Base64ImageLoader";
 
-const recentOrders = [
-  { id: "O-1001", buyer: "María G.", total: 25000, status: "Entregada" },
-  { id: "O-1002", buyer: "Andrés P.", total: 550000, status: "Confirmada" },
-];
+interface SaleWithProduct extends ShippingResponseItem {
+  productDetails?: Product;
+}
 
 export function SellerDashboard() {
   const { uid } = useAuth();
@@ -48,6 +47,54 @@ export function SellerDashboard() {
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  // Sales state
+  const [sales, setSales] = useState<SaleWithProduct[]>([]);
+  const [salesPage, setSalesPage] = useState(1);
+  const [salesTotalPages, setSalesTotalPages] = useState(1);
+  const [loadingSales, setLoadingSales] = useState(false);
+  const [loadingMoreSales, setLoadingMoreSales] = useState(false);
+
+  const fetchSales = async (pageNum: number, isLoadMore: boolean = false) => {
+    try {
+      if (isLoadMore) setLoadingMoreSales(true);
+      else setLoadingSales(true);
+
+      const response = await productService.getSellerShippingStatus(pageNum);
+      const resultsArray = Object.values(response.results);
+      
+      const salesWithDetails = await Promise.all(
+        resultsArray.map(async (item) => {
+          try {
+            const productDetails = await productService.getProduct(item.productID);
+            return { ...item, productDetails };
+          } catch (err) {
+            console.error(`Error fetching details for product ${item.productID}:`, err);
+            return item;
+          }
+        })
+      );
+
+      if (isLoadMore) {
+        setSales(prev => [...prev, ...salesWithDetails]);
+      } else {
+        setSales(salesWithDetails);
+      }
+      
+      setSalesTotalPages(response.pages);
+      setSalesPage(response.page);
+    } catch (err: unknown) {
+      if (err instanceof Error && err.message.includes('No sales found')) {
+        setSales([]);
+        setSalesCount(0);
+      } else {
+        console.error('Error fetching sales:', err);
+      }
+    } finally {
+      setLoadingSales(false);
+      setLoadingMoreSales(false);
+    }
+  };
 
   const fetchDashboardData = useCallback(async () => {
     if (!uid) return;
@@ -67,6 +114,9 @@ export function SellerDashboard() {
       setCount(productResp.count);
       setTotalPages(productResp.pages);
       setCurrentPage(1);
+
+      // Fetch initial sales
+      await fetchSales(1);
     } catch (err) {
       console.error("Error fetching dashboard data:", err);
     } finally {
@@ -100,12 +150,17 @@ export function SellerDashboard() {
     }
   };
 
+  const loadMoreSales = () => {
+    if (salesPage < salesTotalPages) {
+      fetchSales(salesPage + 1, true);
+    }
+  };
+
   const handleDeleteProduct = async (id: string) => {
     setDeletingId(id);
     try {
       await productService.deleteProduct(id);
       toast.success("Producto eliminado exitosamente");
-      // Refresh the list after deletion
       fetchDashboardData();
     } catch (err) {
       console.error("Error deleting product:", err);
@@ -115,11 +170,26 @@ export function SellerDashboard() {
     }
   };
 
-  const activeOrders = recentOrders.filter((o) => o.status !== "Entregada").length;
-  const unreadMessages = 4; // placeholder
+  function getStatusBadge(status: string) {
+    const s = status.toLowerCase();
+    if (s.includes('delivered') || s.includes('entregado')) 
+      return <Badge variant="default" className="bg-green-600 gap-1.5 py-1 px-3">Entregado</Badge>;
+    if (s.includes('in transit') || s.includes('tránsito') || s.includes('enviado')) 
+      return <Badge variant="default" className="gap-1.5 py-1 px-3">En tránsito</Badge>;
+    if (s.includes('confirmed') || s.includes('confirmado')) 
+      return <Badge variant="secondary" className="gap-1.5 py-1 px-3">Confirmado</Badge>;
+    if (s.includes('pending') || s.includes('pendiente')) 
+      return <Badge variant="outline" className="gap-1.5 py-1 px-3">Pendiente</Badge>;
+    if (s.includes('cancelled') || s.includes('cancelado') || s.includes('rechazado')) 
+      return <Badge variant="destructive" className="gap-1.5 py-1 px-3">Cancelado</Badge>;
+    return <Badge variant="outline" className="gap-1.5 py-1 px-3">{status}</Badge>;
+  }
+
+  const activeOrders = sales.filter((s) => !s.status.toLowerCase().includes("delivered") && !s.status.toLowerCase().includes("entregado") && !s.status.toLowerCase().includes("cancelled") && !s.status.toLowerCase().includes("cancelado")).length;
+  const unreadMessages = 0; // placeholder
   const rating = user?.reputation ? parseFloat(user.reputation) : 0;
 
-  if (loading && !products.length) {
+  if (loading && !products.length && !sales.length) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -151,7 +221,7 @@ export function SellerDashboard() {
           <Card className="p-6">
             <div className="flex items-start justify-between mb-4">
               <div>
-                <p className="text-3xl font-bold mb-1">{activeOrders}</p>
+                <p className="text-3xl font-bold mb-1">{loadingSales ? "..." : activeOrders}</p>
                 <p className="text-sm text-muted-foreground">Órdenes activas</p>
               </div>
               <div className="w-12 h-12 rounded-lg bg-blue-50 flex items-center justify-center">
@@ -204,7 +274,7 @@ export function SellerDashboard() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {loadingProducts ? (
+                      {loadingProducts && products.length === 0 ? (
                         <TableRow>
                           <TableCell colSpan={5} className="text-center py-8">
                             <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" />
@@ -217,10 +287,10 @@ export function SellerDashboard() {
                               <div className="flex items-center gap-4">
                                 <div className="w-16 h-16 bg-muted rounded-lg overflow-hidden flex items-center justify-center">
                                   {p.image ? (
-                                    <img 
-                                      src={p.image.startsWith('data:') ? p.image : `data:image/jpeg;base64,${p.image}`} 
-                                      alt={p.name} 
-                                      className="w-full h-full object-cover" 
+                                    <Base64ImageLoader
+                                      data={p.image}
+                                      alt={p.name}
+                                      className="w-full h-full object-cover"
                                     />
                                   ) : (
                                     <Package className="w-6 h-6 text-muted-foreground" />
@@ -326,25 +396,70 @@ export function SellerDashboard() {
 
             <Card className="mt-6">
               <div className="p-6 border-b">
-                <h3 className="font-semibold text-lg">Órdenes recientes</h3>
+                <h3 className="font-semibold text-lg">Ventas recientes</h3>
               </div>
               <div className="divide-y">
-                {recentOrders.map((o) => (
-                  <div key={o.id} className="p-6 flex items-center justify-between hover:bg-muted/50">
-                    <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 bg-muted rounded-lg" />
-                      <div>
-                        <h4 className="font-medium mb-1">{o.buyer}</h4>
-                        <p className="text-sm text-muted-foreground">{o.id}</p>
+                {loadingSales && sales.length === 0 ? (
+                  <div className="p-6 text-center">
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" />
+                    <p className="text-sm text-muted-foreground mt-2">Cargando ventas...</p>
+                  </div>
+                ) : sales.length > 0 ? (
+                  sales.map((s) => (
+                    <div key={s.saleID} className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center gap-4">
+                        <div className="w-16 h-16 bg-muted rounded-lg overflow-hidden flex items-center justify-center">
+                          {s.productDetails?.images?.[0] ? (
+                            <Base64ImageLoader 
+                              data={s.productDetails.images[0]}
+                              alt={s.productDetails.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <Package className="w-6 h-6 text-muted-foreground" />
+                          )}
+                        </div>
+                        <div>
+                          <h4 className="font-medium mb-1">{s.productDetails?.name || "Cargando..."}</h4>
+                          <p className="text-sm text-muted-foreground">ID Venta: {s.saleID}</p>
+                          <p className="text-xs text-muted-foreground mt-1">Dirección: {s.shippingAddress}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 justify-between md:justify-end">
+                        <div className="text-right">
+                          <p className="text-sm font-medium">${((s.productDetails?.price || 0) * s.amount).toLocaleString()}</p>
+                          <p className="text-xs text-muted-foreground">{s.amount} unidad(es)</p>
+                        </div>
+                        {getStatusBadge(s.status)}
+                        <Button 
+                          variant="default" 
+                          size="sm" 
+                          className="bg-primary hover:bg-primary/90 text-white"
+                          onClick={() => navigate(`/seller/orders/${s.saleID}/update`)}
+                        >
+                          Actualizar envío
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <p className="text-sm font-medium">${o.total.toLocaleString()}</p>
-                      <Badge variant={o.status === "Entregada" ? "outline" : "default"}>{o.status}</Badge>
-                      <Button variant="default" size="sm" className="bg-primary hover:bg-primary/90 text-white">Actualizar envío</Button>
-                    </div>
+                  ))
+                ) : (
+                  <div className="p-12 text-center text-muted-foreground">
+                    No tienes ventas registradas.
                   </div>
-                ))}
+                )}
+
+                {salesPage < salesTotalPages && (
+                  <div className="p-6 flex justify-center">
+                    <Button 
+                      variant="outline" 
+                      onClick={loadMoreSales}
+                      disabled={loadingMoreSales}
+                    >
+                      {loadingMoreSales ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                      {loadingMoreSales ? 'Cargando...' : 'Ver más ventas'}
+                    </Button>
+                  </div>
+                )}
               </div>
             </Card>
           </div>
@@ -353,8 +468,8 @@ export function SellerDashboard() {
             <Card className="p-6">
               <h3 className="font-semibold text-lg mb-2">Rendimiento</h3>
               <p className="text-sm text-muted-foreground mb-4">Ventas mensuales (ejemplo)</p>
-              <ChartContainer id="sales" config={{ sales: { label: "Ventas", color: "#2563eb" } }}>
-                <svg className="w-full h-40" viewBox="0 0 100 40" preserveAspectRatio="none">
+              <div className="h-40 flex items-center justify-center border rounded-lg bg-muted/20">
+                <svg className="w-full h-full p-4" viewBox="0 0 100 40" preserveAspectRatio="none">
                   <polyline
                     fill="none"
                     stroke="#2563eb"
@@ -362,7 +477,7 @@ export function SellerDashboard() {
                     points="0,30 25,18 50,24 75,12 100,8"
                   />
                 </svg>
-              </ChartContainer>
+              </div>
             </Card>
 
             <Card className="p-6">
@@ -373,8 +488,8 @@ export function SellerDashboard() {
                     Publicar nuevo producto
                   </Button>
                 </Link>
-                <Button variant="outline" size="sm">Ver mensajes ({unreadMessages})</Button>
-                <Button variant="ghost" size="sm">Ajustes de envío</Button>
+                <Button variant="outline" size="sm" className="w-full">Ver mensajes ({unreadMessages})</Button>
+                <Button variant="ghost" size="sm" className="w-full">Ajustes de envío</Button>
               </div>
             </Card>
           </div>
@@ -383,3 +498,4 @@ export function SellerDashboard() {
     </div>
   );
 }
+

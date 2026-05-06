@@ -56,6 +56,21 @@ export interface SearchResponse {
   page: number;
   results: { [key: number]: SearchResultItem };
 }
+export interface ShippingResponseItem {
+  saleID: string;
+  productID: string;
+  sellerID?: string;
+  buyerID?: string;
+  shippingAddress: string;
+  amount: number;
+  status: string;
+}
+export interface ShippingResponse {
+  count: number;
+  pages: number;
+  page: number;
+  results: { [key: number]: ShippingResponseItem };
+}
 
 export const productService = {
   async createProduct(data: CreateProductRequest): Promise<ProductResponse> {
@@ -98,5 +113,24 @@ export const productService = {
       method: 'POST',
       body: JSON.stringify(data),
     });
-  }
+  },
+
+  async getShippingStatus(page: number = 1): Promise<ShippingResponse> {
+    return apiRequest<ShippingResponse>(`/api/shipping/status?page=${page}`);
+  },
+
+  async getSellerShippingStatus(page: number = 1): Promise<ShippingResponse> {
+    return apiRequest<ShippingResponse>(`/api/seller/shipping/status?page=${page}`);
+  },
+
+  async getShippingDetail(saleID: string): Promise<ShippingResponseItem> {
+    return apiRequest<ShippingResponseItem>(`/api/shipping/${saleID}`);
+  },
+
+  async updateShippingStatus(saleID: string, status: string): Promise<void> {
+    return apiRequest<void>(`/api/seller/shipping/${saleID}/`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+  },
 };
