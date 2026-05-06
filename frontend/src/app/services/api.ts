@@ -1,5 +1,6 @@
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost';
 const PORT = import.meta.env.VITE_API_PORT || null;
+const VERCEL_ENV = import.meta.env.VERCEL_ENV || null;
 
 const FULL_URL = (PORT)? `${BASE_URL}:${PORT}` : `${BASE_URL}`;
 export const API_URL = (PORT)? `${BASE_URL}:${PORT}/api` : `${BASE_URL}/api`;
@@ -25,11 +26,16 @@ export async function apiRequest<T = unknown>(
   if (token) {
     headers.set('Authorization', `Bearer ${token}`);
   }
-
-  const response = await fetch(url, {
+  const request = {
     ...options,
-    headers,
-  });
+    headers
+  }
+
+  if(VERCEL_ENV === "staging"){
+    request["credentials"] = "include"
+  }
+
+  const response = await fetch(url, request);
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
