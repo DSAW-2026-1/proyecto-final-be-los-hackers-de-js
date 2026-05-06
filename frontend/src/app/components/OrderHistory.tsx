@@ -5,6 +5,7 @@ import { Badge } from './ui/badge'
 import { Loader2, Package, ShoppingBag } from 'lucide-react'
 import { productService, Product } from '../services/productService'
 import { toast } from 'sonner'
+import { Link, useNavigate } from 'react-router'
 
 interface OrderItem {
     saleID: string;
@@ -17,6 +18,7 @@ interface OrderItem {
 }
 
 export function OrderHistory() {
+    const navigate = useNavigate();
     const [orders, setOrders] = useState<OrderItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
@@ -109,7 +111,7 @@ export function OrderHistory() {
                         </div>
                         <h3 className="text-xl font-semibold mb-2">No tienes pedidos aún</h3>
                         <p className="text-muted-foreground mb-8">Cuando realices una compra, aparecerá aquí para que puedas seguir su estado.</p>
-                        <Button onClick={() => window.location.href = '/search'}>
+                        <Button onClick={() => navigate('/search')}>
                             Explorar productos
                         </Button>
                     </Card>
@@ -162,11 +164,11 @@ export function OrderHistory() {
                                                             <p className="text-sm text-muted-foreground mb-2" title={order.shippingAddress}>{order.shippingAddress}</p>
                                                         </div>
                                                         <div className="flex items-center gap-3 sm:justify-end">
-                                                            <Button size="sm" variant="outline">
-                                                                Ver pedido
+                                                            <Button asChild size="sm" variant="outline">
+                                                                <Link to={`/orders/${order.saleID}/status`}>Ver pedido</Link>
                                                             </Button>
-                                                            <Button size="sm">
-                                                                Contacto
+                                                            <Button asChild size="sm">
+                                                                <Link to={`/chat?user=${order.sellerID}`}>Contacto</Link>
                                                             </Button>
                                                         </div>
                                                     </div>

@@ -140,3 +140,4 @@ coverage/
 .DS_Store
 *.log
 !.env.example
+.env.expose

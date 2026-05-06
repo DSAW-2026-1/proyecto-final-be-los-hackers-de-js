@@ -134,9 +134,9 @@ export function AdminLogin() {
                   Recordarme
                 </label>
               </div>
-              <a href="#" className="text-sm text-primary hover:underline">
+              <Link to="#" className="text-sm text-primary hover:underline">
                 ¿Olvidaste tu contraseña?
-              </a>
+              </Link>
             </div>
 
             <Button 
