@@ -117,7 +117,11 @@ export function BuyerShippingStatus() {
             <div className="flex-1">
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 flex-shrink-0 rounded-md bg-muted flex items-center justify-center overflow-hidden">
-                  <Base64ImageLoader data={product.images[0]} alt={product.name} className="w-full h-full object-cover"/>
+                  {product.images?.[0] ? (
+                      <Base64ImageLoader data={product.images[0]} alt={product.name} className="w-full h-full object-cover"/>
+                  ) : (
+                      <Package className="w-6 h-6 text-muted-foreground" />
+                  )}
                 </div>
 
                 <div>
