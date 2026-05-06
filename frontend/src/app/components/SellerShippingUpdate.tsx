@@ -5,7 +5,7 @@ import { Button } from './ui/button'
 import { Badge } from './ui/badge'
 import { Avatar } from './ui/avatar'
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from './ui/select'
-import { Loader2, Package, ChevronLeft, MessageSquare } from 'lucide-react'
+import { Loader2, Package, ChevronLeft, MessageCircle } from 'lucide-react'
 import { productService, ShippingResponseItem, Product } from '../services/productService'
 import { userService, UserProfileResponse } from '../services/userService'
 import { toast } from 'sonner'
@@ -162,80 +162,86 @@ export function SellerShippingUpdate() {
                 </div>
               </div>
 
-              <div className="mt-8 pt-8 border-t">
-                <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">Comprador</h3>
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <Card className="p-4 bg-secondary/50 border-primary/10 w-full sm:w-auto min-w-[300px]">
-                    <div className="flex items-start gap-4">
-                    <Avatar className="w-12 h-12">
-                      {buyer?.photo ? (
-                          <Base64ImageLoader data={buyer.photo} alt={buyer.username} className="w-full h-full object-cover"/>
-                      ) : (
-                        <div className="w-full h-full bg-primary flex items-center justify-center text-white text-lg font-bold">
-                          {buyerInitials}
+              <div className="mt-8 pt-8 border-t grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div>
+                  <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">Comprador</h3>
+                  <Card className="p-4 bg-secondary/50 border-primary/10 w-full shadow-sm">
+                    <div className="flex flex-col gap-4">
+                      <div className="flex items-start gap-4">
+                        <Avatar className="w-12 h-12 shadow-sm border-2 border-background">
+                          {buyer?.photo ? (
+                              <Base64ImageLoader data={buyer.photo} alt={buyer.username} className="w-full h-full object-cover"/>
+                          ) : (
+                            <div className="w-full h-full bg-primary flex items-center justify-center text-white text-lg font-bold">
+                              {buyerInitials}
+                            </div>
+                          )}
+                        </Avatar>
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-foreground">{buyer?.username}</h3>
+                          <p className="text-xs text-muted-foreground mb-2">{buyer?.career}</p>
+                          <div className="text-sm text-gray-700">
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight mb-1">Dirección de entrega:</p>
+                            <p className="leading-tight text-sm">{shipping.shippingAddress}</p>
+                          </div>
                         </div>
-                      )}
-                    </Avatar>
-                      <div className="flex-1">
-                        <h3 className="font-semibold">{buyer?.username}</h3>
-                        <p className="text-xs text-muted-foreground mb-2">{buyer?.career}</p>
-                        <div className="text-sm text-gray-700">
-                          <p className="text-xs font-medium text-muted-foreground uppercase tracking-tighter mb-1">Dirección de entrega:</p>
-                          <p className="leading-tight">{shipping.shippingAddress}</p>
-                        </div>
+                      </div>
+                      
+                      <div className="pt-3 border-t border-primary/10">
+                        <Button variant="outline" asChild className="w-full">
+                          <Link to={`/chat?user=${shipping.buyerID}`}>
+                            <MessageCircle className="w-4 h-4 mr-2" />
+                            Enviar mensaje al comprador
+                          </Link>
+                        </Button>
                       </div>
                     </div>
                   </Card>
-                  
-                  <div className="flex gap-2">
-                    <Button variant="outline" asChild className="gap-2">
-                      <Link to={`/chat?user=${shipping.buyerID}`}>
-                        <MessageSquare className="w-4 h-4" />
-                        Mensaje al Comprador
-                      </Link>
-                    </Button>
-                  </div>
                 </div>
-              </div>
 
-              <div className="mt-10 bg-muted/20 p-6 rounded-xl border">
-                <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-6">Actualizar Estado</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Estado del Envío</label>
-                    <Select 
-                      value={shipping.status} 
-                      onValueChange={(v) => setShipping(s => s ? ({ ...s, status: v }) : null)}
-                    >
-                      <SelectTrigger className="bg-background">
-                        <SelectValue placeholder="Seleccionar estado" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Pendiente">Pendiente</SelectItem>
-                        <SelectItem value="Confirmado">Confirmado</SelectItem>
-                        <SelectItem value="En tránsito">En tránsito</SelectItem>
-                        <SelectItem value="Entregado">Entregado</SelectItem>
-                        <SelectItem value="Cancelado">Cancelado</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-muted-foreground">Cambiando el estado notificarás automáticamente al comprador.</p>
-                  </div>
+                <div className="bg-muted/20 p-6 rounded-xl border border-border/60">
+                  <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-6">Actualizar Estado</h3>
+                  <div className="space-y-6">
+                    <div className="space-y-3">
+                      <label className="text-sm font-medium flex items-center gap-2">
+                        <Package className="w-4 h-4 text-primary" />
+                        Estado del Envío
+                      </label>
+                      <Select 
+                        value={shipping.status} 
+                        onValueChange={(v) => setShipping(s => s ? ({ ...s, status: v }) : null)}
+                      >
+                        <SelectTrigger className="bg-background border-muted-foreground/20">
+                          <SelectValue placeholder="Seleccionar estado" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Pendiente">Pendiente</SelectItem>
+                          <SelectItem value="Confirmado">Confirmado</SelectItem>
+                          <SelectItem value="En tránsito">En tránsito</SelectItem>
+                          <SelectItem value="Entregado">Entregado</SelectItem>
+                          <SelectItem value="Cancelado">Cancelado</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-[11px] text-muted-foreground leading-relaxed">
+                        Al cambiar el estado, se enviará una notificación automática al centro de mensajes del comprador.
+                      </p>
+                    </div>
 
-                  <div className="flex flex-col justify-end">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 pt-2">
+                      <Button 
+                        variant="outline" 
+                        className="flex-1"
+                        onClick={() => navigate('/seller')}
+                      >
+                        Cancelar
+                      </Button>
                       <Button 
                         onClick={handleSave} 
-                        className="flex-1 shadow-lg"
+                        className="flex-1 shadow-md"
                         disabled={saving}
                       >
                         {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                         Guardar cambios
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        onClick={() => navigate('/seller')}
-                      >
-                        Descartar
                       </Button>
                     </div>
                   </div>
