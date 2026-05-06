@@ -434,7 +434,7 @@ export function SellerDashboard() {
                           variant="default" 
                           size="sm" 
                           className="bg-primary hover:bg-primary/90 text-white"
-                          onClick={() => navigate(`/seller/shipping/update/${s.saleID}`)}
+                          onClick={() => navigate(`/seller/orders/${s.saleID}/update`)}
                         >
                           Actualizar envío
                         </Button>
