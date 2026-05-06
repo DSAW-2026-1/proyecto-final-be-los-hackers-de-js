@@ -26,13 +26,11 @@ export async function apiRequest<T = unknown>(
   if (token) {
     headers.set('Authorization', `Bearer ${token}`);
   }
+
   const request = {
     ...options,
-    headers
-  }
-
-  if(VERCEL_ENV === "staging"){
-    request["credentials"] = "include"
+    headers,
+    credentials: 'include'
   }
 
   const response = await fetch(url, request);
