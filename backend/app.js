@@ -22,7 +22,8 @@ const ordersRouter = require('./routes/orders/order')
 const app = express();
 
 const corsOptions = {
-    origin: process.env.CORS_ORIGIN || '*'
+    origin: process.env.CORS_ORIGIN || '*',
+    credentials: true
 };
 if(!process.env.CORS_ORIGIN) console.warn("Could not find CORS environment variable. Allowing all CORS requests...")
 
