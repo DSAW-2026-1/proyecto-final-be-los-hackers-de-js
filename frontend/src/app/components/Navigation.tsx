@@ -1,4 +1,4 @@
-import { ShoppingCart, Bell, User, Search, Menu, LogIn, UserPlus, Settings, LogOut } from 'lucide-react';
+import { ShoppingCart, Bell, User, Search, Menu, LogIn, UserPlus, Settings, LogOut, ShoppingBag } from 'lucide-react';
 import { Link, NavLink, useNavigate } from 'react-router';
 import { useEffect } from 'react';
 import { Button } from './ui/button';
@@ -167,6 +167,12 @@ export function Navigation() {
                       <Link to="/profile" className="cursor-pointer w-full flex items-center">
                         <User className="mr-2 h-4 w-4" />
                         <span>Perfil</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/orders" className="cursor-pointer w-full flex items-center">
+                        <ShoppingBag className="mr-2 h-4 w-4" />
+                        <span>Mis Pedidos</span>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
