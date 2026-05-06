@@ -56,15 +56,16 @@ export interface SearchResponse {
   page: number;
   results: { [key: number]: SearchResultItem };
 }
-export interface ShippingResponseItem{
+export interface ShippingResponseItem {
   saleID: string;
   productID: string;
-  sellerID: string;
+  sellerID?: string;
+  buyerID?: string;
   shippingAddress: string;
   amount: number;
   status: string;
 }
-export interface ShippingResponse{
+export interface ShippingResponse {
   count: number;
   pages: number;
   page: number;
@@ -116,5 +117,9 @@ export const productService = {
 
   async getShippingStatus(page: number = 1): Promise<ShippingResponse> {
     return apiRequest<ShippingResponse>(`/api/shipping/status?page=${page}`);
+  },
+
+  async getSellerShippingStatus(page: number = 1): Promise<ShippingResponse> {
+    return apiRequest<ShippingResponse>(`/api/seller/shipping/status?page=${page}`);
   },
 };
