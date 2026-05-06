@@ -249,6 +249,14 @@ class DbManager{
     static async getOrders(ordersArray, page, limit){
         return await this.#findLimitedByIDs(ORDERS_DB, ordersArray, page, limit)
     }
+    static async findOrderByID(ID){
+        const item = await this.#findByID(ORDERS_DB, ID)
+        if(!item) return null
+        return item
+    }
+    static async updateOrder(ID, newData){
+        return await this.#updateItem(ORDERS_DB, ID, newData)
+    }
 }
 
 module.exports = DbManager
