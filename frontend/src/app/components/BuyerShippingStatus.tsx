@@ -9,6 +9,7 @@ import { productService, ShippingResponseItem, Product } from '../services/produ
 import { userService, UserProfileResponse } from '../services/userService'
 import { toast } from 'sonner'
 import { useNavigate } from 'react-router'
+ import Base64ImageLoader from "./Base64ImageLoader.tsx";
 
 // Using same statuses and badge mapping as OrderHistory
 
@@ -116,15 +117,7 @@ export function BuyerShippingStatus() {
             <div className="flex-1">
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 flex-shrink-0 rounded-md bg-muted flex items-center justify-center overflow-hidden">
-                  {product.images?.[0] ? (
-                    <img 
-                      src={product.images[0].startsWith('data:') ? product.images[0] : `data:image/jpeg;base64,${product.images[0]}`} 
-                      alt={product.name} 
-                      className="w-full h-full object-cover" 
-                    />
-                  ) : (
-                    <Package className="w-6 h-6 text-muted-foreground" />
-                  )}
+                  <Base64ImageLoader data={product.images[0]} alt={product.name} className="w-full h-full object-cover"/>
                 </div>
 
                 <div>
@@ -146,7 +139,7 @@ export function BuyerShippingStatus() {
                   <div className="flex items-center gap-4">
                     <Avatar className="w-12 h-12">
                       {seller?.photo ? (
-                        <img src={seller.photo} alt={seller.username} className="w-full h-full object-cover" />
+                          <Base64ImageLoader data={seller.photo} alt={seller.username} className="w-full h-full object-cover"/>
                       ) : (
                         <div className="w-full h-full bg-primary flex items-center justify-center text-white text-lg font-bold">
                           {sellerInitials}
