@@ -122,4 +122,8 @@ export const productService = {
   async getSellerShippingStatus(page: number = 1): Promise<ShippingResponse> {
     return apiRequest<ShippingResponse>(`/api/seller/shipping/status?page=${page}`);
   },
+
+  async getShippingDetail(saleID: string): Promise<ShippingResponseItem> {
+    return apiRequest<ShippingResponseItem>(`/api/shipping/${saleID}`);
+  },
 };
