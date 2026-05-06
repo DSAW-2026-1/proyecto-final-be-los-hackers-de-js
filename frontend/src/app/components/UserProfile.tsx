@@ -15,6 +15,7 @@ import { ApiError } from '../services/api';
 import { NotFound } from './NotFound';
 import { ProductCard } from './ProductCard';
 import { ConnectionError } from './ConnectionError';
+import Base64ImageLoader from './Base64ImageLoader';
 
 const REVIEWS = [
   {
@@ -178,8 +179,8 @@ export function UserProfile() {
               <div className="flex items-end gap-6">
                 <Avatar className="w-32 h-32 border-4 border-white shadow-lg">
                   {user.photo ? (
-                    <img 
-                      src={user.photo.startsWith('data:') ? user.photo : `data:image/jpeg;base64,${user.photo}`} 
+                    <Base64ImageLoader 
+                      data={user.photo} 
                       alt={user.username} 
                       className="w-full h-full object-cover"
                     />

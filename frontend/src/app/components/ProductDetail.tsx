@@ -24,6 +24,7 @@ import { userService, UserProfileResponse } from '../services/userService';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { NotFound } from './NotFound';
+import Base64ImageLoader from './Base64ImageLoader';
 
 export function ProductDetail() {
   const { id: productID } = useParams<{ id: string }>();
@@ -117,8 +118,8 @@ export function ProductDetail() {
           <div className="space-y-4">
             <div className="relative aspect-square bg-white rounded-xl overflow-hidden shadow-sm border border-border">
               {product.images[selectedImage] ? (
-                <img
-                  src={product.images[selectedImage].startsWith('data:') ? product.images[selectedImage] : `data:image/jpeg;base64,${product.images[selectedImage]}`}
+                <Base64ImageLoader
+                  data={product.images[selectedImage]}
                   alt={product.name}
                   className="w-full h-full object-cover"
                 />
@@ -150,8 +151,8 @@ export function ProductDetail() {
                   }`}
                   onClick={() => setSelectedImage(parseInt(key))}
                 >
-                  <img
-                    src={img.startsWith('data:') ? img : `data:image/jpeg;base64,${img}`}
+                  <Base64ImageLoader
+                    data={img}
                     alt={`${product.name} thumb ${key}`}
                     className="w-full h-full object-cover"
                   />
@@ -208,9 +209,10 @@ export function ProductDetail() {
               <div className="flex items-center gap-4">
                 <Avatar className="w-16 h-16">
                   {seller?.photo ? (
-                    <AvatarImage 
-                      src={seller.photo.startsWith('data:') ? seller.photo : `data:image/jpeg;base64,${seller.photo}`} 
+                    <Base64ImageLoader 
+                      data={seller.photo} 
                       alt={seller.username} 
+                      className="w-full h-full object-cover"
                     />
                   ) : (
                     <AvatarFallback className="bg-primary text-white text-xl font-bold">

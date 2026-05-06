@@ -31,6 +31,7 @@ import { ConnectionError } from './ConnectionError';
 import { useAuth } from '../context/AuthContext';
 import { ApiError } from '../services/api';
 import { FACULTIES } from '../constants';
+import Base64ImageLoader from './Base64ImageLoader';
 
 export function EditProfile() {
   const navigate = useNavigate();
@@ -268,7 +269,11 @@ export function EditProfile() {
                 <div className="relative">
                   <Avatar className="w-32 h-32 border-4 border-white shadow-xl ring-1 ring-border">
                     {photoPreview ? (
-                      <AvatarImage src={photoPreview} alt={user.username} />
+                      <Base64ImageLoader 
+                        data={photoPreview} 
+                        alt={user.username} 
+                        className="w-full h-full object-cover"
+                      />
                     ) : null}
                     <AvatarFallback>{userInitial}</AvatarFallback>
                   </Avatar>

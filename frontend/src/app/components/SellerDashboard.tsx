@@ -29,6 +29,7 @@ import { productService, SearchResultItem, Product, ShippingResponseItem } from 
 import { userService, UserProfileResponse } from "../services/userService";
 import { ShoppingCart, Package, MessageSquare, Star, Loader2, Trash2, Edit } from "lucide-react";
 import { toast } from "sonner";
+import Base64ImageLoader from "./Base64ImageLoader";
 
 interface SaleWithProduct extends ShippingResponseItem {
   productDetails?: Product;
@@ -286,10 +287,10 @@ export function SellerDashboard() {
                               <div className="flex items-center gap-4">
                                 <div className="w-16 h-16 bg-muted rounded-lg overflow-hidden flex items-center justify-center">
                                   {p.image ? (
-                                    <img 
-                                      src={p.image.startsWith('data:') ? p.image : `data:image/jpeg;base64,${p.image}`} 
-                                      alt={p.name} 
-                                      className="w-full h-full object-cover" 
+                                    <Base64ImageLoader
+                                      data={p.image}
+                                      alt={p.name}
+                                      className="w-full h-full object-cover"
                                     />
                                   ) : (
                                     <Package className="w-6 h-6 text-muted-foreground" />
@@ -409,8 +410,8 @@ export function SellerDashboard() {
                       <div className="flex items-center gap-4">
                         <div className="w-16 h-16 bg-muted rounded-lg overflow-hidden flex items-center justify-center">
                           {s.productDetails?.images?.[0] ? (
-                            <img 
-                              src={s.productDetails.images[0].startsWith('data:') ? s.productDetails.images[0] : `data:image/jpeg;base64,${s.productDetails.images[0]}`}
+                            <Base64ImageLoader 
+                              data={s.productDetails.images[0]}
                               alt={s.productDetails.name}
                               className="w-full h-full object-cover"
                             />

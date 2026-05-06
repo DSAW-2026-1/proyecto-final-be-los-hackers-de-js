@@ -121,10 +121,10 @@ export function SellerShippingUpdate() {
               <div className="flex flex-col sm:flex-row items-start gap-6">
                 <div className="w-24 h-24 flex-shrink-0 rounded-lg bg-muted overflow-hidden border">
                   {product.images?.[0] ? (
-                    <img 
-                      src={product.images[0].startsWith('data:') ? product.images[0] : `data:image/jpeg;base64,${product.images[0]}`} 
-                      alt={product.name} 
-                      className="w-full h-full object-cover" 
+                    <Base64ImageLoader
+                      data={product.images[0]}
+                      alt={product.name}
+                      className="w-full h-full object-cover"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
