@@ -18,6 +18,8 @@ const productRouter = require('./routes/products/product')
 const jsonParseFailureHandler = require('./errorHandlers/jsonParseFailure')
 const salesRouter = require('./routes/sales/sale')
 const ordersRouter = require('./routes/orders/order')
+const sellerShippingStatusRouter = require('./routes/seller/shipping/status')
+const sellerRouter = require('./routes/seller/seller')
 
 const app = express();
 
@@ -40,7 +42,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/api/auth/login', loginRouter);
 app.use('/api/auth/register', registerRouter);
 app.use('/api/admin/login', adminLoginRouter);
-app.use('/api/seller/register', sellerRegisterRouter)
+app.use('/api/seller', sellerRouter)
 app.use('/api/users', usersRouter);
 
 app.use('/api/test', tokenValidatorMiddleware)
