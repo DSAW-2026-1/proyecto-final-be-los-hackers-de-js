@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { Card } from './ui/card'
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
-import { Loader2, Package, ShoppingBag, Truck, CheckCircle2, Clock, XCircle, AlertCircle } from 'lucide-react'
+import { Loader2, Package, ShoppingBag } from 'lucide-react'
 import { productService, Product } from '../services/productService'
 import { toast } from 'sonner'
 
@@ -152,7 +152,6 @@ export function OrderHistory() {
                                                             </p>
                                                         </div>
                                                         <Badge variant={statusInfo.variant} className={`${statusInfo.className} gap-1.5 py-1 px-3`}>
-                                                            {statusInfo.icon}
                                                             {statusInfo.label}
                                                         </Badge>
                                                     </div>
