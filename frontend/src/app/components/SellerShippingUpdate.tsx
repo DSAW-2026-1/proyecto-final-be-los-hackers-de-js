@@ -1,173 +1,245 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
+import { useParams, useNavigate, Link } from 'react-router'
 import { Card } from './ui/card'
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
 import { Avatar } from './ui/avatar'
-import { Input } from './ui/input'
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from './ui/select'
-
-type ShippingStatus = 'Pendiente' | 'Confirmado' | 'En tránsito' | 'Entregado' | 'Cancelado'
-
-const mockItem = {
-  id: 'PR-2026-0421',
-  name: 'Auriculares inalámbricos ZX-200',
-  price: 199000,
-  date: '2026-04-20',
-  status: 'Pendiente' as ShippingStatus,
-  tracking: '',
-  progress: 0,
-  items: [
-    { name: 'Auriculares inalámbricos ZX-200', qty: 1 },
-  ],
-}
-
-const buyer = {
-  name: 'Carlos Méndez',
-  address: {
-    line1: 'Calle 123 #45-67',
-    line2: 'Piso 12, Apto 3',
-    city: 'Bogotá',
-    postal: '12345',
-    country: 'Colombia',
-  },
-  phone: '+57 300 123 456',
-}
+import { Loader2, Package, ChevronLeft, MessageSquare } from 'lucide-react'
+import { productService, ShippingResponseItem, Product } from '../services/productService'
+import { userService, UserProfileResponse } from '../services/userService'
+import { toast } from 'sonner'
+import Base64ImageLoader from "./Base64ImageLoader.tsx";
 
 export function SellerShippingUpdate() {
-  const [item, setItem] = useState(() => ({ ...mockItem }))
-  const totalQty = (item.items && item.items.length) ? item.items.reduce((s, it) => s + (it.qty || 0), 0) : 1
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [shipping, setShipping] = useState<ShippingResponseItem | null>(null);
+  const [product, setProduct] = useState<Product | null>(null);
+  const [buyer, setBuyer] = useState<UserProfileResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving] = useState(false);
 
-  function badgeProps(status: ShippingStatus) {
-    switch (status) {
-      case 'Pendiente':
-        return { variant: 'outline' }
-      case 'Confirmado':
-        return { variant: 'secondary' }
-      case 'En tránsito':
-        return { variant: 'default' }
-      case 'Entregado':
-        return { variant: 'default', className: 'bg-green-600' }
-      case 'Cancelado':
-        return { variant: 'destructive' }
-      default:
-        return { variant: 'default' }
-    }
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!id) return;
+      try {
+        setLoading(true);
+        const shippingData = await productService.getShippingDetail(id);
+        setShipping(shippingData);
+
+        const [productData, buyerData] = await Promise.all([
+          productService.getProduct(shippingData.productID),
+          userService.getProfileByUid(shippingData.buyerID!)
+        ]);
+
+        setProduct(productData);
+        setBuyer(buyerData);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        toast.error('No se pudo cargar la información del envío');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [id]);
+
+  function getStatusBadge(status: string) {
+    const s = status.toLowerCase();
+    const baseClasses = "gap-1.5 py-1 px-3 text-sm";
+    if (s.includes('delivered') || s.includes('entregado')) 
+      return <Badge variant="default" className={`${baseClasses} bg-green-600`}>Entregado</Badge>;
+    if (s.includes('in transit') || s.includes('tránsito') || s.includes('transito') || s.includes('enviado') || s.includes('shipped')) 
+      return <Badge variant="default" className={baseClasses}>En tránsito</Badge>;
+    if (s.includes('confirmed') || s.includes('confirmado')) 
+      return <Badge variant="secondary" className={baseClasses}>Confirmado</Badge>;
+    if (s.includes('pending') || s.includes('pendiente')) 
+      return <Badge variant="outline" className={baseClasses}>Pendiente</Badge>;
+    if (s.includes('cancelled') || s.includes('cancelado') || s.includes('rechazado')) 
+      return <Badge variant="destructive" className={baseClasses}>Cancelado</Badge>;
+    return <Badge variant="outline" className={baseClasses}>{status}</Badge>;
   }
 
-  function handleSave() {
-    // In a real app, call an API here. For the prototype we'll just log.
-    console.log('Saved shipping update', item)
-    alert('Estado guardado (prototipo)')
+  function getProgress(status: string) {
+    const s = status.toLowerCase();
+    if (s.includes('delivered') || s.includes('entregado')) return 100;
+    if (s.includes('in transit') || s.includes('tránsito') || s.includes('transito') || s.includes('enviado') || s.includes('shipped')) return 75;
+    if (s.includes('confirmed') || s.includes('confirmado')) return 40;
+    if (s.includes('pending') || s.includes('pendiente')) return 15;
+    return 0;
   }
+
+  async function handleSave() {
+    // This will be implemented in the next step when we have the update API
+    toast.info('La funcionaliad de actualización se completará pronto');
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!shipping || !product) {
+    return (
+      <div className="text-center py-20">
+        <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+        <h2 className="text-xl font-semibold">No se encontró la información del pedido</h2>
+        <Button asChild className="mt-4">
+          <Link to="/seller">Volver al panel</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  const buyerInitials = buyer?.username?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'B';
 
   return (
     <div className="bg-muted/30 py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <Button 
+          variant="ghost" 
+          className="mb-6 -ml-2 text-muted-foreground hover:text-primary transition-colors gap-2"
+          onClick={() => navigate('/seller')}
+        >
+          <ChevronLeft className="w-4 h-4" />
+          Volver al Panel de Vendedor
+        </Button>
+
         <header className="mb-6">
           <h1 className="text-4xl font-bold text-primary mb-2">Actualizar estado de envío</h1>
-          <p className="text-sm text-muted-foreground">Actualiza el estado, número de seguimiento y progreso del envío</p>
+          <p className="text-sm text-muted-foreground">Gestiona el progreso de entrega para tus clientes</p>
         </header>
 
         <Card className="p-6">
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-8">
             <div className="w-full">
-              <div className="flex items-start gap-4">
-                <div className="w-16 h-16 flex-shrink-0 rounded-md bg-muted flex items-center justify-center text-sm text-muted-foreground">
-                  🚚
+              <div className="flex flex-col sm:flex-row items-start gap-6">
+                <div className="w-24 h-24 flex-shrink-0 rounded-lg bg-muted overflow-hidden border">
+                  {product.images?.[0] ? (
+                    <img 
+                      src={product.images[0].startsWith('data:') ? product.images[0] : `data:image/jpeg;base64,${product.images[0]}`} 
+                      alt={product.name} 
+                      className="w-full h-full object-cover" 
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Package className="w-8 h-8 text-muted-foreground" />
+                    </div>
+                  )}
                 </div>
 
-                <div>
-                  <h2 className="text-2xl font-bold text-primary">
-                    {item.name}
-                    {item.price != null && (
-                      <span className="text-lg font-semibold text-muted-foreground">{` — $${item.price.toLocaleString()} · ${totalQty} ${totalQty > 1 ? 'unidades' : 'unidad'}`}</span>
-                    )}
+                <div className="flex-1">
+                  <h2 className="text-2xl font-bold text-primary mb-1">
+                    {product.name}
                   </h2>
-                  <div className="text-xs text-muted-foreground">Pedido {item.id} · {item.date}</div>
+                  <div className="flex items-center gap-2 text-lg font-semibold text-foreground mb-2">
+                    <span>${product.price.toLocaleString('es-CO')}</span>
+                    <span className="text-muted-foreground font-normal text-sm">· {shipping.amount} {shipping.amount > 1 ? 'unidades' : 'unidad'}</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground">ID Venta: <span className="font-mono">{shipping.saleID}</span></div>
                 </div>
-                <div className="ml-auto flex-shrink-0 flex flex-col items-end gap-2">
-                  <Badge {...badgeProps(item.status)}>{item.status}</Badge>
-                  {item.status === 'En tránsito' && (
-                    <div className="w-40">
-                      <div className="h-2 bg-gray-200 rounded-full overflow-hidden mt-1">
-                        <div className="h-2 bg-primary rounded-full" style={{ width: `${item.progress}%` }} />
+
+                <div className="ml-auto flex-shrink-0 flex flex-col items-end gap-3">
+                  {getStatusBadge(shipping.status)}
+                  {!shipping.status.toLowerCase().includes('cancel') && !shipping.status.toLowerCase().includes('rechazado') && (
+                    <div className="w-48">
+                      <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden mt-1">
+                        <div 
+                          className={`h-full bg-primary rounded-full ${getProgress(shipping.status) < 100 ? 'animate-pulse' : ''}`} 
+                          style={{ width: `${getProgress(shipping.status)}%` }} 
+                        />
                       </div>
-                      <div className="text-xs text-muted-foreground mt-1">En camino — {item.tracking ?? '—'}</div>
+                      <p className="text-[10px] text-right text-muted-foreground mt-1 uppercase tracking-wider font-semibold">
+                        Progreso: {getProgress(shipping.status)}%
+                      </p>
                     </div>
                   )}
                 </div>
               </div>
 
-              <div className="mt-4 inline-block">
-                <Card className="p-4 bg-secondary/50 border-primary/10 inline-block w-auto">
-                  <div className="flex items-start gap-4">
+              <div className="mt-8 pt-8 border-t">
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">Comprador</h3>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <Card className="p-4 bg-secondary/50 border-primary/10 w-full sm:w-auto min-w-[300px]">
+                    <div className="flex items-start gap-4">
                     <Avatar className="w-12 h-12">
-                      <div className="w-full h-full bg-primary flex items-center justify-center text-white text-lg font-bold">CM</div>
-                    </Avatar>
-                    <div className="flex-1">
-                      <h3 className="font-semibold">{buyer.name}</h3>
-                      <div className="text-sm text-muted-foreground mt-1">
-                        <div className="truncate">
-                          {[
-                            buyer.address.line1,
-                            buyer.address.line2,
-                            `${buyer.address.postal} ${buyer.address.city}`.trim(),
-                            buyer.address.country,
-                          ]
-                            .filter(Boolean)
-                            .join(', ')}
+                      {buyer?.photo ? (
+                          <Base64ImageLoader data={buyer.photo} alt={buyer.username} className="w-full h-full object-cover"/>
+                      ) : (
+                        <div className="w-full h-full bg-primary flex items-center justify-center text-white text-lg font-bold">
+                          {buyerInitials}
                         </div>
-                        <div className="mt-1">
-                          <Button variant="outline" size="sm" onClick={() => alert('Abrir chat (prototipo)')}>Abrir chat</Button>
+                      )}
+                    </Avatar>
+                      <div className="flex-1">
+                        <h3 className="font-semibold">{buyer?.username}</h3>
+                        <p className="text-xs text-muted-foreground mb-2">{buyer?.career}</p>
+                        <div className="text-sm text-gray-700">
+                          <p className="text-xs font-medium text-muted-foreground uppercase tracking-tighter mb-1">Dirección de entrega:</p>
+                          <p className="leading-tight">{shipping.shippingAddress}</p>
                         </div>
                       </div>
                     </div>
+                  </Card>
+                  
+                  <div className="flex gap-2">
+                    <Button variant="outline" asChild className="gap-2">
+                      <Link to={`/chat?user=${shipping.buyerID}`}>
+                        <MessageSquare className="w-4 h-4" />
+                        Mensaje al Comprador
+                      </Link>
+                    </Button>
                   </div>
-                </Card>
-              </div>
-
-              <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-sm text-muted-foreground">Estado</label>
-                  <Select value={item.status} onValueChange={(v) => setItem(s => ({ ...s, status: v as ShippingStatus }))}>
-                    <SelectTrigger className="mt-1">
-                      <SelectValue>{item.status}</SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Pendiente">Pendiente</SelectItem>
-                      <SelectItem value="Confirmado">Confirmado</SelectItem>
-                      <SelectItem value="En tránsito">En tránsito</SelectItem>
-                      <SelectItem value="Entregado">Entregado</SelectItem>
-                      <SelectItem value="Cancelado">Cancelado</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <label className="text-sm text-muted-foreground">Número de seguimiento</label>
-                  <Input className="mt-1" value={item.tracking} onChange={(e) => setItem(s => ({ ...s, tracking: e.target.value }))} placeholder="Ej: TRACK-1234" />
-                </div>
-
-                <div className="sm:col-span-2">
-                  <label className="text-sm text-muted-foreground">Progreso (%)</label>
-                  <input
-                    type="range"
-                    min={0}
-                    max={100}
-                    value={item.progress}
-                    onChange={(e) => setItem(s => ({ ...s, progress: Number(e.target.value) }))}
-                    className="w-full mt-2"
-                  />
-                  <div className="text-sm text-muted-foreground mt-1">{item.progress}%</div>
                 </div>
               </div>
 
-            </div>
+              <div className="mt-10 bg-muted/20 p-6 rounded-xl border">
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-6">Actualizar Estado</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Estado del Envío</label>
+                    <Select 
+                      value={shipping.status} 
+                      onValueChange={(v) => setShipping(s => s ? ({ ...s, status: v }) : null)}
+                    >
+                      <SelectTrigger className="bg-background">
+                        <SelectValue placeholder="Seleccionar estado" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Pendiente">Pendiente</SelectItem>
+                        <SelectItem value="Confirmado">Confirmado</SelectItem>
+                        <SelectItem value="En tránsito">En tránsito</SelectItem>
+                        <SelectItem value="Entregado">Entregado</SelectItem>
+                        <SelectItem value="Cancelado">Cancelado</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">Cambiando el estado notificarás automáticamente al comprador.</p>
+                  </div>
 
-            <div className="w-full flex justify-end">
-              <div className="flex gap-2">
-                <Button onClick={handleSave}>Guardar cambios</Button>
-                <Button variant="outline" onClick={() => setItem({ ...mockItem })}>Revertir</Button>
+                  <div className="flex flex-col justify-end">
+                    <div className="flex items-center gap-3">
+                      <Button 
+                        onClick={handleSave} 
+                        className="flex-1 shadow-lg"
+                        disabled={saving}
+                      >
+                        {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                        Guardar cambios
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => navigate('/seller')}
+                      >
+                        Descartar
+                      </Button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -176,3 +248,4 @@ export function SellerShippingUpdate() {
     </div>
   )
 }
+
