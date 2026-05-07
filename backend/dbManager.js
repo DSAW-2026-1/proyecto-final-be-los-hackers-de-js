@@ -18,6 +18,7 @@ const PRODUCT_IMAGES_KEY = "images"
 const MAIN_DB = "marketplace"
 const ORDERS_DB = "orders"
 const REVIEWS_DB = "reviews"
+const REPORTS_DB = "reports"
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -261,6 +262,24 @@ class DbManager{
                 await this.#appendToArrays(USERS_DB, buyerID, {orders: order._id})
                 return true
             }
+        }
+    }
+
+    // Reports
+    static async addReport(report) {
+        try {
+            const result = await client.db(MAIN_DB).collection(REPORTS_DB).insertOne(report)
+            return result.insertedId
+        } catch (e) {
+            return null
+        }
+    }
+
+    static async findReport(query) {
+        try {
+            return await this.#findOneInDb(REPORTS_DB, query)
+        } catch (e) {
+            return null
         }
     }
     static async addReview(reviewData){
