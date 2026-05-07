@@ -314,6 +314,39 @@ class DbManager{
             return null
         }
     }
+
+    // Counts for admin dashboard
+    static async countUsers() {
+        try {
+            return await client.db(MAIN_DB).collection(USERS_DB).countDocuments({ isSuspended: { $ne: true } })
+        } catch (e) {
+            return 0
+        }
+    }
+
+    static async countActiveSellers() {
+        try {
+            return await client.db(MAIN_DB).collection(USERS_DB).countDocuments({ isSeller: true, isSuspended: { $ne: true } })
+        } catch (e) {
+            return 0
+        }
+    }
+
+    static async countProducts() {
+        try {
+            return await client.db(MAIN_DB).collection(PRODUCTS_DB).countDocuments({ deleted: { $ne: true } })
+        } catch (e) {
+            return 0
+        }
+    }
+
+    static async countOrders() {
+        try {
+            return await client.db(MAIN_DB).collection(ORDERS_DB).countDocuments({})
+        } catch (e) {
+            return 0
+        }
+    }
 }
 
 module.exports = DbManager

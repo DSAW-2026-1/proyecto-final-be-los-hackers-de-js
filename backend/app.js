@@ -8,17 +8,16 @@ const logger = require('morgan');
 const usersRouter = require('./routes/users/user');
 const loginRouter = require('./routes/auth/login');
 const adminLoginRouter = require('./routes/auth/admin/login');
+const adminDashboardRouter = require('./routes/admin/dashboard');
 const registerRouter = require('./routes/auth/register');
 const tokenValidatorMiddleware = require('./middleware/auth/tokenValidator');
 const userAuthMiddleware = require('./middleware/auth/userValidator')
-const sellerRegisterRouter  = require('./routes/seller/register')
 const sellerAuthMiddleware = require("./middleware/auth/sellerValidator")
 const testRouter = require('./routes/test')
 const productRouter = require('./routes/products/product')
 const jsonParseFailureHandler = require('./errorHandlers/jsonParseFailure')
 const salesRouter = require('./routes/sales/sale')
 const ordersRouter = require('./routes/orders/order')
-const sellerShippingStatusRouter = require('./routes/seller/shipping/status')
 const sellerRouter = require('./routes/seller/seller')
 
 const app = express();
@@ -42,6 +41,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/api/auth/login', loginRouter);
 app.use('/api/auth/register', registerRouter);
 app.use('/api/admin/login', adminLoginRouter);
+app.use('/api/admin/dashboard', adminDashboardRouter);
 app.use('/api/seller', sellerRouter)
 app.use('/api/users', usersRouter);
 

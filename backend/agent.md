@@ -1,128 +1,250 @@
- # Marketplace Backend — Agent Notes
+# Marketplace Backend — Agent Notes
 
- This file captures the current state, architecture decisions, key files, and next steps for the backend of the Marketplace project (implementation described in `TRD.txt`). It is intended to help future agent and developer conversations about design, running, and extension of the backend.
+This file documents the backend project context, design decisions, architecture, APIs, development conventions, and information the agent will need to continue work later. It is derived from the product TRD: [TRD.txt](TRD.txt#L1-L400).
 
- ## 1. Summary
- - Purpose: REST backend for a university marketplace (University of La Sabana). Implements user auth, product CRUD, sales flow, order handling, reviews, in-app notifications, and seller management.
- - Tech: Node.js + Express, MongoDB (mongodb driver), JWT auth, optional WebSocket upgrade later.
+**Project**: Marketplace Universidad de La Sabana (backend)
 
- ## 2. Current repository state (observed)
- - Entry point: `bin/www` (script `start` runs it via `node ./bin/www`).
- - App definition: `app.js` wires Express middleware, routes, and error handlers. Seller-related routes are consolidated under `/api/seller` via `routes/seller/seller.js`.
- - Auth: JWT-based (`jsonwebtoken`) and password hashing (`bcrypt`).
- - DB: `mongodb` driver is present; `dbManager.js` centralizes DB access. It manages `orders` and user `saleData`/`orders` arrays and now exposes `findOrderByID(ID)` and `updateOrder(ID, newData)` helpers.
- - Packages: `express`, `cors`, `dotenv`, `morgan`, `express-validator`, `cookie-parser`, `jsonwebtoken`, `mongodb`, `bcrypt` (see `package.json`).
+**Purpose**: Provide a robust, maintainable Node.js + Express backend powering an institutional marketplace for students to publish, buy, and manage products.
 
- ## 3. Design choices & rationale
- - API style: REST endpoints exposed under `/api/*` to keep frontend/backend separated.
- - Authentication: JWT tokens (stateless), enforced via middleware in `middleware/auth/`.
- - Roles model: Users, Sellers, Admins — role checks are enforced with middleware validators (`userValidator`, `sellerValidator`, etc.).
- - Data store: MongoDB (flexible schemas for products, orders, messages).
- - Realtime: Not implemented; Socket.io or a dedicated realtime service is a future addition.
+----
 
- ## 4. Important files and folders
- - `app.js` — Express app and route mounting. Seller routes mounted at `/api/seller`.
- - `bin/www` — server bootstrap (start script target).
- - `dbManager.js` — DB connection and helpers (now includes `getOrders`, `findOrder`, `findOrderByID`, `updateOrder`, `addOrder`).
- - `dbManager.js` — DB connection and helpers (now includes `getOrders`, `findOrder`, `findOrderByID`, `updateOrder`, `addOrder`, and review helpers `addReview`, `findReview`, `findReviews`).
- - `routes/` — Routes grouped by domain: `auth/`, `products/`, `sales/`, `orders/`, `users/`, `seller/`, `test.js`.
- - `routes/seller/seller.js` — consolidates seller subroutes (`/register`, `/shipping/*`) and applies token + seller middleware.
- - `routes/seller/shipping/status.js` — seller endpoint: paginated shipping/order status.
- - `routes/seller/shipping/update.js` — seller endpoint: PATCH to update a sale's shipping status (validates ownership and allowed statuses).
- - `routes/orders/getById.js` — returns an individual sale when requester is buyer or seller (mounted at `/api/shipping/:saleID`).
- - `routes/orders/getOwn.js` — returns buyer's own orders (paginated).
- - `routes/products/reviews/create.js` — POST endpoint to create product reviews (mounted at `/api/products/:id/reviews`).
- - `routes/seller/shipping/update.js` — seller endpoint: PATCH to update a sale's shipping status (validates ownership and allowed statuses).
- - `routes/orders/getById.js` — returns an individual sale when requester is buyer or seller (mounted at `/api/shipping/:saleID`).
- - `routes/orders/getOwn.js` — returns buyer's own orders (paginated).
- - `middleware/auth/` — `tokenValidator.js`, `userValidator.js`, `sellerValidator.js`, `adminValidator.js`.
- - `errorHandlers/jsonParseFailure.js` — JSON parse error handling middleware.
+**High-Level Goals**
+- **Facilitate P2P marketplace**: simple CRUD for products, purchase flow, messaging, reviews, notifications.
+- **Institutional trust**: email-domain registration (institutional), roles and moderation by admins.
+- **MVP focus**: prioritize auth, products, orders, reviews, basic chat, in-app notifications.
 
- - `dbManager.js` — DB connection and helpers. Current helpers include: `getOrders`, `findOrder`, `findOrderByID`, `updateOrder`, `addOrder`, plus review helpers `addReview`, `findReview`, `findReviews`.
- - `routes/` — Routes grouped by domain: `auth/`, `products/`, `sales/`, `orders/`, `users/`, `seller/`, `test.js`.
- - `routes/seller/seller.js` — consolidates seller subroutes (`/register`, `/shipping/*`) and applies token + seller middleware.
- - `routes/seller/shipping/status.js` — seller endpoint: paginated shipping/order status.
- - `routes/seller/shipping/update.js` — seller endpoint: PATCH to update a sale's shipping status (validates ownership and allowed statuses).
- - `routes/orders/getById.js` — returns an individual sale when requester is buyer or seller (mounted at `/api/shipping/:saleID`).
- - `routes/orders/getOwn.js` — returns buyer's own orders (paginated).
- - `routes/products/reviews/create.js` — `POST /api/products/:id/reviews` — create product reviews (validates purchase, uniqueness, rating, updates product/seller stats).
- - `routes/products/reviews/get.js` — `GET /api/products/:id/reviews` — returns reviews for a product (204 if none).
- - `middleware/auth/` — `tokenValidator.js`, `userValidator.js`, `sellerValidator.js`, `adminValidator.js`.
- - `errorHandlers/jsonParseFailure.js` — JSON parse error handling middleware.
+----
 
- ## 5. API surface (high level)
- - `POST /api/auth/login` — login (JWT issuance).
- - `POST /api/auth/register` — user registration.
- - `POST /api/admin/login` — admin login.
- - `PATCH /api/seller/register` — promote user to seller (mounted under `/api/seller/register`).
- - `GET /api/seller/shipping/status?page=X` — seller-only: paginated list of seller's sales (12 items per page).
- - `PATCH /api/seller/shipping/:saleID` — seller-only: update a sale's shipping status. Valid statuses: `Pending`, `Confirmed`, `In transit`, `Delivered`, `Cancelled`.
- - `GET /api/shipping/:saleID` — authenticated user (buyer or seller): fetch single sale details.
- - `POST /api/products/:id/reviews` — authenticated buyer-only: create a review for a purchased product. Validates purchase, uniqueness, rating (1-5), basic XSS checks, updates product `rating` and seller `reputation`.
- - `GET /api/products/:productID/reviews` — fetch reviews for a product. Behavior:
-	 - `200` — Returns reviews in an object keyed by index when reviews exist.
-	 - `204` — Returns `{ "message": "No reviews" }` when product has no reviews.
-	 - `404` — Returns `{ "error": "Product not found" }` when product does not exist.
- - `PATCH /api/seller/shipping/:saleID` — seller-only: update a sale's shipping status. Valid statuses: `Pending`, `Confirmed`, `In transit`, `Delivered`, `Cancelled`.
- - `GET /api/shipping/:saleID` — authenticated user (buyer or seller): fetch single sale details.
- - `GET/POST/PUT/DELETE /api/products` — product CRUD and search endpoints.
- - `POST /api/sales` — checkout / create orders (adds orders and updates user `saleData`/`orders`).
- - `GET /api/shipping/status` (under `orders/getOwn.js`) — buyer's own orders listing.
- - `GET/POST/PUT /api/users` — user profile, find and edit operations.
+**Roles (domain)**
+- **Buyer**: browse, purchase, message sellers, leave reviews.
+- **Seller**: all buyer capabilities + publish/manage inventory.
+- **Administrator**: moderate content, suspend users, view basic metrics.
 
-For exact route details, inspect route files under `routes/`.
+----
 
- For exact route details, inspect route files under `routes/`.
+**Functional Scope (backend responsibilities)**
+- User management: registration, login, profile, role flags (seller/admin).
+- Product management: create/read/update/delete, images reference (storage off-server or local uploads), filters, pagination, text search.
+- Orders: cart simulation, create order, statuses (pending, confirmed, delivered), order history.
+- Reviews: rating (1-5) + comment; only after purchase constraint enforced by API.
+- Chat/Conversations: conversations bound to product + messages; WebSocket optional fallback to polling.
+- Notifications: in-app notifications (stored in DB), optional email integration.
+- Admin endpoints: moderation actions and reports management.
 
- ## 6. Security considerations
- - JWT secret via environment variables. Do not commit secrets.
- - Passwords hashed with `bcrypt` — review salt rounds for production.
- - Apply `express-validator` on all inputs where missing.
- - CORS defaults to permissive; restrict `CORS_ORIGIN` in staging/production.
+----
 
- ## 7. Running locally
- 1. Create `.env` with at minimum: `PORT`, `MONGODB_URI`, `JWT_SECRET`, `CORS_ORIGIN` (optional).
- 2. Install: `npm install`.
- 3. Start: `npm start`.
+**Suggested Tech Stack & Rationale**
+- Runtime: Node.js (current repo uses Express) — fast onboarding, matches frontend stack.
+- Web framework: Express — existing project skeleton uses `app.js` and routes (see [app.js](app.js)).
+- Auth: JWT + refresh tokens (stateless API) or session-based if simpler for MVP. Use HTTPS in deployment.
+- DB: PostgreSQL (relational) recommended for structured data (orders, reviews) and transactions; MongoDB acceptable for faster iteration. Choose based on team familiarity.
+- Realtime: Socket.io (WebSocket fallback) for chat + notifications; fall back to polling if hosting restrictions exist.
+- File storage: S3 or similar for images. For MVP local uploads + static serving are acceptable.
 
- ## 8. Testing and dev notes
- - No test framework yet; add unit and integration tests.
- - Add `npm run dev` (nodemon) to speed local iteration.
+----
 
-- Add tests for `GET /api/products/:id/reviews` covering:
-	- `200` when reviews exist (response structure),
-	- `204` when there are no reviews,
-	- `404` when product ID does not exist.
+**Data Model (high level entities)**
+- User { id, email, name, career, avatar_url, role_flags, reputation, created_at }
+- Product { id, owner_id, title, description, price_cents, currency, category, images[], condition, status, created_at }
+- Order { id, buyer_id, total_cents, status, created_at }
+- OrderItem { id, order_id, product_id, qty, unit_price_cents }
+- Review { id, order_id, product_id, reviewer_id, rating, comment, created_at }
+- Conversation { id, product_id, participant_ids[], last_message_at }
+- Message { id, conversation_id, sender_id, body, created_at }
+- Notification { id, user_id, type, payload, read, created_at }
+- Report { id, reporter_id, target_type, target_id, reason, status }
 
- ## 9. Short-term tasks (recommended MVP scope)
- 1. Confirm `dbManager.js` helpers and centralize access patterns.
- 2. Add integration tests for auth flows.
- 3. Add tests for seller shipping endpoints (`GET /api/seller/shipping/status`, `PATCH /api/seller/shipping/:saleID`) covering pagination, validation, ownership (403), and error conditions.
- 4. Add tests for `GET /api/shipping/:saleID` covering buyer/seller access, 404 and 403 cases.
-5. Add tests for `POST /api/products/:id/reviews` covering validation, purchase verification, duplicate review (409), and rating updates.
-6. Add tests for `GET /api/products/:id/reviews` (see testing notes above).
-7. Harden input validation across routes using `express-validator`.
-8. Add README with run instructions and env examples.
+Notes: use integer PKs or UUIDs; use indexes on product title, category, owner_id, and conversations last_message_at for queries.
 
- ## 10. Long-term / optional
- - Add WebSocket service (Socket.io) for realtime chat and notifications.
- - Add file/image storage (S3 or similar) and CDN for product images.
- - Add analytics and admin dashboard metrics.
+----
 
- ## 11. Where to look next
- - `app.js` — wired routes and middleware.
- - `routes/seller/seller.js` — seller subroute consolidation.
- - `routes/seller/shipping/status.js` and `routes/seller/shipping/update.js` — seller endpoints.
- - `routes/orders/getById.js` and `routes/orders/getOwn.js` — order/sale lookup and listings.
- - `dbManager.js` — `getOrders`, `findOrderByID`, `addOrder`, `updateOrder`.
- - `routes/products/reviews/create.js` — review creation implementation and validation logic.
- - `dbManager.js` — `getOrders`, `findOrderByID`, `addOrder`, `updateOrder`, `addReview`, `findReview`, `findReviews`.
- - `routes/products/reviews/get.js` — review listing implementation (`GET /api/products/:id/reviews`).
- - `routes/products/reviews/create.js` — review creation implementation and validation logic.
- - `dbManager.js` — `getOrders`, `findOrderByID`, `addOrder`, `updateOrder`, `addReview`, `findReview`, `findReviews`.
+**API Design (recommended endpoints)**
+All endpoints return JSON and use standard HTTP codes.
 
- ---
- If you want, I can now:
- - run the server and exercise the new endpoints, or
- - add automated tests for the new endpoints, or
- - add a concise `README.md` with run/test instructions.
+- Auth
+  - POST /api/auth/register — register (institutional email check)
+  - POST /api/auth/login — login, returns access + refresh tokens
+  - POST /api/auth/refresh — exchange refresh token
+  - POST /api/auth/logout — revoke refresh token
+
+- Users
+  - GET /api/users/:id — public profile (include average rating)
+  - PUT /api/users/:id — update profile (auth required)
+
+- Products
+  - GET /api/products — list + filters + pagination
+  - GET /api/products/:id — product detail
+  - POST /api/products — create product (auth seller)
+  - PUT /api/products/:id — update product (owner or admin)
+  - DELETE /api/products/:id — delete (owner or admin)
+
+- Orders
+  # Marketplace Backend — Agent Notes
+
+  Last updated: 2026-05-07
+
+  This document is the single-source agent-facing summary of the backend: goals, constraints, architecture, data models, APIs, operational notes, and short-term priorities. Keep this file updated as decisions change.
+
+  **Project**: Marketplace (University) — backend
+  **Purpose**: Provide a maintainable, testable Node.js + Express API that supports product listing, buying, messaging, reviews, and admin moderation for an institutional marketplace.
+
+  ----
+
+  ## 1. Quick facts
+  - Language / runtime: Node.js (Express)
+  - Repo entry: [app.js](app.js#L1)
+  - DB (recommended): PostgreSQL; alternative: MongoDB for faster prototyping
+  - Auth: JWT (access + refresh tokens)
+  - Realtime: Socket.io (WebSocket with fallback to polling)
+  - Image storage: Local for MVP, migrate to S3 for production
+
+  ----
+
+  ## 2. Goals & constraints
+  - Primary goals: security (institutional registration), simple UX for students, reliable order/review lifecycle, in-app communication.
+  - MVP scope: auth, product CRUD, order creation, reviews, conversations/messages, notifications, admin moderation endpoints.
+  - Non-goals (MVP): payments integration, advanced recommendation engine, full analytics stack.
+
+  ----
+
+  ## 3. Folder & file map (important locations)
+  - [app.js](app.js#L1) — main Express app
+  - [bin/www](bin/www#L1) — server start
+  - [dbManager.js](dbManager.js#L1) — DB connection helpers
+  - [routes/](routes/README.md) — resource routes (see files inside `routes/`)
+  - [auth/](auth/) — auth handlers (`login.js`, `register.js`)
+  - [middleware/](middleware/) — auth & validation middleware
+  - [public/](public/) — static assets and local image uploads
+
+  ----
+
+  ## 4. Environment variables (required / recommended)
+  - `PORT` — server port (default 3000)
+  - `NODE_ENV` — development|production
+  - `DATABASE_URL` — Postgres connection string (or Mongo URI)
+  - `JWT_SECRET` — access token signing secret
+  - `JWT_REFRESH_SECRET` — refresh token signing secret
+  - `IMAGE_UPLOAD_PATH` — local path for uploaded images
+  - `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS` — optional email
+
+  ----
+
+  ## 5. Data model (concise)
+  - User: id, email, name, password_hash, roles (buyer|seller|admin), avatar_url, created_at
+  - Product: id, seller_id, title, description, price_cents, currency, category, images[], condition, status, created_at
+  - Order: id, buyer_id, total_cents, status (pending/confirmed/shipped/delivered), created_at
+  - OrderItem: id, order_id, product_id, qty, unit_price_cents
+  - Review: id, product_id, reviewer_id, rating, comment, created_at
+  - Conversation: id, product_id, participants[], last_message_at
+  - Message: id, conversation_id, sender_id, body, created_at
+  - Notification: id, user_id, type, payload, read, created_at
+
+  Use integer PKs or UUIDs consistently. Add indexes on `products(title)`, `products(category)`, `products(seller_id)`, and `conversations(last_message_at)`.
+
+  ----
+
+  ## 6. API surface (summary)
+  All endpoints return JSON; protect with auth middleware where noted.
+
+  - Auth
+    - POST /auth/register — register (institutional email check)
+    - POST /auth/login — login (returns access + refresh tokens)
+    - POST /auth/refresh — refresh access token
+    - POST /auth/logout — revoke refresh token
+
+  - Users
+    - GET /users/:id — public profile
+    - PUT /users/:id — update profile (auth)
+
+  - Products
+    - GET /products — list + filters + pagination
+    - GET /products/:id — detail
+    - POST /products — create (seller)
+    - PUT /products/:id — update (owner/admin)
+    - DELETE /products/:id — delete (owner/admin)
+    - GET /products/search?q=... — text search
+
+  - Orders
+    - POST /orders — create order (simulate payment)
+    - GET /orders/:id — detail (buyer/seller)
+    - GET /orders — user's orders
+    - PATCH /orders/:id/status — update status (seller/admin)
+
+  - Reviews
+    - POST /products/:id/reviews — create (validate purchase)
+    - GET /products/:id/reviews — list
+
+  - Conversations / Messages
+    - GET /conversations — user's conversations
+    - POST /conversations — open conversation
+    - GET /conversations/:id/messages — fetch messages
+    - POST /conversations/:id/messages — send message
+
+  - Notifications
+    - GET /notifications — list
+    - POST /notifications/mark-read — mark read
+
+  - Admin
+    - GET /admin/stats — metrics
+    - POST /admin/reports/:id/action — moderate content
+
+  ----
+
+  ## 7. Auth & security recommendations
+  - JWT short-lived access tokens (eg. 15m) + refresh tokens stored hashed server-side.
+  - Validate institutional email domain(s) during registration (decide canonical domain).
+  - Hash passwords with bcrypt (salted). Rate-limit auth endpoints. Validate inputs with `Joi` or `express-validator`.
+  - Sanitize and validate file uploads (type, size). Use signed URLs for S3 in prod.
+
+  ----
+
+  ## 8. Realtime & notifications
+  - Socket.io rooms: `user:<id>` and `conversation:<id>`. Emit `new_message`, `order_updated`, `new_review` events.
+  - Provide REST fallbacks (polling) for environments without WebSocket support.
+
+  ----
+
+  ## 9. Storage & backups
+  - Images: local `public/images/` during development. Plan migration to S3 with environment config.
+  - DB backups: schedule daily backups for production DB. Use managed DB snapshots where possible.
+
+  ----
+
+  ## 10. Development & testing
+  - Install: `npm install`
+  - Run dev: `npm run dev` or `node ./bin/www`
+  - Lint: add `eslint` and `prettier`; consider `husky` + `lint-staged` hooks.
+  - Tests: unit tests (Jest/Mocha) + integration tests (Supertest) for auth, products, orders.
+
+  ----
+
+  ## 11. Deployment notes
+  - Containerize with Docker; keep app stateless. Use `DATABASE_URL` and secrets from environment.
+  - In production use HTTPS and rotate JWT secrets periodically. Use a managed Postgres + S3.
+
+  ----
+
+  ## 12. Short-term roadmap (next tasks)
+  1. Confirm DB choice and add migration tool (knex/TypeORM/Sequelize).
+  2. Implement auth: registration + login + refresh flow + tests.
+  3. Implement products CRUD with pagination and basic image upload.
+  4. Implement orders + review constraints (only buyers who purchased can review).
+  5. Add notifications model + REST endpoints and basic Socket.io integration.
+
+  ----
+
+  ## 13. Decisions to make / Questions
+  - Which DB to use for the project (Postgres recommended)?
+  - Institutional email domain(s) to enforce at register?
+  - Image storage: keep local or provide S3 credentials now?
+
+  ----
+
+  If you want, I can:
+  - scaffold route handlers and services,
+  - produce a minimal DB schema + migration file,
+  - or generate an OpenAPI spec for the routes above.
+
+  Keep this file current; reference it when making architectural decisions.
+- Notifications
+
