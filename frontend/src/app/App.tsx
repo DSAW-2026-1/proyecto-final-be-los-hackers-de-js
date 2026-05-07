@@ -22,6 +22,7 @@ import { SellerDashboard } from './components/SellerDashboard';
 import { ChatInterface } from './components/ChatInterface';
 import { Notifications } from './components/Notifications';
 import { ReportView } from './components/ReportView';
+import { UserReportView } from './components/UserReportView';
 import { AdminDashboard } from './components/AdminDashboard';
 import { AdminReportView } from './components/AdminReportView';
 import { AdminSuspendUser } from './components/AdminSuspendUser.tsx';
@@ -78,6 +79,7 @@ export default function App() {
               <Route path="/chat" element={<ChatInterface />} />
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/report/:id" element={<ReportView />} />
+              <Route path="/report/user/:id" element={<UserReportView />} />
 
               {/* Admin routes */}
               <Route path="/admin" element={<AdminProtectedRoute><AdminDashboard /></AdminProtectedRoute>} />

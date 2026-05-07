@@ -231,7 +231,11 @@ export function UserProfile() {
                       <MessageCircle className="w-4 h-4 mr-2" />
                       Enviar Mensaje
                     </Button>
-                    <Button variant="ghost" className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                    <Button 
+                      variant="ghost" 
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                      onClick={() => navigate(`/report/user/${uid}`)}
+                    >
                       <Flag className="w-4 h-4 mr-2" />
                       Reportar
                     </Button>
