@@ -30,6 +30,7 @@ import { AdminLogin } from  './components/AdminLogin.tsx'
 import { ScrollToTop } from './components/ScrollToTop.tsx';
 
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { AdminProtectedRoute } from './components/AdminProtectedRoute';
 
 function Home() {
   return (
@@ -77,8 +78,8 @@ export default function App() {
               <Route path="/report/:id" element={<ReportView />} />
 
               {/* Admin routes */}
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/admin/reports/:id" element={<AdminReportView />} />
+              <Route path="/admin" element={<AdminProtectedRoute><AdminDashboard /></AdminProtectedRoute>} />
+              <Route path="/admin/reports/:id" element={<AdminProtectedRoute><AdminReportView /></AdminProtectedRoute>} />
 
               <Route path="/admin/login" element={<AdminLogin />} />
 

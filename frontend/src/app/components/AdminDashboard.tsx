@@ -6,19 +6,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import {
   Users,
   Package,
-  AlertTriangle,
   TrendingUp,
   MoreVertical,
   CheckCircle,
   XCircle
 } from 'lucide-react';
-
-const STATS = [
-  { label: 'Usuarios Activos', value: '1,234', change: '+12%', icon: Users, color: 'text-blue-600' },
-  { label: 'Productos Publicados', value: '567', change: '+8%', icon: Package, color: 'text-green-600' },
-  { label: 'Reportes Pendientes', value: '12', change: '-3%', icon: AlertTriangle, color: 'text-orange-600' },
-  { label: 'Ventas Este Mes', value: '234', change: '+18%', icon: TrendingUp, color: 'text-purple-600' },
-];
+import { useState, useEffect } from 'react';
+import { adminService, AdminDashboardStats } from '../services/adminService';
+import { toast } from 'sonner';
 
 const RECENT_PRODUCTS = [
   { id: 1, title: 'MacBook Air M1', seller: 'Ana R.', status: 'Aprobado', date: '2024-04-18' },
@@ -33,6 +28,32 @@ const REPORTS = [
 ];
 
 export function AdminDashboard() {
+  const [stats, setStats] = useState<AdminDashboardStats | null>(null);
+  const [loadingStats, setLoadingStats] = useState(true);
+
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        setLoadingStats(true);
+        const data = await adminService.getDashboardStats();
+        setStats(data);
+      } catch (error) {
+        console.error('Error fetching admin stats:', error);
+        toast.error('No se pudieron cargar las estadísticas del panel');
+      } finally {
+        setLoadingStats(false);
+      }
+    }
+    fetchStats();
+  }, []);
+
+  const statCards = stats ? [
+    { label: 'Usuarios Totales', value: stats.totalUsers.toLocaleString(), icon: Users, color: 'text-blue-600', bgColor: 'bg-blue-100' },
+    { label: 'Vendedores Activos', value: stats.activeSellers.toLocaleString(), icon: Users, color: 'text-indigo-600', bgColor: 'bg-indigo-100' },
+    { label: 'Productos Totales', value: stats.totalProducts.toLocaleString(), icon: Package, color: 'text-green-600', bgColor: 'bg-green-100' },
+    { label: 'Ventas Totales', value: stats.totalSales.toLocaleString(), icon: TrendingUp, color: 'text-purple-600', bgColor: 'bg-purple-100' },
+  ] : [];
+
   return (
     <div className="bg-muted/30 py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -42,25 +63,32 @@ export function AdminDashboard() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {STATS.map((stat, index) => {
-            const Icon = stat.icon;
-            return (
-              <Card key={index} className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className={`w-12 h-12 rounded-lg bg-${stat.color.split('-')[1]}-100 flex items-center justify-center`}>
-                    <Icon className={`w-6 h-6 ${stat.color}`} />
-                  </div>
-                  <Badge variant="secondary" className="text-xs">
-                    {stat.change}
-                  </Badge>
-                </div>
-                <div>
-                  <p className="text-3xl font-bold mb-1">{stat.value}</p>
-                  <p className="text-sm text-muted-foreground">{stat.label}</p>
-                </div>
+          {loadingStats ? (
+            [...Array(4)].map((_, i) => (
+              <Card key={i} className="p-6 animate-pulse">
+                <div className="w-12 h-12 rounded-lg bg-muted mb-4" />
+                <div className="h-8 bg-muted rounded w-1/2 mb-2" />
+                <div className="h-4 bg-muted rounded w-3/4" />
               </Card>
-            );
-          })}
+            ))
+          ) : (
+            statCards.map((stat, index) => {
+              const Icon = stat.icon;
+              return (
+                <Card key={index} className="p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className={`w-12 h-12 rounded-lg ${stat.bgColor} flex items-center justify-center`}>
+                      <Icon className={`w-6 h-6 ${stat.color}`} />
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-3xl font-bold mb-1">{stat.value}</p>
+                    <p className="text-sm text-muted-foreground">{stat.label}</p>
+                  </div>
+                </Card>
+              );
+            })
+          )}
         </div>
 
         <Tabs defaultValue="products" className="space-y-6">
