@@ -9,6 +9,7 @@ const findProductByID = require("./find")
 const deleteProduct = require("./delete")
 const searchProducts = require("./search")
 const createReview = require('./reviews/create')
+const getReviews = require('./reviews/get')
 
 router.use('/search', searchProducts)
 router.use('/', findProductByID)
@@ -20,5 +21,7 @@ router.use('/', editProduct)
 router.use('/', deleteProduct)
 // mount reviews creation at /:id/reviews
 router.use('/', createReview)
+// mount reviews listing at /:id/reviews
+router.use('/', getReviews)
 
 module.exports = router;

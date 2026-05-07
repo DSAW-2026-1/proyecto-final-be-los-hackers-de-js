@@ -38,6 +38,18 @@
  - `middleware/auth/` — `tokenValidator.js`, `userValidator.js`, `sellerValidator.js`, `adminValidator.js`.
  - `errorHandlers/jsonParseFailure.js` — JSON parse error handling middleware.
 
+ - `dbManager.js` — DB connection and helpers. Current helpers include: `getOrders`, `findOrder`, `findOrderByID`, `updateOrder`, `addOrder`, plus review helpers `addReview`, `findReview`, `findReviews`.
+ - `routes/` — Routes grouped by domain: `auth/`, `products/`, `sales/`, `orders/`, `users/`, `seller/`, `test.js`.
+ - `routes/seller/seller.js` — consolidates seller subroutes (`/register`, `/shipping/*`) and applies token + seller middleware.
+ - `routes/seller/shipping/status.js` — seller endpoint: paginated shipping/order status.
+ - `routes/seller/shipping/update.js` — seller endpoint: PATCH to update a sale's shipping status (validates ownership and allowed statuses).
+ - `routes/orders/getById.js` — returns an individual sale when requester is buyer or seller (mounted at `/api/shipping/:saleID`).
+ - `routes/orders/getOwn.js` — returns buyer's own orders (paginated).
+ - `routes/products/reviews/create.js` — `POST /api/products/:id/reviews` — create product reviews (validates purchase, uniqueness, rating, updates product/seller stats).
+ - `routes/products/reviews/get.js` — `GET /api/products/:id/reviews` — returns reviews for a product (204 if none).
+ - `middleware/auth/` — `tokenValidator.js`, `userValidator.js`, `sellerValidator.js`, `adminValidator.js`.
+ - `errorHandlers/jsonParseFailure.js` — JSON parse error handling middleware.
+
  ## 5. API surface (high level)
  - `POST /api/auth/login` — login (JWT issuance).
  - `POST /api/auth/register` — user registration.
@@ -47,12 +59,18 @@
  - `PATCH /api/seller/shipping/:saleID` — seller-only: update a sale's shipping status. Valid statuses: `Pending`, `Confirmed`, `In transit`, `Delivered`, `Cancelled`.
  - `GET /api/shipping/:saleID` — authenticated user (buyer or seller): fetch single sale details.
  - `POST /api/products/:id/reviews` — authenticated buyer-only: create a review for a purchased product. Validates purchase, uniqueness, rating (1-5), basic XSS checks, updates product `rating` and seller `reputation`.
+ - `GET /api/products/:productID/reviews` — fetch reviews for a product. Behavior:
+	 - `200` — Returns reviews in an object keyed by index when reviews exist.
+	 - `204` — Returns `{ "message": "No reviews" }` when product has no reviews.
+	 - `404` — Returns `{ "error": "Product not found" }` when product does not exist.
  - `PATCH /api/seller/shipping/:saleID` — seller-only: update a sale's shipping status. Valid statuses: `Pending`, `Confirmed`, `In transit`, `Delivered`, `Cancelled`.
  - `GET /api/shipping/:saleID` — authenticated user (buyer or seller): fetch single sale details.
  - `GET/POST/PUT/DELETE /api/products` — product CRUD and search endpoints.
  - `POST /api/sales` — checkout / create orders (adds orders and updates user `saleData`/`orders`).
  - `GET /api/shipping/status` (under `orders/getOwn.js`) — buyer's own orders listing.
  - `GET/POST/PUT /api/users` — user profile, find and edit operations.
+
+For exact route details, inspect route files under `routes/`.
 
  For exact route details, inspect route files under `routes/`.
 
@@ -71,14 +89,20 @@
  - No test framework yet; add unit and integration tests.
  - Add `npm run dev` (nodemon) to speed local iteration.
 
+- Add tests for `GET /api/products/:id/reviews` covering:
+	- `200` when reviews exist (response structure),
+	- `204` when there are no reviews,
+	- `404` when product ID does not exist.
+
  ## 9. Short-term tasks (recommended MVP scope)
  1. Confirm `dbManager.js` helpers and centralize access patterns.
  2. Add integration tests for auth flows.
  3. Add tests for seller shipping endpoints (`GET /api/seller/shipping/status`, `PATCH /api/seller/shipping/:saleID`) covering pagination, validation, ownership (403), and error conditions.
  4. Add tests for `GET /api/shipping/:saleID` covering buyer/seller access, 404 and 403 cases.
 5. Add tests for `POST /api/products/:id/reviews` covering validation, purchase verification, duplicate review (409), and rating updates.
- 5. Harden input validation across routes using `express-validator`.
- 6. Add README with run instructions and env examples.
+6. Add tests for `GET /api/products/:id/reviews` (see testing notes above).
+7. Harden input validation across routes using `express-validator`.
+8. Add README with run instructions and env examples.
 
  ## 10. Long-term / optional
  - Add WebSocket service (Socket.io) for realtime chat and notifications.
@@ -91,6 +115,9 @@
  - `routes/seller/shipping/status.js` and `routes/seller/shipping/update.js` — seller endpoints.
  - `routes/orders/getById.js` and `routes/orders/getOwn.js` — order/sale lookup and listings.
  - `dbManager.js` — `getOrders`, `findOrderByID`, `addOrder`, `updateOrder`.
+ - `routes/products/reviews/create.js` — review creation implementation and validation logic.
+ - `dbManager.js` — `getOrders`, `findOrderByID`, `addOrder`, `updateOrder`, `addReview`, `findReview`, `findReviews`.
+ - `routes/products/reviews/get.js` — review listing implementation (`GET /api/products/:id/reviews`).
  - `routes/products/reviews/create.js` — review creation implementation and validation logic.
  - `dbManager.js` — `getOrders`, `findOrderByID`, `addOrder`, `updateOrder`, `addReview`, `findReview`, `findReviews`.
 
