@@ -159,4 +159,11 @@ export const productService = {
   async getReviews(productID: string, page: number = 1): Promise<ReviewsResponse> {
     return apiRequest<ReviewsResponse>(`/api/products/${productID}/reviews?page=${page}`);
   },
+
+  async createReport(productID: string, data: { category: string, reportTitle: string, reportBody: string }): Promise<void> {
+    return apiRequest<void>(`/api/products/${productID}/report`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
 };

@@ -383,7 +383,12 @@ export function ProductDetail() {
 
             {!isOwner && (
               <div className="flex justify-center pt-8">
-                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive transition-colors">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-muted-foreground hover:text-destructive transition-colors"
+                  onClick={() => navigate(`/report/${productID}`)}
+                >
                   <AlertTriangle className="w-4 h-4 mr-2" />
                   Reportar publicación
                 </Button>
