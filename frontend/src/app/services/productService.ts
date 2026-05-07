@@ -133,4 +133,11 @@ export const productService = {
       body: JSON.stringify({ status }),
     });
   },
+
+  async createReview(productID: string, data: { rating: number, title: string, body: string }): Promise<void> {
+    return apiRequest<void>(`/api/products/${productID}/reviews/`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
 };
