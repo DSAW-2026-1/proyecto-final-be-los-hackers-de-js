@@ -247,15 +247,15 @@ class DbManager{
                     //Update product rating by computing average based on previous average
                     const productReviewArray = product.reviews || []
                     const productReviews = productReviewArray.length
-                    const currentRating = product.rating || 0
-                    const productAvg = ((currentRating*productReviews) + rating) / (productReviews + 1)
+                    const currentRating = product.rating || Number(0)
+                    const productAvg = Number(((currentRating*productReviews) + rating) / (productReviews + 1))
                     await this.updateProduct(product._id, {rating: productAvg})
 
                     //Update seller review count and reputation
                     const sellerReviews = seller.reviews || 0
                     await this.updateUser(sellerID, {reviews: sellerReviews+1})
-                    const currentSellerRating = product.rating || 0
-                    const sellerAvg = ((currentSellerRating*sellerReviews) + rating) / (sellerReviews + 1)
+                    const currentSellerRating = product.rating || Number(0)
+                    const sellerAvg = Number(((currentSellerRating*sellerReviews) + rating) / (sellerReviews + 1))
                     await this.updateUser(seller._id, {reputation: sellerAvg})
                     return true
                 }
