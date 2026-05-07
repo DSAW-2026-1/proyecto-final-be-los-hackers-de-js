@@ -9,5 +9,7 @@ router.use('/', adminValidatorMiddleware)
 router.use('/dashboard', adminDashboardRouter);
 const adminProductsRouter = require('./products')
 router.use('/products', adminProductsRouter)
+const adminUsersRouter = require('./users')
+router.use('/users', adminUsersRouter)
 
 module.exports = router;

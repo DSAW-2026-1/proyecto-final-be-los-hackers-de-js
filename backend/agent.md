@@ -105,6 +105,8 @@ All endpoints return JSON; protect with auth middleware where noted.
 
 - Admin
   - POST /api/admin/dashboard — site activity summary (admin-only)
+  - DELETE /api/admin/products/:productID — soft-delete product (admin-only)
+  - PATCH /api/admin/users/:UID/suspend — suspend a user and soft-delete their products (admin-only)
   - GET /admin/stats — metrics (future)
   - POST /admin/reports/:id/action — moderate content
 
@@ -146,17 +148,17 @@ All endpoints return JSON; protect with auth middleware where noted.
 
 ## 12. Short-term roadmap (next tasks)
 1. Confirm DB choice and add migration tool (knex/TypeORM/Sequelize).
-2. Implement auth: registration + login + refresh flow + tests.
-3. Implement products CRUD with pagination and basic image upload.
-4. Implement orders + review constraints (only buyers who purchased can review).
-5. Add notifications model + REST endpoints and basic Socket.io integration.
+2. Implement orders + review constraints (only buyers who purchased can review).
+3. Add notifications model + REST endpoints and basic Socket.io integration.
 
 ----
 
 ## 13. Changelog (recent changes)
-- 2026-05-07: Implemented `POST /api/admin/dashboard` endpoint (admin-only). See `routes/admin/dashboard.js`.
-- 2026-05-07: Added `DbManager` helpers: `countUsers()`, `countActiveSellers()`, `countProducts()`, `countOrders()` in `dbManager.js`.
-- 2026-05-07: Registered `/api/admin/dashboard` in `app.js` and protected it with `tokenValidator` + `adminValidator` middleware.
+ - 2026-05-07: Implemented `POST /api/admin/dashboard` endpoint (admin-only). See `routes/admin/dashboard.js`.
+ - 2026-05-07: Added `DbManager` helpers: `countUsers()`, `countActiveSellers()`, `countProducts()`, `countOrders()` in `dbManager.js`.
+ - 2026-05-07: Registered `/api/admin/dashboard` in `app.js` and protected it with `tokenValidator` + `adminValidator` middleware.
+ - 2026-05-07: Implemented `DELETE /api/admin/products/:productID` to soft-delete products; added `findProductRawByID()` helper and mounted admin products router under `/api/admin/products`.
+ - 2026-05-07: Implemented `PATCH /api/admin/users/:UID/suspend` to suspend users, store suspension reason, and soft-delete their products. Added `suspendUser()` helper in `dbManager.js`.
 
 ----
 

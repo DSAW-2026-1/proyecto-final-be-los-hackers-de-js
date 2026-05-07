@@ -183,6 +183,30 @@ class DbManager{
             return null
         }
     }
+
+    // Suspend a user and soft-delete all their products.
+    static async suspendUser(UID, reason) {
+        try {
+            const success = await this.updateUser(UID, {isSuspended: true, suspensionReason: reason})
+            if(success) {
+                // Find all products for this seller and soft-delete them
+                const products = await this.findAllProducts({sellerID: UID}) || []
+                for (const p of products) {
+                    try {
+                        await this.softDeleteProduct(p._id.toString())
+                    } catch (e) {
+                        // continue deleting others even if one fails
+                        console.error('Failed to soft-delete product '+p._id.toString()+' during user '+UID+' suspension:', e)
+                    }
+                }
+                return true
+            }
+            else return false
+        }
+        catch (e){
+            return false
+        }
+    }
     static async softDeleteProduct(ID) {
         await this.#updateItem(PRODUCTS_DB, ID, { deleted: true })
     }
