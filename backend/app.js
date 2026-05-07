@@ -8,7 +8,7 @@ const logger = require('morgan');
 const usersRouter = require('./routes/users/user');
 const loginRouter = require('./routes/auth/login');
 const adminLoginRouter = require('./routes/auth/admin/login');
-const adminDashboardRouter = require('./routes/admin/dashboard');
+const adminRouter = require('./routes/admin/admin');
 const registerRouter = require('./routes/auth/register');
 const tokenValidatorMiddleware = require('./middleware/auth/tokenValidator');
 const userAuthMiddleware = require('./middleware/auth/userValidator')
@@ -41,7 +41,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/api/auth/login', loginRouter);
 app.use('/api/auth/register', registerRouter);
 app.use('/api/admin/login', adminLoginRouter);
-app.use('/api/admin/dashboard', adminDashboardRouter);
+app.use('/api/admin', adminRouter);
 app.use('/api/seller', sellerRouter)
 app.use('/api/users', usersRouter);
 

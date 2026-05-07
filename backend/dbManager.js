@@ -175,6 +175,14 @@ class DbManager{
         if(!item) return null
         return (!(item.deleted)) ? item : null
     }
+    // Return the product document even if soft-deleted (used by admin checks)
+    static async findProductRawByID(ID) {
+        try {
+            return await this.#findByID(PRODUCTS_DB, ID)
+        } catch (e) {
+            return null
+        }
+    }
     static async softDeleteProduct(ID) {
         await this.#updateItem(PRODUCTS_DB, ID, { deleted: true })
     }

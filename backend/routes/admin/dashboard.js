@@ -4,8 +4,6 @@ const db = require('../../dbManager')
 const tokenValidatorMiddleware = require("../../middleware/auth/tokenValidator");
 const adminValidatorMiddleware = require("../../middleware/auth/adminValidator");
 
-router.use('/', tokenValidatorMiddleware)
-router.use('/', adminValidatorMiddleware)
 // POST /api/admin/dashboard
 router.get('/', async function (req, res) {
     try {
