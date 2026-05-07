@@ -11,4 +11,10 @@ export const adminService = {
   async getDashboardStats(): Promise<AdminDashboardStats> {
     return apiRequest<AdminDashboardStats>('/api/admin/dashboard');
   },
+
+  async deleteProduct(productID: string): Promise<void> {
+    return apiRequest<void>(`/api/admin/products/${productID}/`, {
+      method: 'DELETE',
+    });
+  },
 };

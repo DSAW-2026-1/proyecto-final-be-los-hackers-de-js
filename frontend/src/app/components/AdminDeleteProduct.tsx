@@ -5,6 +5,8 @@ import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { AlertTriangle, Package, ArrowLeft, Loader2, Trash2 } from 'lucide-react';
 import { productService, Product } from '../services/productService';
+import { adminService } from '../services/adminService';
+import { ApiError } from '../services/api';
 import { toast } from 'sonner';
 import Base64ImageLoader from './Base64ImageLoader';
 
@@ -13,6 +15,7 @@ export function AdminDeleteProduct() {
   const navigate = useNavigate();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     async function fetchProduct() {
@@ -31,8 +34,25 @@ export function AdminDeleteProduct() {
     fetchProduct();
   }, [id]);
 
-  const handleDelete = () => {
-    toast.info('La API de eliminación se implementará pronto');
+  const handleDelete = async () => {
+    if (!id) return;
+    
+    try {
+      setDeleting(true);
+      await adminService.deleteProduct(id);
+      toast.success('Producto eliminado exitosamente');
+      navigate('/admin');
+    } catch (error: unknown) {
+      console.error('Error deleting product:', error);
+      const err = error as ApiError;
+      if (err.status === 409) {
+        toast.error('El producto ya ha sido eliminado');
+      } else {
+        toast.error(err.message || 'Error al eliminar el producto');
+      }
+    } finally {
+      setDeleting(false);
+    }
   };
 
   if (loading) {
@@ -124,9 +144,16 @@ export function AdminDeleteProduct() {
           </div>
           
           <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => navigate('/admin')}>Cancelar</Button>
-            <Button variant="destructive" onClick={handleDelete}>
-              Borrar Definitivamente
+            <Button variant="outline" onClick={() => navigate('/admin')} disabled={deleting}>Cancelar</Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+              {deleting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Borrando...
+                </>
+              ) : (
+                'Borrar Definitivamente'
+              )}
             </Button>
           </div>
         </Card>
