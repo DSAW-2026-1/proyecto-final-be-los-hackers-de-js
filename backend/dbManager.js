@@ -17,6 +17,7 @@ const PRODUCTS_DB = "products"
 const PRODUCT_IMAGES_KEY = "images"
 const MAIN_DB = "marketplace"
 const ORDERS_DB = "orders"
+const REVIEWS_DB = "reviews"
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -43,6 +44,7 @@ class DbManager{
             if (err) throw err;
         });
         console.log("1 document inserted");
+        return true
     }
     static async addUser(user){
         await this.#addToCollection(USERS_DB, user)
@@ -229,6 +231,54 @@ class DbManager{
             }
         }
     }
+    static async addReview(reviewData){
+        const { productID, sellerID, rating } = reviewData
+        if(!productID || !sellerID || !rating) return false
+        else{
+            const product = await this.findProductByID(productID)
+            const seller = await this.findUserByUID(sellerID)
+            if(!product || !seller) return false
+            else{
+                const review = await this.#addToCollection(REVIEWS_DB, reviewData)
+                if(!review) return false
+                else{
+                    console.log(reviewData._id)
+                    await this.#appendToArrays(PRODUCTS_DB, productID, {reviews: review._id})
+
+                    //Update product rating by computing average based on previous average
+                    const productReviewArray = product.reviews || []
+                    const productReviews = productReviewArray.length
+                    const currentRating = product.rating || 0
+                    const productAvg = ((currentRating*productReviews) + rating) / (productReviews + 1)
+                    await this.updateProduct(product._id, {rating: productAvg})
+
+                    //Update seller review count and reputation
+                    const sellerReviews = seller.reviews || 0
+                    await this.updateUser(sellerID, {reviews: sellerReviews+1})
+                    const currentSellerRating = product.rating || 0
+                    const sellerAvg = ((currentSellerRating*sellerReviews) + rating) / (sellerReviews + 1)
+                    await this.updateUser(seller._id, {reputation: sellerAvg})
+                    return true
+                }
+            }
+        }
+    }
+    static async findReviews(query){
+        try{
+            return await this.#findInDb(REVIEWS_DB, query)
+        }
+        catch (e){
+            return null
+        }
+    }
+    static async findReview(query){
+        try{
+            return this.#findOneInDb(REVIEWS_DB, query)
+        }
+        catch (e){
+            return null
+        }
+    }
     static async #findLimitedByIDs(database, IDs, page, limit) {
         try {
             //let db = await this.#openConnection()
@@ -256,6 +306,14 @@ class DbManager{
     }
     static async updateOrder(ID, newData){
         return await this.#updateItem(ORDERS_DB, ID, newData)
+    }
+    static async findOrder(query){
+        try{
+            return this.#findOneInDb(ORDERS_DB, query)
+        }
+        catch (e){
+            return null
+        }
     }
 }
 

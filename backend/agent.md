@@ -23,10 +23,15 @@
  ## 4. Important files and folders
  - `app.js` — Express app and route mounting. Seller routes mounted at `/api/seller`.
  - `bin/www` — server bootstrap (start script target).
- - `dbManager.js` — DB connection and helpers (now includes `getOrders`, `findOrderByID`, `updateOrder`, `addOrder`).
+ - `dbManager.js` — DB connection and helpers (now includes `getOrders`, `findOrder`, `findOrderByID`, `updateOrder`, `addOrder`).
+ - `dbManager.js` — DB connection and helpers (now includes `getOrders`, `findOrder`, `findOrderByID`, `updateOrder`, `addOrder`, and review helpers `addReview`, `findReview`, `findReviews`).
  - `routes/` — Routes grouped by domain: `auth/`, `products/`, `sales/`, `orders/`, `users/`, `seller/`, `test.js`.
  - `routes/seller/seller.js` — consolidates seller subroutes (`/register`, `/shipping/*`) and applies token + seller middleware.
  - `routes/seller/shipping/status.js` — seller endpoint: paginated shipping/order status.
+ - `routes/seller/shipping/update.js` — seller endpoint: PATCH to update a sale's shipping status (validates ownership and allowed statuses).
+ - `routes/orders/getById.js` — returns an individual sale when requester is buyer or seller (mounted at `/api/shipping/:saleID`).
+ - `routes/orders/getOwn.js` — returns buyer's own orders (paginated).
+ - `routes/products/reviews/create.js` — POST endpoint to create product reviews (mounted at `/api/products/:id/reviews`).
  - `routes/seller/shipping/update.js` — seller endpoint: PATCH to update a sale's shipping status (validates ownership and allowed statuses).
  - `routes/orders/getById.js` — returns an individual sale when requester is buyer or seller (mounted at `/api/shipping/:saleID`).
  - `routes/orders/getOwn.js` — returns buyer's own orders (paginated).
@@ -39,6 +44,9 @@
  - `POST /api/admin/login` — admin login.
  - `PATCH /api/seller/register` — promote user to seller (mounted under `/api/seller/register`).
  - `GET /api/seller/shipping/status?page=X` — seller-only: paginated list of seller's sales (12 items per page).
+ - `PATCH /api/seller/shipping/:saleID` — seller-only: update a sale's shipping status. Valid statuses: `Pending`, `Confirmed`, `In transit`, `Delivered`, `Cancelled`.
+ - `GET /api/shipping/:saleID` — authenticated user (buyer or seller): fetch single sale details.
+ - `POST /api/products/:id/reviews` — authenticated buyer-only: create a review for a purchased product. Validates purchase, uniqueness, rating (1-5), basic XSS checks, updates product `rating` and seller `reputation`.
  - `PATCH /api/seller/shipping/:saleID` — seller-only: update a sale's shipping status. Valid statuses: `Pending`, `Confirmed`, `In transit`, `Delivered`, `Cancelled`.
  - `GET /api/shipping/:saleID` — authenticated user (buyer or seller): fetch single sale details.
  - `GET/POST/PUT/DELETE /api/products` — product CRUD and search endpoints.
@@ -68,6 +76,7 @@
  2. Add integration tests for auth flows.
  3. Add tests for seller shipping endpoints (`GET /api/seller/shipping/status`, `PATCH /api/seller/shipping/:saleID`) covering pagination, validation, ownership (403), and error conditions.
  4. Add tests for `GET /api/shipping/:saleID` covering buyer/seller access, 404 and 403 cases.
+5. Add tests for `POST /api/products/:id/reviews` covering validation, purchase verification, duplicate review (409), and rating updates.
  5. Harden input validation across routes using `express-validator`.
  6. Add README with run instructions and env examples.
 
@@ -82,6 +91,8 @@
  - `routes/seller/shipping/status.js` and `routes/seller/shipping/update.js` — seller endpoints.
  - `routes/orders/getById.js` and `routes/orders/getOwn.js` — order/sale lookup and listings.
  - `dbManager.js` — `getOrders`, `findOrderByID`, `addOrder`, `updateOrder`.
+ - `routes/products/reviews/create.js` — review creation implementation and validation logic.
+ - `dbManager.js` — `getOrders`, `findOrderByID`, `addOrder`, `updateOrder`, `addReview`, `findReview`, `findReviews`.
 
  ---
  If you want, I can now:
