@@ -40,7 +40,7 @@ router.post('/:productID/report', async function (req, res) {
 
     // Find product
     const product = await db.findProductByID(productID)
-    if (!product) return res.status(401).json({ error: 'Product not found' })
+    if (!product) return res.status(404).json({ error: 'Product not found' })
 
     // Find user
     const user = await db.findUserByUID(UID)
