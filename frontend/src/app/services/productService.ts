@@ -72,6 +72,21 @@ export interface ShippingResponse {
   results: { [key: number]: ShippingResponseItem };
 }
 
+export interface ReviewItem {
+  buyerID: string;
+  rating: number;
+  reviewTitle: string;
+  reviewBody: string;
+  reviewDate: number;
+}
+
+export interface ReviewsResponse {
+  count: number;
+  pages: number;
+  page: number;
+  results: { [key: number]: ReviewItem };
+}
+
 export const productService = {
   async createProduct(data: CreateProductRequest): Promise<ProductResponse> {
     return apiRequest<ProductResponse>('/api/products/', {
@@ -139,5 +154,9 @@ export const productService = {
       method: 'POST',
       body: JSON.stringify(data),
     });
+  },
+
+  async getReviews(productID: string, page: number = 1): Promise<ReviewsResponse> {
+    return apiRequest<ReviewsResponse>(`/api/products/${productID}/reviews?page=${page}`);
   },
 };
