@@ -3,11 +3,12 @@ const router = express.Router({ mergeParams: true })
 const db = require('../../dbManager')
 
 const VALID_REPORT_CATEGORIES = [
-    "Fraude",
-    "Spam",
-    "Contenido inapropiado",
-    "Contenido ilegal",
-    "Otro"
+    "fake",
+    "spam",
+    "scam",
+    "inappropriate",
+    "prohibited",
+    "other"
 ]
 
 function escapeHtml(str){
@@ -21,6 +22,7 @@ function escapeHtml(str){
 
 // POST /api/products/:productID/report
 router.post('/:productID/report', async function (req, res) {
+    console.log(req.body)
     const UID = req.token.payload.UID
     const { productID } = req.params
     const { category, reportTitle, reportBody } = req.body || {}
