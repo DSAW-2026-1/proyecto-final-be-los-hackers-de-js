@@ -24,6 +24,8 @@ import { Notifications } from './components/Notifications';
 import { ReportView } from './components/ReportView';
 import { AdminDashboard } from './components/AdminDashboard';
 import { AdminReportView } from './components/AdminReportView';
+import { AdminSuspendUser } from './components/AdminSuspendUser.tsx';
+import { AdminDeleteProduct } from './components/AdminDeleteProduct.tsx';
 import { EditProduct } from './components/EditProduct';
 import { MainLayout } from './components/MainLayout';
 import { AdminLogin } from  './components/AdminLogin.tsx'
@@ -80,6 +82,8 @@ export default function App() {
               {/* Admin routes */}
               <Route path="/admin" element={<AdminProtectedRoute><AdminDashboard /></AdminProtectedRoute>} />
               <Route path="/admin/reports/:id" element={<AdminProtectedRoute><AdminReportView /></AdminProtectedRoute>} />
+              <Route path="/admin/suspend-user/:id" element={<AdminProtectedRoute><AdminSuspendUser /></AdminProtectedRoute>} />
+              <Route path="/admin/delete-product/:id" element={<AdminProtectedRoute><AdminDeleteProduct /></AdminProtectedRoute>} />
 
               <Route path="/admin/login" element={<AdminLogin />} />
 
