@@ -82,6 +82,7 @@ All endpoints return JSON; protect with auth middleware where noted.
   - PUT /products/:id — update (owner/admin)
   - DELETE /products/:id — delete (owner/admin)
   - GET /products/search?q=... — text search
+  - POST /products/:productID/report — report a product (authenticated users)
 
 - Orders
   - POST /orders — create order (simulate payment)
@@ -159,6 +160,7 @@ All endpoints return JSON; protect with auth middleware where noted.
  - 2026-05-07: Registered `/api/admin/dashboard` in `app.js` and protected it with `tokenValidator` + `adminValidator` middleware.
  - 2026-05-07: Implemented `DELETE /api/admin/products/:productID` to soft-delete products; added `findProductRawByID()` helper and mounted admin products router under `/api/admin/products`.
  - 2026-05-07: Implemented `PATCH /api/admin/users/:UID/suspend` to suspend users, store suspension reason, and soft-delete their products. Added `suspendUser()` helper in `dbManager.js`.
+ - 2026-05-07: Implemented `POST /api/products/:productID/report` to allow authenticated users to report products. Added `reports` collection helpers in `dbManager.js` and mounted `routes/products/report.js`.
 
 ----
 
