@@ -13,6 +13,7 @@ const getReviews = require('./reviews/get')
 
 router.use('/search', searchProducts)
 router.use('/', findProductByID)
+router.use('/', getReviews)
 router.use('/', tokenValidatorMiddleware)
 router.use('/', userAuthMiddleware)
 router.use('/', sellerAuthMiddleware)
@@ -21,7 +22,5 @@ router.use('/', editProduct)
 router.use('/', deleteProduct)
 // mount reviews creation at /:id/reviews
 router.use('/', createReview)
-// mount reviews listing at /:id/reviews
-router.use('/', getReviews)
 
 module.exports = router;

@@ -242,8 +242,7 @@ class DbManager{
                 const review = await this.#addToCollection(REVIEWS_DB, reviewData)
                 if(!review) return false
                 else{
-                    console.log(reviewData._id)
-                    await this.#appendToArrays(PRODUCTS_DB, productID, {reviews: review._id})
+                    await this.#appendToArrays(PRODUCTS_DB, productID, {reviews: reviewData._id})
 
                     //Update product rating by computing average based on previous average
                     const productReviewArray = product.reviews || []
@@ -263,9 +262,9 @@ class DbManager{
             }
         }
     }
-    static async findReviews(query){
+    static async getReviews(reviewsArray, page, limit){
         try{
-            return await this.#findInDb(REVIEWS_DB, query)
+            return await this.#findLimitedByIDs(REVIEWS_DB, reviewsArray, page, limit)
         }
         catch (e){
             return null
