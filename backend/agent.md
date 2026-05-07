@@ -12,7 +12,7 @@ This document is the single-source agent-facing summary of the backend: goals, c
 ## 1. Quick facts
 - Language / runtime: Node.js (Express)
 - Repo entry: [app.js](app.js#L1)
-- DB (recommended): PostgreSQL; alternative: MongoDB for faster prototyping
+- DB: MongoDB (chosen)
 - Auth: JWT (access + refresh tokens)
 - Realtime: Socket.io (WebSocket with fallback to polling)
 - Image storage: Local for MVP, migrate to S3 for production
@@ -58,7 +58,7 @@ This document is the single-source agent-facing summary of the backend: goals, c
 - Message: id, conversation_id, sender_id, body, created_at
 - Notification: id, user_id, type, payload, read, created_at
 
-Use integer PKs or UUIDs consistently. Add indexes on `products(title)`, `products(category)`, `products(seller_id)`, and `conversations(last_message_at)`.
+Use MongoDB ObjectId (or UUIDs) consistently. Add indexes on `products(title)`, `products(category)`, `products(seller_id)`, and `conversations(last_message_at)`.
 
 ----
 
@@ -74,6 +74,7 @@ All endpoints return JSON; protect with auth middleware where noted.
 - Users
   - GET /users/:id — public profile
   - PUT /users/:id — update profile (auth)
+  - POST /users/:UID/report — report a user (authenticated users)
 
 - Products
   - GET /products — list + filters + pagination
@@ -143,12 +144,12 @@ All endpoints return JSON; protect with auth middleware where noted.
 
 ## 11. Deployment notes
 - Containerize with Docker; keep app stateless. Use `DATABASE_URL` and secrets from environment.
-- In production use HTTPS and rotate JWT secrets periodically. Use a managed Postgres + S3.
+ - In production use HTTPS and rotate JWT secrets periodically. Use a managed MongoDB service + S3.
 
 ----
 
 ## 12. Short-term roadmap (next tasks)
-1. Confirm DB choice and add migration tool (knex/TypeORM/Sequelize).
+1. DB choice confirmed (MongoDB). Add migration/tooling for MongoDB (e.g., `migrate-mongo` or custom migration scripts).
 2. Implement orders + review constraints (only buyers who purchased can review).
 3. Add notifications model + REST endpoints and basic Socket.io integration.
 
@@ -161,11 +162,15 @@ All endpoints return JSON; protect with auth middleware where noted.
  - 2026-05-07: Implemented `DELETE /api/admin/products/:productID` to soft-delete products; added `findProductRawByID()` helper and mounted admin products router under `/api/admin/products`.
  - 2026-05-07: Implemented `PATCH /api/admin/users/:UID/suspend` to suspend users, store suspension reason, and soft-delete their products. Added `suspendUser()` helper in `dbManager.js`.
  - 2026-05-07: Implemented `POST /api/products/:productID/report` to allow authenticated users to report products. Added `reports` collection helpers in `dbManager.js` and mounted `routes/products/report.js`.
+ - 2026-05-07: Recorded DB choice — MongoDB is the primary database for the backend.
+ - 2026-05-07: Implemented `POST /api/products/:productID/report` to allow authenticated users to report products. Added `reports` collection helpers in `dbManager.js` and mounted `routes/products/report.js`.
+ - 2026-05-07: Implemented `POST /api/users/:UID/report` to allow authenticated users to report users. Added `routes/users/report.js` and mounted it in `routes/users/user.js`. Reused `reports` collection helpers in `dbManager.js`.
+ - 2026-05-07: Recorded DB choice — MongoDB is the primary database for the backend.
 
 ----
 
 ## 14. Decisions to make / Questions
-- Which DB to use for the project (Postgres recommended)?
+- DB: MongoDB selected (decision already made).
 - Institutional email domain(s) to enforce at register?
 - Image storage: keep local or provide S3 credentials now?
 
@@ -177,5 +182,3 @@ If you want, I can:
 - or generate an OpenAPI spec for the routes above.
 
 Keep this file current; reference it when making architectural decisions.
-
-
