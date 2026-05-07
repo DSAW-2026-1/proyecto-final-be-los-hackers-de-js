@@ -17,4 +17,11 @@ export const adminService = {
       method: 'DELETE',
     });
   },
+
+  async suspendUser(uid: string, reason: string): Promise<void> {
+    return apiRequest<void>(`/api/admin/users/${uid}/suspend`, {
+      method: 'PATCH',
+      body: JSON.stringify({ reason }),
+    });
+  },
 };

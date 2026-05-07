@@ -4,8 +4,12 @@ import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Avatar, AvatarFallback } from './ui/avatar';
-import { AlertTriangle, User, ArrowLeft, Loader2, ShieldAlert } from 'lucide-react';
+import { AlertTriangle, User, ArrowLeft, Loader2, ShieldAlert, MessageSquare } from 'lucide-react';
 import { userService, UserProfileResponse } from '../services/userService';
+import { adminService } from '../services/adminService';
+import { ApiError } from '../services/api';
+import { Label } from './ui/label';
+import { Textarea } from './ui/textarea';
 import { toast } from 'sonner';
 import Base64ImageLoader from './Base64ImageLoader';
 
@@ -14,6 +18,8 @@ export function AdminSuspendUser() {
   const navigate = useNavigate();
   const [user, setUser] = useState<UserProfileResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [reason, setReason] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     async function fetchUser() {
@@ -32,8 +38,29 @@ export function AdminSuspendUser() {
     fetchUser();
   }, [id]);
 
-  const handleSuspend = () => {
-    toast.info('La API de suspensión se implementará pronto');
+  const handleSuspend = async () => {
+    if (!id) return;
+    if (!reason.trim()) {
+      toast.error('Por favor, indica una razón para la suspensión');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      await adminService.suspendUser(id, reason);
+      toast.success('Usuario suspendido exitosamente');
+      navigate('/admin');
+    } catch (error: unknown) {
+      console.error('Error suspending user:', error);
+      const err = error as ApiError;
+      if (err.status === 409) {
+        toast.error('El usuario ya se encuentra suspendido');
+      } else {
+        toast.error(err.message || 'Error al suspender al usuario');
+      }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (loading) {
@@ -116,11 +143,35 @@ export function AdminSuspendUser() {
               </p>
             </div>
           </div>
+
+          <div className="space-y-4 mb-8">
+            <div className="space-y-2">
+              <Label htmlFor="reason" className="text-destructive font-semibold flex items-center gap-2">
+                <MessageSquare className="w-4 h-4" />
+                Razón de la Suspensión *
+              </Label>
+              <Textarea
+                id="reason"
+                placeholder="Explica detalladamente el motivo de la suspensión (reincidencia, fraude, comportamiento inadecuado...)"
+                className="min-h-32 border-destructive/30 focus-visible:ring-destructive"
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                disabled={submitting}
+              />
+            </div>
+          </div>
           
           <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => navigate('/admin')}>Cancelar</Button>
-            <Button variant="destructive" onClick={handleSuspend}>
-              Confirmar Suspensión
+            <Button variant="outline" onClick={() => navigate('/admin')} disabled={submitting}>Cancelar</Button>
+            <Button variant="destructive" onClick={handleSuspend} disabled={submitting}>
+              {submitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Suspendiendo...
+                </>
+              ) : (
+                'Confirmar Suspensión'
+              )}
             </Button>
           </div>
         </Card>

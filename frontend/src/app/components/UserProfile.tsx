@@ -245,7 +245,7 @@ export function UserProfile() {
                 <div className="flex items-center justify-center mb-2">
                   <Star className="w-5 h-5 fill-accent text-accent mr-1" />
                   <span className="text-2xl font-bold">
-                    {user.reputation ? user.reputation.split(' ')[0] : '0.0'}
+                    {user.reputation ? user.reputation : '0.0'}
                   </span>
                 </div>
                 <p className="text-sm text-muted-foreground">Calificación</p>
