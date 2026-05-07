@@ -6,13 +6,22 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// 1. Conexión a MongoDB (Asegúrate de tener MongoDB instalado o una URI de Atlas)
+// 1. Conexión a MongoDB
 mongoose.connect('mongodb://localhost:27017/marketplace-chat');
 
-// 2. Definición de Modelos
+// 2. Modelos Actualizados (Según el nuevo tiquet)
+const ProductSchema = new mongoose.Schema({
+    name: String,
+    sellerID: String, // UID del vendedor
+    price: Number
+});
+const Product = mongoose.model('Product', ProductSchema);
+
 const ChatSchema = new mongoose.Schema({
-    participants: [{ type: String, required: true }], // IDs de usuarios
-    productId: { type: String, required: true }
+    buyerID: { type: String, required: true },
+    sellerID: { type: String, required: true },
+    associatedProduct: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
+    createdAt: { type: Date, default: Date.now }
 });
 const Chat = mongoose.model('Chat', ChatSchema);
 
@@ -24,31 +33,77 @@ const MessageSchema = new mongoose.Schema({
 });
 const Message = mongoose.model('Message', MessageSchema);
 
-// 3. Rutas (Endpoints)
+// 3. Middleware de Autenticación (Simulado)
+// IMPORTANTE: Para las pruebas, envía un header 'user-id' con el ID del comprador
+const authMiddleware = (req, res, next) => {
+    const userId = req.headers['user-id']; 
+    if (!userId) return res.status(401).json({ error: "No autorizado. Falta user-id en headers." });
+    req.user = { id: userId };
+    next();
+};
 
-// A. Crear o recuperar un chat
-app.post('/api/chats', async (req, res) => {
-    const { sellerId, buyerId, productId } = req.body;
-    let chat = await Chat.findOne({ participants: { $all: [sellerId, buyerId] }, productId });
-    
-    if (!chat) {
-        chat = await new Chat({ participants: [sellerId, buyerId], productId }).save();
+// 4. RUTAS DEL TIQUET
+
+// POST /api/chat/ - Iniciar nuevo chat
+app.post('/api/chat/', authMiddleware, async (req, res) => {
+    const { productID } = req.body;
+    const buyerID = req.user.id;
+
+    try {
+        // A. Verificar que el productID exista
+        const product = await Product.findById(productID);
+        if (!product) {
+            return res.status(404).json({ error: "Product not found" });
+        }
+
+        const sellerID = product.sellerID;
+
+        // Validación extra: No chatear con uno mismo
+        if (buyerID === sellerID) {
+            return res.status(400).json({ error: "No puedes iniciar chat con tu propio producto" });
+        }
+
+        // B. Verificar que no exista ya un chat para este producto entre ellos
+        const existingChat = await Chat.findOne({
+            associatedProduct: productID,
+            buyerID: buyerID,
+            sellerID: sellerID
+        });
+
+        if (existingChat) {
+            return res.status(409).json({ error: "This chat already exists" });
+        }
+
+        // C. Crear nuevo chat
+        const newChat = new Chat({
+            buyerID: buyerID,
+            sellerID: sellerID,
+            associatedProduct: productID
+        });
+
+        await newChat.save();
+        res.status(201).json({ message: "Chat created.", chatId: newChat._id });
+
+    } catch (error) {
+        res.status(500).json({ error: "Error en el servidor" });
     }
-    res.json(chat);
 });
 
-// B. Obtener mensajes de un chat
+// GET /api/messages/:chatId - Obtener mensajes
 app.get('/api/messages/:chatId', async (req, res) => {
     const messages = await Message.find({ chatId: req.params.chatId }).sort('timestamp');
     res.json(messages);
 });
 
-// C. Enviar un mensaje
-app.post('/api/messages', async (req, res) => {
-    const { chatId, senderId, text } = req.body;
-    const newMessage = await new Message({ chatId, senderId, text }).save();
+// POST /api/messages - Enviar mensaje
+app.post('/api/messages', authMiddleware, async (req, res) => {
+    const { chatId, text } = req.body;
+    const newMessage = await new Message({ 
+        chatId, 
+        senderId: req.user.id, 
+        text 
+    }).save();
     res.status(201).json(newMessage);
 });
 
-// 4. Iniciar Servidor
-app.listen(3001, () => console.log('Backend corriendo en puerto 3001'));
+app.listen(3001, () => console.log('Backend del Chat corriendo en puerto 3001'));
