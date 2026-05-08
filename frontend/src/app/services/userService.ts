@@ -33,5 +33,11 @@ export const userService = {
     return apiRequest<{ token: string }>('/api/seller/register', {
       method: 'PATCH',
     });
-  }
+  },
+  async reportUser(uid: string, data: { category: string, reportTitle: string, reportBody: string }): Promise<void> {
+    return apiRequest<void>(`/api/users/${uid}/report`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
 };

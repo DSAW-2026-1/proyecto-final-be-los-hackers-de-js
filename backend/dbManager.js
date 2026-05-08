@@ -17,6 +17,8 @@ const PRODUCTS_DB = "products"
 const PRODUCT_IMAGES_KEY = "images"
 const MAIN_DB = "marketplace"
 const ORDERS_DB = "orders"
+const REVIEWS_DB = "reviews"
+const REPORTS_DB = "reports"
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -43,6 +45,7 @@ class DbManager{
             if (err) throw err;
         });
         console.log("1 document inserted");
+        return true
     }
     static async addUser(user){
         await this.#addToCollection(USERS_DB, user)
@@ -173,6 +176,38 @@ class DbManager{
         if(!item) return null
         return (!(item.deleted)) ? item : null
     }
+    // Return the product document even if soft-deleted (used by admin checks)
+    static async findProductRawByID(ID) {
+        try {
+            return await this.#findByID(PRODUCTS_DB, ID)
+        } catch (e) {
+            return null
+        }
+    }
+
+    // Suspend a user and soft-delete all their products.
+    static async suspendUser(UID, reason) {
+        try {
+            const success = await this.updateUser(UID, {isSuspended: true, suspensionReason: reason})
+            if(success) {
+                // Find all products for this seller and soft-delete them
+                const products = await this.findAllProducts({sellerID: UID}) || []
+                for (const p of products) {
+                    try {
+                        await this.softDeleteProduct(p._id.toString())
+                    } catch (e) {
+                        // continue deleting others even if one fails
+                        console.error('Failed to soft-delete product '+p._id.toString()+' during user '+UID+' suspension:', e)
+                    }
+                }
+                return true
+            }
+            else return false
+        }
+        catch (e){
+            return false
+        }
+    }
     static async softDeleteProduct(ID) {
         await this.#updateItem(PRODUCTS_DB, ID, { deleted: true })
     }
@@ -229,6 +264,96 @@ class DbManager{
             }
         }
     }
+
+    // Reports
+    static async addReport(report) {
+        try {
+            const result = await client.db(MAIN_DB).collection(REPORTS_DB).insertOne(report)
+            return result.insertedId
+        } catch (e) {
+            return null
+        }
+    }
+
+    static async findReport(query) {
+        try {
+            return await this.#findOneInDb(REPORTS_DB, query)
+        } catch (e) {
+            return null
+        }
+    }
+    static async findReportByID(id){
+        try{
+            return await this.#findByID(REPORTS_DB, id)
+        }
+        catch (e){
+            return null
+        }
+    }
+    static async findActiveReports(page, limit){
+        try{
+            const p = Math.max(0, page)
+            const lim = Math.max(1, limit)
+            const query = { resolved: { $ne: true } }
+            const cursor = client.db(MAIN_DB).collection(REPORTS_DB).find(query)
+                .sort({ createdAt: -1 })
+                .skip(p * lim)
+                .limit(lim)
+            const results = await cursor.toArray()
+            const count = await client.db(MAIN_DB).collection(REPORTS_DB).countDocuments(query)
+            return { result: results, count }
+        }
+        catch (e){
+            return null
+        }
+    }
+    static async addReview(reviewData){
+        const { productID, sellerID, rating } = reviewData
+        if(!productID || !sellerID || !rating) return false
+        else{
+            const product = await this.findProductByID(productID)
+            const seller = await this.findUserByUID(sellerID)
+            if(!product || !seller) return false
+            else{
+                const review = await this.#addToCollection(REVIEWS_DB, reviewData)
+                if(!review) return false
+                else{
+                    await this.#appendToArrays(PRODUCTS_DB, productID, {reviews: reviewData._id})
+
+                    //Update product rating by computing average based on previous average
+                    const productReviewArray = product.reviews || []
+                    const productReviews = productReviewArray.length
+                    const currentRating = product.rating || Number(0)
+                    const productAvg = Number(((currentRating*productReviews) + rating) / (productReviews + 1))
+                    await this.updateProduct(product._id, {rating: productAvg})
+
+                    //Update seller review count and reputation
+                    const sellerReviews = seller.reviews || 0
+                    await this.updateUser(sellerID, {reviews: sellerReviews+1})
+                    const currentSellerRating = product.rating || Number(0)
+                    const sellerAvg = Number(((currentSellerRating*sellerReviews) + rating) / (sellerReviews + 1))
+                    await this.updateUser(seller._id, {reputation: sellerAvg})
+                    return true
+                }
+            }
+        }
+    }
+    static async getReviews(reviewsArray, page, limit){
+        try{
+            return await this.#findLimitedByIDs(REVIEWS_DB, reviewsArray, page, limit)
+        }
+        catch (e){
+            return null
+        }
+    }
+    static async findReview(query){
+        try{
+            return this.#findOneInDb(REVIEWS_DB, query)
+        }
+        catch (e){
+            return null
+        }
+    }
     static async #findLimitedByIDs(database, IDs, page, limit) {
         try {
             //let db = await this.#openConnection()
@@ -256,6 +381,47 @@ class DbManager{
     }
     static async updateOrder(ID, newData){
         return await this.#updateItem(ORDERS_DB, ID, newData)
+    }
+    static async findOrder(query){
+        try{
+            return this.#findOneInDb(ORDERS_DB, query)
+        }
+        catch (e){
+            return null
+        }
+    }
+
+    // Counts for admin dashboard
+    static async countUsers() {
+        try {
+            return await client.db(MAIN_DB).collection(USERS_DB).countDocuments({ isSuspended: { $ne: true } })
+        } catch (e) {
+            return 0
+        }
+    }
+
+    static async countActiveSellers() {
+        try {
+            return await client.db(MAIN_DB).collection(USERS_DB).countDocuments({ isSeller: true, isSuspended: { $ne: true } })
+        } catch (e) {
+            return 0
+        }
+    }
+
+    static async countProducts() {
+        try {
+            return await client.db(MAIN_DB).collection(PRODUCTS_DB).countDocuments({ deleted: { $ne: true } })
+        } catch (e) {
+            return 0
+        }
+    }
+
+    static async countOrders() {
+        try {
+            return await client.db(MAIN_DB).collection(ORDERS_DB).countDocuments({})
+        } catch (e) {
+            return 0
+        }
     }
 }
 
