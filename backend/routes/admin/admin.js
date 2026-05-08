@@ -11,5 +11,7 @@ const adminProductsRouter = require('./products')
 router.use('/products', adminProductsRouter)
 const adminUsersRouter = require('./users')
 router.use('/users', adminUsersRouter)
+const adminReportsRouter = require('./reports')
+router.use('/reports', adminReportsRouter)
 
 module.exports = router;

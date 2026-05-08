@@ -282,6 +282,14 @@ class DbManager{
             return null
         }
     }
+    static async findReportByID(id){
+        try{
+            return await this.#findByID(REPORTS_DB, id)
+        }
+        catch (e){
+            return null
+        }
+    }
     static async addReview(reviewData){
         const { productID, sellerID, rating } = reviewData
         if(!productID || !sellerID || !rating) return false
