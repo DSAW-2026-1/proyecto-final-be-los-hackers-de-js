@@ -7,6 +7,16 @@ export interface AdminDashboardStats {
   totalSales: number;
 }
 
+export interface AdminReport {
+  reportID: string;
+  reporterID: string;
+  type: 'productReport' | 'userReport';
+  reportedID: string;
+  category: string;
+  reportTitle: string;
+  reportBody: string;
+}
+
 export const adminService = {
   async getDashboardStats(): Promise<AdminDashboardStats> {
     return apiRequest<AdminDashboardStats>('/api/admin/dashboard');
@@ -23,5 +33,9 @@ export const adminService = {
       method: 'PATCH',
       body: JSON.stringify({ reason }),
     });
+  },
+
+  async getReport(reportID: string): Promise<AdminReport> {
+    return apiRequest<AdminReport>(`/api/admin/reports/${reportID}`);
   },
 };
