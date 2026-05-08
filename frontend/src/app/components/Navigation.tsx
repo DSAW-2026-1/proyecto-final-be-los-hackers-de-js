@@ -15,6 +15,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
+
+import UnisabanaLogo from "./../../../res/images/unisabana_logo_blue.png"
+
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 
 export function Navigation() {
@@ -46,7 +49,7 @@ export function Navigation() {
           <div className="flex items-center gap-8">
             <Link to="/" className="flex items-center gap-2">
               <img
-                src="/res/images/unisabana_logo_blue.png"
+                src={UnisabanaLogo}
                 alt="Unisabana Logo"
                 className="w-10 h-10 object-contain"
                 referrerPolicy="no-referrer"
