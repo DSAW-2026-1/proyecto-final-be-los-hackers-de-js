@@ -9,6 +9,8 @@ import { userService, UserProfileResponse } from '../services/userService';
 import { productService, Product } from '../services/productService';
 import { Label } from './ui/label';
 import { toast } from 'sonner';
+import Base64ImageLoader from './Base64ImageLoader';
+import { Avatar, AvatarFallback } from './ui/avatar';
 
 export function AdminReportView() {
   const { id: reportID } = useParams<{ id: string }>();
@@ -165,8 +167,24 @@ export function AdminReportView() {
                 </h4>
                 <Card className="p-4 flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-primary/5 rounded flex items-center justify-center">
-                      {report.type === 'productReport' ? <Box className="w-6 h-6 text-primary" /> : <User className="w-6 h-6 text-primary" />}
+                    <div className="w-16 h-16 bg-primary/5 rounded flex items-center justify-center border overflow-hidden">
+                      {report.type === 'productReport' ? (
+                        (reportedEntity as Product)?.images && (reportedEntity as Product).images[0] ? (
+                          <Base64ImageLoader data={(reportedEntity as Product).images[0]} alt={reportedName} className="w-full h-full object-cover" />
+                        ) : (
+                          <Box className="w-8 h-8 text-primary" />
+                        )
+                      ) : (
+                        <Avatar className="w-full h-full rounded-none">
+                          {(reportedEntity as UserProfileResponse)?.photo ? (
+                            <Base64ImageLoader data={(reportedEntity as UserProfileResponse).photo!} alt={reportedName} className="w-full h-full object-cover" />
+                          ) : (
+                            <AvatarFallback className="bg-primary/5 text-primary text-xl font-bold rounded-none w-full h-full">
+                              {reportedName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)}
+                            </AvatarFallback>
+                          )}
+                        </Avatar>
+                      )}
                     </div>
                     <div>
                       <p className="font-bold">{reportedName}</p>

@@ -17,6 +17,13 @@ export interface AdminReport {
   reportBody: string;
 }
 
+export interface AdminReportsResponse {
+  count: number;
+  pages: number;
+  page: number;
+  results: Record<string, AdminReport>;
+}
+
 export const adminService = {
   async getDashboardStats(): Promise<AdminDashboardStats> {
     return apiRequest<AdminDashboardStats>('/api/admin/dashboard');
@@ -37,5 +44,9 @@ export const adminService = {
 
   async getReport(reportID: string): Promise<AdminReport> {
     return apiRequest<AdminReport>(`/api/admin/reports/${reportID}`);
+  },
+
+  async getReports(page: number = 1): Promise<AdminReportsResponse> {
+    return apiRequest<AdminReportsResponse>(`/api/admin/reports?page=${page}`);
   },
 };
