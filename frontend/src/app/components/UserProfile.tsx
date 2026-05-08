@@ -231,7 +231,11 @@ export function UserProfile() {
                       <MessageCircle className="w-4 h-4 mr-2" />
                       Enviar Mensaje
                     </Button>
-                    <Button variant="ghost" className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                    <Button 
+                      variant="ghost" 
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                      onClick={() => navigate(`/report/user/${uid}`)}
+                    >
                       <Flag className="w-4 h-4 mr-2" />
                       Reportar
                     </Button>
@@ -245,7 +249,7 @@ export function UserProfile() {
                 <div className="flex items-center justify-center mb-2">
                   <Star className="w-5 h-5 fill-accent text-accent mr-1" />
                   <span className="text-2xl font-bold">
-                    {user.reputation ? user.reputation.split(' ')[0] : '0.0'}
+                    {user.reputation ? user.reputation : '0.0'}
                   </span>
                 </div>
                 <p className="text-sm text-muted-foreground">Calificación</p>

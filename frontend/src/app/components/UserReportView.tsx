@@ -7,25 +7,26 @@ import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 import { Input } from './ui/input';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
-import { AlertTriangle, Flag, ArrowLeft, Loader2, Package, ShieldCheck } from 'lucide-react';
-import { productService, Product } from '../services/productService';
+import { Avatar, AvatarFallback } from './ui/avatar';
+import { AlertTriangle, Flag, ArrowLeft, Loader2, User, ShieldCheck } from 'lucide-react';
+import { userService, UserProfileResponse } from '../services/userService';
 import { toast } from 'sonner';
 import Base64ImageLoader from './Base64ImageLoader';
 import { ApiError } from '../services/api';
 
 const REPORT_CATEGORIES = [
-  { id: 'fake', label: 'Producto falso o falsificación' },
+  { id: 'fake', label: 'Suplantación de identidad' },
   { id: 'scam', label: 'Estafa o fraude potencial' },
   { id: 'spam', label: 'Spam o duplicado' },
-  { id: 'inappropriate', label: 'Contenido inapropiado u ofensivo' },
-  { id: 'prohibited', label: 'Producto prohibido en la universidad' },
+  { id: 'inappropriate', label: 'Comportamiento inadecuado u ofensivo' },
+  { id: 'prohibited', label: 'Venta de productos prohibidos' },
   { id: 'other', label: 'Otro motivo' },
 ];
 
-export function ReportView() {
-  const { id: productID } = useParams<{ id: string }>();
+export function UserReportView() {
+  const { id: uid } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [product, setProduct] = useState<Product | null>(null);
+  const [user, setUser] = useState<UserProfileResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
@@ -34,25 +35,25 @@ export function ReportView() {
   const [body, setBody] = useState('');
 
   useEffect(() => {
-    async function fetchProduct() {
-      if (!productID) return;
+    async function fetchUser() {
+      if (!uid) return;
       try {
         setLoading(true);
-        const data = await productService.getProduct(productID);
-        setProduct(data);
+        const data = await userService.getProfileByUid(uid);
+        setUser(data);
       } catch (error) {
-        console.error('Error fetching product for report:', error);
-        toast.error('No se pudo cargar la información del producto');
+        console.error('Error fetching user for report:', error);
+        toast.error('No se pudo cargar la información del usuario');
       } finally {
         setLoading(false);
       }
     }
-    fetchProduct();
-  }, [productID]);
+    fetchUser();
+  }, [uid]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!productID) return;
+    if (!uid) return;
 
     if (!category) {
       toast.error('Por favor, selecciona una categoría');
@@ -65,21 +66,21 @@ export function ReportView() {
 
     try {
       setSubmitting(true);
-      await productService.createReport(productID, {
+      await userService.reportUser(uid, {
         category,
         reportTitle: title,
         reportBody: body
       });
       toast.success('Reporte enviado exitosamente. El equipo de moderación lo revisará pronto.');
-      navigate(`/product/${productID}`);
+      navigate(`/profile/${uid}`);
     } catch (error: unknown) {
       console.error('Error creating report:', error);
       const err = error as ApiError;
       
       if (err.status === 409) {
-        toast.error('Ya has reportado este producto anteriormente.');
+        toast.error('Ya has reportado a este usuario anteriormente.');
       } else if (err.status === 404) {
-        toast.error('El producto ya no existe.');
+        toast.error('El usuario ya no existe.');
       } else {
         toast.error(err.message || 'Error al enviar el reporte. Por favor intenta más tarde.');
       }
@@ -96,27 +97,29 @@ export function ReportView() {
     );
   }
 
-  if (!product) {
+  if (!user) {
     return (
       <div className="max-w-md mx-auto py-20 text-center">
-        <Package className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-        <h2 className="text-2xl font-bold mb-2">Producto no encontrado</h2>
+        <User className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+        <h2 className="text-2xl font-bold mb-2">Usuario no encontrado</h2>
         <Button onClick={() => navigate('/')}>Volver al Inicio</Button>
       </div>
     );
   }
 
+  const initials = user.username?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
+
   return (
     <div className="bg-muted/30 py-12">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <Button variant="ghost" onClick={() => navigate(`/product/${productID}`)} className="mb-4">
+        <div className="mb-8 text-left">
+          <Button variant="ghost" onClick={() => navigate(`/profile/${uid}`)} className="mb-4">
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Volver al Producto
+            Volver al Perfil
           </Button>
           <div className="flex items-center gap-3 mb-2">
             <Flag className="w-8 h-8 text-destructive" />
-            <h1 className="text-3xl font-bold text-primary">Reportar Producto</h1>
+            <h1 className="text-3xl font-bold text-primary">Reportar Usuario</h1>
           </div>
           <p className="text-muted-foreground">Tu reporte ayuda a mantener segura la comunidad de Unisabana.</p>
         </div>
@@ -124,19 +127,17 @@ export function ReportView() {
         <div className="grid grid-cols-1 gap-8">
           <Card className="p-6 mb-2">
             <div className="flex items-center gap-4">
-              <div className="w-20 h-20 rounded-lg overflow-hidden border bg-white flex-shrink-0">
-                {product.images[0] ? (
-                  <Base64ImageLoader data={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
+              <Avatar className="w-20 h-20 border shadow-sm">
+                {user.photo ? (
+                  <Base64ImageLoader data={user.photo} alt={user.username} className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <Package className="w-8 h-8 text-muted-foreground" />
-                  </div>
+                  <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">{initials}</AvatarFallback>
                 )}
-              </div>
+              </Avatar>
               <div>
-                <h3 className="font-semibold text-lg">{product.name}</h3>
-                <p className="text-sm text-muted-foreground">Vendedor: #{product.sellerID.substring(0, 8)}...</p>
-                <Badge variant="outline" className="mt-2">ID: {productID?.substring(0, 8)}...</Badge>
+                <h3 className="font-semibold text-lg">{user.username}</h3>
+                <p className="text-sm text-muted-foreground">{user.career}</p>
+                <Badge variant="outline" className="mt-2 text-xs">ID: {uid?.substring(0, 8)}...</Badge>
               </div>
             </div>
           </Card>
@@ -165,7 +166,7 @@ export function ReportView() {
                     <Label htmlFor="title">Título del reporte *</Label>
                     <Input 
                       id="title" 
-                      placeholder="Ej: El producto es una imitación" 
+                      placeholder="Ej: El usuario está usando fotos falsas" 
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
                       required
@@ -176,7 +177,7 @@ export function ReportView() {
                     <Label htmlFor="details">Descripción detallada *</Label>
                     <Textarea 
                       id="details" 
-                      placeholder="Proporciona toda la información posible para ayudar a los moderadores..." 
+                      placeholder="Proporciona toda la información posible para ayudar a los moderadores (fechas, productos involucrados, etc.)..." 
                       className="min-h-32 resize-none"
                       value={body}
                       onChange={(e) => setBody(e.target.value)}
@@ -213,7 +214,7 @@ export function ReportView() {
                 type="button" 
                 variant="outline" 
                 className="sm:w-32 h-12"
-                onClick={() => navigate(`/product/${productID}`)}
+                onClick={() => navigate(`/profile/${uid}`)}
                 disabled={submitting}
               >
                 Cancelar
@@ -225,9 +226,9 @@ export function ReportView() {
             <div className="flex gap-4">
               <ShieldCheck className="w-10 h-10 text-primary flex-shrink-0" />
               <div>
-                <h4 className="font-bold text-primary mb-1">Tu privacidad es importante</h4>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Los reportes son totalmente confidenciales. El vendedor no sabrá quién realizó la denuncia. Solo el equipo de administración de la Universidad de La Sabana podrá revisar esta información.
+                <h4 className="font-bold text-primary mb-1 text-left">Tu privacidad es importante</h4>
+                <p className="text-sm text-muted-foreground leading-relaxed text-left">
+                  Los reportes son totalmente confidenciales. El usuario no sabrá quién realizó la denuncia. Solo el equipo de administración de la Universidad de La Sabana podrá revisar esta información.
                 </p>
               </div>
             </div>

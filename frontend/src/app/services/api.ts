@@ -15,7 +15,15 @@ export async function apiRequest<T = unknown>(
 ): Promise<T> {
   const url = `${FULL_URL}${endpoint}`;
   
-  const token = localStorage.getItem('token');
+  let token = localStorage.getItem('token');
+  
+  // Use admin token for admin routes
+  if (endpoint.startsWith('/api/admin') && !endpoint.includes('/api/admin/login')) {
+    const adminToken = localStorage.getItem('admin_token');
+    if (adminToken) {
+      token = adminToken;
+    }
+  }
   
   const headers = new Headers({
     'Content-Type': 'application/json',

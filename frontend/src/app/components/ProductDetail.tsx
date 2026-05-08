@@ -19,12 +19,14 @@ import {
   Minus,
   Plus
 } from 'lucide-react';
-import { productService, Product } from '../services/productService';
+import { productService, Product, ReviewItem } from '../services/productService';
 import { userService, UserProfileResponse } from '../services/userService';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { NotFound } from './NotFound';
 import Base64ImageLoader from './Base64ImageLoader';
+import { ApiError } from '../services/api';
+import { useCallback } from 'react';
 
 export function ProductDetail() {
   const { id: productID } = useParams<{ id: string }>();
@@ -38,6 +40,60 @@ export function ProductDetail() {
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
 
+  // Reviews state
+  const [reviews, setReviews] = useState<ReviewItem[]>([]);
+  const [buyerProfiles, setBuyerProfiles] = useState<Record<string, UserProfileResponse>>({});
+  const [reviewsPage, setReviewsPage] = useState(1);
+  const [loadingReviews, setLoadingReviews] = useState(false);
+  const [hasMoreReviews, setHasMoreReviews] = useState(false);
+  const [reviewCount, setReviewCount] = useState(0);
+
+  const loadReviews = useCallback(async (page: number, append: boolean = false) => {
+    if (!productID) return;
+    try {
+      setLoadingReviews(true);
+      const data = await productService.getReviews(productID, page);
+      
+      const reviewList = Object.values(data.results || {});
+      
+      // Fetch buyer profiles for new reviews
+      const newProfiles: Record<string, UserProfileResponse> = {};
+      await Promise.all(reviewList.map(async (review) => {
+        if (!buyerProfiles[review.buyerID] && !newProfiles[review.buyerID]) {
+          try {
+            const profile = await userService.getProfileByUid(review.buyerID);
+            newProfiles[review.buyerID] = profile;
+          } catch (err) {
+            console.error(`Error fetching profile for buyer ${review.buyerID}:`, err);
+          }
+        }
+      }));
+
+      if (Object.keys(newProfiles).length > 0) {
+        setBuyerProfiles(prev => ({ ...prev, ...newProfiles }));
+      }
+      
+      if (append) {
+        setReviews(prev => [...prev, ...reviewList]);
+      } else {
+        setReviews(reviewList);
+      }
+      
+      setReviewsPage(data.page);
+      setReviewCount(data.count);
+      setHasMoreReviews(data.page < data.pages);
+    } catch (err: unknown) {
+      if ((err as ApiError).status === 204) {
+        setReviews([]);
+        setReviewCount(0);
+        setHasMoreReviews(false);
+      }
+      console.error('Error fetching reviews:', err);
+    } finally {
+      setLoadingReviews(false);
+    }
+  }, [productID, buyerProfiles]);
+
   useEffect(() => {
     async function fetchData() {
       if (!productID) return;
@@ -48,6 +104,9 @@ export function ProductDetail() {
         // Fetch seller info
         const sellerData = await userService.getProfileByUid(productData.sellerID);
         setSeller(sellerData);
+
+        // Fetch initial reviews
+        await loadReviews(1);
       } catch (err) {
         console.error('Error fetching data:', err);
         setError(true);
@@ -56,7 +115,13 @@ export function ProductDetail() {
       }
     }
     fetchData();
-  }, [productID]);
+  }, [productID, loadReviews]);
+
+  const handleLoadMore = () => {
+    if (hasMoreReviews && !loadingReviews) {
+      loadReviews(reviewsPage + 1, true);
+    }
+  };
 
   const handleAddToCart = () => {
     if (product && productID) {
@@ -318,7 +383,12 @@ export function ProductDetail() {
 
             {!isOwner && (
               <div className="flex justify-center pt-8">
-                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive transition-colors">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-muted-foreground hover:text-destructive transition-colors"
+                  onClick={() => navigate(`/report/${productID}`)}
+                >
                   <AlertTriangle className="w-4 h-4 mr-2" />
                   Reportar publicación
                 </Button>
@@ -329,13 +399,13 @@ export function ProductDetail() {
 
         {/* Reviews Section */}
         <div className="mt-16 sm:mt-24 max-w-2xl border-t pt-12">
-          <h2 className="text-xl font-bold text-primary mb-8 px-1">Reviews</h2>
+          <h2 className="text-xl font-bold text-primary mb-8 px-1">Reseñas ({reviewCount})</h2>
           
-          {product.rating ? (
+          {reviews.length > 0 ? (
             <div className="space-y-8">
               <div className="flex items-center gap-4 sm:gap-6 px-1">
                 <span className="text-4xl font-bold text-primary">
-                  {Number(product.rating.toFixed(1))}/5
+                  {product.rating ? Number(product.rating.toFixed(1)) : '0.0'}/5
                 </span>
                 <div className="flex gap-1">
                   {[1, 2, 3, 4, 5].map((star) => (
@@ -347,40 +417,68 @@ export function ProductDetail() {
                 </div>
               </div>
 
-              {/* Sample Review */}
-              <div className="space-y-4 pt-8 mt-8 border-t border-border/50">
-                <div className="flex items-center gap-4">
-                  <Avatar className="w-12 h-12">
-                    <AvatarFallback className="bg-[#102a43] text-white font-bold">GV</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <div className="flex gap-0.5 mb-1">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <Star 
-                          key={star} 
-                          className={`w-3.5 h-3.5 ${star <= 4 ? 'fill-accent text-accent' : 'text-muted-foreground'}`} 
-                        />
-                      ))}
+              <div className="space-y-8 pt-8 mt-8 border-t border-border/50">
+                {reviews.map((review, index) => {
+                  const buyer = buyerProfiles[review.buyerID];
+                  const buyerInitials = buyer?.username?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
+
+                  return (
+                    <div key={`${review.buyerID}-${index}`} className="space-y-4">
+                      <div className="flex items-center gap-4">
+                        <Avatar className="w-12 h-12">
+                          {buyer?.photo ? (
+                            <Base64ImageLoader data={buyer.photo} alt={buyer.username} className="w-full h-full object-cover" />
+                          ) : (
+                            <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                              {buyerInitials}
+                            </AvatarFallback>
+                          )}
+                        </Avatar>
+                        <div>
+                          <div className="flex gap-0.5 mb-1">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <Star 
+                                key={star} 
+                                className={`w-3.5 h-3.5 ${star <= review.rating ? 'fill-accent text-accent' : 'text-muted-foreground'}`} 
+                              />
+                            ))}
+                          </div>
+                          <h4 className="font-bold text-sm text-primary">{review.reviewTitle}</h4>
+                          <p className="text-xs text-muted-foreground">
+                            {buyer?.username || `Usuario #${review.buyerID.substring(0, 5)}`} • {new Date(review.reviewDate).toLocaleDateString('es-CO')}
+                          </p>
+                        </div>
+                      </div>
+                      <p className="text-sm text-muted-foreground leading-relaxed max-w-prose">
+                        {review.reviewBody}
+                      </p>
                     </div>
-                    <h4 className="font-bold text-sm text-primary">No incluye el cargador en la caja</h4>
-                    <p className="text-xs text-muted-foreground">Gabriel Vega • 2026-04-20</p>
+                  );
+                })}
+
+                {hasMoreReviews && (
+                  <div className="flex justify-center pt-4">
+                    <Button 
+                      variant="outline" 
+                      onClick={handleLoadMore}
+                      disabled={loadingReviews}
+                      className="gap-2"
+                    >
+                      {loadingReviews && <Loader2 className="w-4 h-4 animate-spin" />}
+                      Cargar más reseñas
+                    </Button>
                   </div>
-                </div>
-                <p className="text-sm text-muted-foreground leading-relaxed max-w-prose">
-                  El macbook me llegó en buen estado, pero el vendedor no incluyó el cargador en la caja. 
-                  Afortunadamente le servía el de mi macbook anterior y todo lo demás funciona bien, 
-                  pero el vendedor debería mencionar eso en la descripción.
-                </p>
+                )}
               </div>
             </div>
           ) : (
             <div className="space-y-6 px-1">
               <div className="flex gap-2">
                 {[1, 2, 3, 4, 5].map((star) => (
-                  <Star key={star} className="w-10 h-10 text-muted-foreground" />
+                  <Star key={star} className="w-10 h-10 text-muted-foreground border-border" />
                 ))}
               </div>
-              <p className="text-muted-foreground italic text-sm">Este producto no tiene reviews.</p>
+              <p className="text-muted-foreground italic text-sm">Este producto no tiene reseñas aún.</p>
             </div>
           )}
         </div>
