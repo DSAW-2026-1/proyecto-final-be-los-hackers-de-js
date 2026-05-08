@@ -109,6 +109,8 @@ All endpoints return JSON; protect with auth middleware where noted.
   - POST /api/admin/dashboard — site activity summary (admin-only)
   - DELETE /api/admin/products/:productID — soft-delete product (admin-only)
   - PATCH /api/admin/users/:UID/suspend — suspend a user and soft-delete their products (admin-only)
+  - GET /api/admin/reports/:reportID — fetch a specific report (admin-only)
+  - GET /api/admin/reports?page=X — list active reports, paginated (admin-only)
   - GET /admin/stats — metrics (future)
   - POST /admin/reports/:id/action — moderate content
 
@@ -166,6 +168,7 @@ All endpoints return JSON; protect with auth middleware where noted.
  - 2026-05-07: Implemented `POST /api/products/:productID/report` to allow authenticated users to report products. Added `reports` collection helpers in `dbManager.js` and mounted `routes/products/report.js`.
  - 2026-05-07: Implemented `POST /api/users/:UID/report` to allow authenticated users to report users. Added `routes/users/report.js` and mounted it in `routes/users/user.js`. Reused `reports` collection helpers in `dbManager.js`.
  - 2026-05-07: Recorded DB choice — MongoDB is the primary database for the backend.
+ - 2026-05-07: Implemented `GET /api/admin/reports/:reportID` to allow admins to fetch a report. Added `routes/admin/reports.js`, mounted under `/api/admin/reports`, and added `dbManager.findReportByID()` helper.
 
 ----
 

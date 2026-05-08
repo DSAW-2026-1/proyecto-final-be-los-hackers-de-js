@@ -290,6 +290,23 @@ class DbManager{
             return null
         }
     }
+    static async findActiveReports(page, limit){
+        try{
+            const p = Math.max(0, page)
+            const lim = Math.max(1, limit)
+            const query = { resolved: { $ne: true } }
+            const cursor = client.db(MAIN_DB).collection(REPORTS_DB).find(query)
+                .sort({ createdAt: -1 })
+                .skip(p * lim)
+                .limit(lim)
+            const results = await cursor.toArray()
+            const count = await client.db(MAIN_DB).collection(REPORTS_DB).countDocuments(query)
+            return { result: results, count }
+        }
+        catch (e){
+            return null
+        }
+    }
     static async addReview(reviewData){
         const { productID, sellerID, rating } = reviewData
         if(!productID || !sellerID || !rating) return false
