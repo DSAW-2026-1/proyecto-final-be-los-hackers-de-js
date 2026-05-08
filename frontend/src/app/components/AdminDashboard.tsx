@@ -106,14 +106,14 @@ function ReportItemRow({ report }: { report: AdminReport }) {
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1.5">
-              <Badge variant="outline" className="text-[10px] py-0 h-5 font-bold uppercase tracking-wider">
+              <Badge variant="outline" className="text-[10px] py-0 h-5">
                 {report.type === 'productReport' ? 'Producto' : 'Usuario'}
               </Badge>
-              <Badge variant="destructive" className="text-[10px] py-0 h-5 uppercase tracking-tighter shadow-sm">Prioridad Alta</Badge>
+              <Badge variant="destructive" className="text-[10px] py-0 h-5">Prioridad Alta</Badge>
             </div>
-            <h4 className="font-bold text-lg leading-tight mb-1 truncate text-primary">{report.reportTitle}</h4>
+            <h4 className="font-medium text-lg leading-tight mb-1 truncate text-primary">{report.reportTitle}</h4>
             <div className="flex items-center gap-2 text-sm">
-              <span className="font-medium text-destructive">Reportado:</span>
+              <span className="font-medium text-destructive/80">Reportado:</span>
               <span className="text-muted-foreground truncate max-w-[200px]">{reportedName || 'Desconocido'}</span>
               {reportedSubtext && (
                 <>
@@ -122,7 +122,7 @@ function ReportItemRow({ report }: { report: AdminReport }) {
                 </>
               )}
             </div>
-            <p className="text-[10px] font-mono text-muted-foreground/80 mt-1 uppercase tracking-widest">ID: {report.reportID.substring(0, 8)}</p>
+            <p className="text-xs text-muted-foreground/50 mt-1">ID: {report.reportID.substring(0, 8)}</p>
           </div>
         </div>
       </div>

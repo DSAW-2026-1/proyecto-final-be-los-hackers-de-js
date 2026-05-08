@@ -150,7 +150,7 @@ export function AdminReportView() {
                 <Badge variant="outline">{report.type === 'productReport' ? 'Producto' : 'Usuario'}</Badge>
                 <Badge variant="destructive">Prioridad Alta</Badge>
               </div>
-              <h3 className="text-xl font-bold mb-2">{report.reportTitle}</h3>
+              <h3 className="text-xl font-semibold mb-2">{report.reportTitle}</h3>
               <p className="text-sm text-muted-foreground mb-4">
                 Reportado {reporter ? `por ${reporter.username}` : 'por Usuario Anónimo'} • 2026-04-21
               </p>
@@ -161,7 +161,7 @@ export function AdminReportView() {
               </div>
 
               <div className="space-y-4">
-                <h4 className="font-bold flex items-center gap-2">
+                <h4 className="font-semibold flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 text-primary" />
                   Objeto del Reporte
                 </h4>
@@ -187,7 +187,7 @@ export function AdminReportView() {
                       )}
                     </div>
                     <div>
-                      <p className="font-bold">{reportedName}</p>
+                      <p className="font-semibold">{reportedName}</p>
                       <p className="text-xs text-muted-foreground">ID: {report.reportedID}</p>
                     </div>
                   </div>
@@ -206,7 +206,7 @@ export function AdminReportView() {
                     <User className="w-5 h-5 text-primary" />
                   </div>
                   <div>
-                    <p className="font-bold text-sm">{reporter?.username || 'Cargando...'}</p>
+                    <p className="font-semibold text-sm">{reporter?.username || 'Cargando...'}</p>
                     <p className="text-xs text-muted-foreground">{reporter?.career || 'Estudiante'}</p>
                   </div>
                 </div>
