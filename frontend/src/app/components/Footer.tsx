@@ -1,6 +1,7 @@
 import { Facebook, Instagram, Twitter, Mail, MapPin, Phone } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { Link } from 'react-router';
+import UnisabanaWhiteLogo from "./../../../res/images/unisabana_logo_white.png"
 
 export function Footer() {
   return (
@@ -10,7 +11,7 @@ export function Footer() {
           <div>
             <Link to="/" className="flex items-center gap-2 mb-4 shrink-0">
               <img
-                src="/res/images/unisabana_logo_white.png"
+                src={UnisabanaWhiteLogo}
                 alt="Unisabana Logo"
                 className="w-10 h-10 object-contain"
                 referrerPolicy="no-referrer"

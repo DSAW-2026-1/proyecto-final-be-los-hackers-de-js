@@ -13,6 +13,7 @@ import { useAuth } from '../context/AuthContext';
 import { productService, Product } from '../services/productService';
 import { userService } from '../services/userService';
 import Base64ImageLoader from './Base64ImageLoader';
+import PseLogo from "./../../../res/images/logo_PSE.png"
 
 export function Checkout() {
   const { cart, clearCart } = useCart();
@@ -250,7 +251,7 @@ export function Checkout() {
                   <RadioGroupItem value="pse" id="pse" />
                   <label htmlFor="pse" className="flex items-center gap-3 font-medium cursor-pointer flex-1">
                     <div className="flex items-center gap-3">
-                      <img src="/res/images/logo-PSE_.png" alt="PSE" className="h-8 w-auto" />
+                      <img src={PseLogo} alt="PSE" className="h-8 w-auto" />
                       <span>Pago por PSE</span>
                     </div>
                   </label>

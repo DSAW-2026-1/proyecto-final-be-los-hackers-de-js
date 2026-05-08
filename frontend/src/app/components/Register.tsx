@@ -9,6 +9,7 @@ import { Link, useNavigate } from 'react-router';
 import { authService } from '../services/authService';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
+import UnisabanaLogoText from './../../../res/images/unisabana_logo_with_text_blue.png'
 
 export function Register() {
   const [formData, setFormData] = useState({
@@ -101,7 +102,7 @@ export function Register() {
           <div className="text-center mb-8">
             <div className="flex items-center justify-center mb-6">
               <img
-                src="/res/images/unisabana_logo_with_text_blue.png"
+                src={UnisabanaLogoText}
                 alt="Unisabana Logo"
                 className="h-24 object-contain"
                 referrerPolicy="no-referrer"
