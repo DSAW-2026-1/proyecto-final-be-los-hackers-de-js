@@ -19,6 +19,7 @@ import { useState, useEffect } from 'react';
 import { userService, NotificationItem as APINotification } from '../services/userService';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { toast } from 'sonner';
 
 interface Notification {
   id: string;
@@ -103,8 +104,18 @@ export function Notifications() {
     }
   };
 
-  const markAsRead = (id: string) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+  const toggleReadState = async (id: string, currentState: boolean) => {
+    try {
+      const newState = !currentState;
+      // Optimistic update
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: newState } : n));
+      await userService.markNotificationState(id, newState);
+    } catch (error) {
+      console.error('Error toggling notification state:', error);
+      // Revert if error
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: currentState } : n));
+      toast.error('No se pudo actualizar el estado de la notificación');
+    }
   };
 
   const markAllAsRead = () => {
@@ -155,7 +166,7 @@ export function Notifications() {
           <NotificationItem 
             key={notif.id} 
             notif={notif} 
-            onMarkRead={() => markAsRead(notif.id)}
+            onToggleRead={() => toggleReadState(notif.id, notif.read)}
             onDelete={() => deleteNotification(notif.id)}
           />
         ))}
@@ -254,9 +265,9 @@ export function Notifications() {
   );
 }
 
-function NotificationItem({ notif, onMarkRead, onDelete }: { 
+function NotificationItem({ notif, onToggleRead, onDelete }: { 
   notif: Notification; 
-  onMarkRead: () => void;
+  onToggleRead: () => void;
   onDelete: () => void;
 }) {
   const Icon = notif.icon;
@@ -282,11 +293,9 @@ function NotificationItem({ notif, onMarkRead, onDelete }: {
           </p>
           
           <div className="flex items-center gap-2">
-            {!notif.read && (
-              <Button size="sm" variant="secondary" onClick={onMarkRead} className="h-8">
-                Marcar como leída
-              </Button>
-            )}
+            <Button size="sm" variant={notif.read ? "ghost" : "secondary"} onClick={onToggleRead} className="h-8">
+              {notif.read ? "Marcar como no leída" : "Marcar como leída"}
+            </Button>
             <Button size="sm" variant="ghost" className="h-8 text-muted-foreground">
               Ver detalle
             </Button>
