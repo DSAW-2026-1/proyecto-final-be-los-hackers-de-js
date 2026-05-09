@@ -317,6 +317,18 @@ class DbManager{
             return false
         }
     }
+    static async markAllNotificationsRead(UID){
+        try{
+            await client.db(MAIN_DB).collection(NOTIFICATIONS_DB).updateMany(
+                { userID: UID },
+                { $set: { read: true } }
+            )
+            return true
+        }
+        catch (e){
+            return false
+        }
+    }
     static async findNotificationsByUser(UID, page, limit, since = null){
         try{
             const p = Math.max(0, page)
