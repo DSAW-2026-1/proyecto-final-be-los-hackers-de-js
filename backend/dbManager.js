@@ -19,6 +19,7 @@ const MAIN_DB = "marketplace"
 const ORDERS_DB = "orders"
 const REVIEWS_DB = "reviews"
 const REPORTS_DB = "reports"
+const NOTIFICATIONS_DB = "notifications"
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -285,6 +286,33 @@ class DbManager{
     static async findReportByID(id){
         try{
             return await this.#findByID(REPORTS_DB, id)
+        }
+        catch (e){
+            return null
+        }
+    }
+
+    // Notifications
+    static async addNotification(notification) {
+        try {
+            const result = await client.db(MAIN_DB).collection(NOTIFICATIONS_DB).insertOne(notification)
+            return result.insertedId
+        } catch (e) {
+            return null
+        }
+    }
+    static async findNotificationsByUser(UID, page, limit){
+        try{
+            const p = Math.max(0, page)
+            const lim = Math.max(1, limit)
+            const query = { userID: UID }
+            const cursor = client.db(MAIN_DB).collection(NOTIFICATIONS_DB).find(query)
+                .sort({ createdAt: -1 })
+                .skip(p * lim)
+                .limit(lim)
+            const results = await cursor.toArray()
+            const count = await client.db(MAIN_DB).collection(NOTIFICATIONS_DB).countDocuments(query)
+            return { result: results, count }
         }
         catch (e){
             return null
