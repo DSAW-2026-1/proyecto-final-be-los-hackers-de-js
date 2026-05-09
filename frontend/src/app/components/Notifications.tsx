@@ -12,84 +12,98 @@ import {
   Trash2, 
   ShoppingBag,
   ArrowRight,
-  LucideIcon
+  LucideIcon,
+  Loader2
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { userService, NotificationItem as APINotification } from '../services/userService';
+import { formatDistanceToNow } from 'date-fns';
+import { es } from 'date-fns/locale';
 
-const MOCK_NOTIFICATIONS = [
-  {
-    id: 1,
-    type: 'sale',
-    title: '¡Nueva venta!',
-    description: 'Has vendido "Calculadora TI-84 Plus". Revisa los detalles para coordinar la entrega.',
-    time: 'Hace 5 minutos',
-    read: false,
-    icon: ShoppingBag,
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-100',
-  },
-  {
-    id: 2,
-    type: 'shipping',
-    title: 'Producto en camino',
-    description: 'Tu pedido "MacBook Air M1" ha sido marcado como "En tránsito" por el vendedor.',
-    time: 'Hace 2 horas',
-    read: false,
-    icon: Package,
-    color: 'text-orange-600',
-    bgColor: 'bg-orange-100',
-  },
-  {
-    id: 3,
-    type: 'message',
-    title: 'Nuevo mensaje',
-    description: 'Ana Rodríguez te ha enviado un mensaje sobre "Libro Cálculo III".',
-    time: 'Hace 3 horas',
-    read: true,
-    icon: MessageCircle,
-    color: 'text-green-600',
-    bgColor: 'bg-green-100',
-  },
-  {
-    id: 4,
-    type: 'system',
-    title: 'Cuenta Verificada',
-    description: '¡Felicidades! Tu cuenta ha sido verificada exitosamente con tu correo institucional.',
-    time: 'Ayer, 4:30 PM',
-    read: true,
-    icon: CheckCircle2,
-    color: 'text-purple-600',
-    bgColor: 'bg-purple-100',
-  },
-  {
-    id: 5,
-    type: 'promotion',
-    title: 'Baja de precio',
-    description: 'Un producto en tus favoritos, "iPad 9na Gen", ha bajado de precio a $1.400.000.',
-    time: 'Ayer, 10:15 AM',
-    read: true,
-    icon: Tag,
-    color: 'text-pink-600',
-    bgColor: 'bg-pink-100',
-  },
-  {
-    id: 6,
-    type: 'system',
-    title: 'Actualización de políticas',
-    description: 'Hemos actualizado nuestros términos de uso para mejorar la seguridad en el campus.',
-    time: 'hace 2 días',
-    read: true,
-    icon: Info,
-    color: 'text-gray-600',
-    bgColor: 'bg-gray-100',
+interface Notification {
+  id: string;
+  type: string;
+  title: string;
+  description: string;
+  time: string;
+  read: boolean;
+  icon: LucideIcon;
+  color: string;
+  bgColor: string;
+}
+
+const getNotificationStyles = (type: string) => {
+  switch (type) {
+    case 'purchase':
+    case 'sale':
+      return { icon: ShoppingBag, color: 'text-blue-600', bgColor: 'bg-blue-100' };
+    case 'shipping':
+    case 'orderUpdate':
+      return { icon: Package, color: 'text-orange-600', bgColor: 'bg-orange-100' };
+    case 'message':
+      return { icon: MessageCircle, color: 'text-green-600', bgColor: 'bg-green-100' };
+    case 'review':
+    case 'promotion':
+      return { icon: Tag, color: 'text-pink-600', bgColor: 'bg-pink-100' };
+    case 'system':
+      return { icon: CheckCircle2, color: 'text-purple-600', bgColor: 'bg-purple-100' };
+    default:
+      return { icon: Info, color: 'text-gray-600', bgColor: 'bg-gray-100' };
   }
-];
+};
 
 export function Notifications() {
-  const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const markAsRead = (id: number) => {
+  const fetchNotifications = async (pageNum: number, isLoadMore: boolean = false) => {
+    try {
+      if (isLoadMore) setLoadingMore(true);
+      else setLoading(true);
+
+      const response = await userService.getNotifications(pageNum);
+      
+      const newNotifications = Object.values(response.results).map((item: APINotification) => ({
+        id: item.notificationID,
+        type: item.type,
+        title: item.title,
+        description: item.message,
+        time: formatDistanceToNow(new Date(item.createdAt), { addSuffix: true, locale: es }),
+        read: item.read,
+        ...getNotificationStyles(item.type)
+      }));
+
+      if (isLoadMore) {
+        setNotifications(prev => [...prev, ...newNotifications]);
+      } else {
+        setNotifications(newNotifications);
+      }
+      
+      setTotalPages(response.pages);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotifications(1);
+  }, []);
+
+  const loadMore = () => {
+    if (page < totalPages) {
+      const nextPage = page + 1;
+      setPage(nextPage);
+      fetchNotifications(nextPage, true);
+    }
+  };
+
+  const markAsRead = (id: string) => {
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
   };
 
@@ -97,8 +111,69 @@ export function Notifications() {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   };
 
-  const deleteNotification = (id: number) => {
+  const deleteNotification = (id: string) => {
     setNotifications(prev => prev.filter(n => n.id !== id));
+  };
+
+  const renderNotificationList = (filterType?: string | string[]) => {
+    let filtered = notifications;
+    if (filterType) {
+      if (Array.isArray(filterType)) {
+        filtered = notifications.filter(n => filterType.includes(n.type));
+      } else if (filterType === 'unread') {
+        filtered = notifications.filter(n => !n.read);
+      } else {
+        filtered = notifications.filter(n => n.type === filterType);
+      }
+    }
+
+    if (loading && page === 1) {
+      return (
+        <div className="space-y-4">
+          {[1, 2, 3].map(i => (
+            <Card key={i} className="p-6 animate-pulse">
+              <div className="flex gap-4">
+                <div className="w-12 h-12 rounded-xl bg-muted" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 bg-muted rounded w-1/4" />
+                  <div className="h-3 bg-muted rounded w-3/4" />
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      );
+    }
+
+    if (filtered.length === 0) {
+      return <EmptyNotifications message={filterType === 'unread' ? "No tienes notificaciones sin leer." : undefined} />;
+    }
+
+    return (
+      <div className="space-y-4">
+        {filtered.map((notif) => (
+          <NotificationItem 
+            key={notif.id} 
+            notif={notif} 
+            onMarkRead={() => markAsRead(notif.id)}
+            onDelete={() => deleteNotification(notif.id)}
+          />
+        ))}
+        {page < totalPages && (
+          <div className="flex justify-center pt-4">
+            <Button 
+              variant="outline" 
+              onClick={loadMore} 
+              disabled={loadingMore}
+              className="gap-2"
+            >
+              {loadingMore && <Loader2 className="w-4 h-4 animate-spin" />}
+              Cargar más notificaciones
+            </Button>
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -108,9 +183,9 @@ export function Notifications() {
           <div>
             <div className="flex items-center gap-3 mb-2">
               <h1 className="text-4xl font-bold text-primary">Notificaciones</h1>
-              {unreadCount > 0 && (
+              {notifications.filter(n => !n.read).length > 0 && (
                 <Badge variant="destructive" className="h-6 px-2">
-                  {unreadCount} nuevas
+                  {notifications.filter(n => !n.read).length} nuevas
                 </Badge>
               )}
             </div>
@@ -119,7 +194,7 @@ export function Notifications() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={markAllAsRead} disabled={unreadCount === 0}>
+            <Button variant="outline" size="sm" onClick={markAllAsRead} disabled={notifications.filter(n => !n.read).length === 0}>
               Marcar todas como leídas
             </Button>
             <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">
@@ -138,78 +213,23 @@ export function Notifications() {
           </TabsList>
 
           <TabsContent value="all" className="space-y-4">
-            {notifications.length > 0 ? (
-              notifications.map((notif) => (
-                <NotificationItem 
-                  key={notif.id} 
-                  notif={notif} 
-                  onMarkRead={() => markAsRead(notif.id)}
-                  onDelete={() => deleteNotification(notif.id)}
-                />
-              ))
-            ) : (
-              <EmptyNotifications />
-            )}
+            {renderNotificationList()}
           </TabsContent>
 
           <TabsContent value="unread" className="space-y-4">
-            {notifications.filter(n => !n.read).length > 0 ? (
-              notifications.filter(n => !n.read).map((notif) => (
-                <NotificationItem 
-                  key={notif.id} 
-                  notif={notif} 
-                  onMarkRead={() => markAsRead(notif.id)}
-                  onDelete={() => deleteNotification(notif.id)}
-                />
-              ))
-            ) : (
-              <EmptyNotifications message="No tienes notificaciones sin leer." />
-            )}
+            {renderNotificationList('unread')}
           </TabsContent>
 
           <TabsContent value="sales" className="space-y-4">
-            {notifications.filter(n => n.type === 'sale').length > 0 ? (
-              notifications.filter(n => n.type === 'sale').map((notif) => (
-                <NotificationItem 
-                  key={notif.id} 
-                  notif={notif} 
-                  onMarkRead={() => markAsRead(notif.id)}
-                  onDelete={() => deleteNotification(notif.id)}
-                />
-              ))
-            ) : (
-              <EmptyNotifications message="No tienes notificaciones de ventas." />
-            )}
+            {renderNotificationList('sale')}
           </TabsContent>
 
           <TabsContent value="purchases" className="space-y-4">
-            {notifications.filter(n => n.type === 'shipping' || n.type === 'promotion').length > 0 ? (
-              notifications.filter(n => n.type === 'shipping' || n.type === 'promotion').map((notif) => (
-                <NotificationItem 
-                  key={notif.id} 
-                  notif={notif} 
-                  onMarkRead={() => markAsRead(notif.id)}
-                  onDelete={() => deleteNotification(notif.id)}
-                />
-              ))
-            ) : (
-              <EmptyNotifications message="No tienes notificaciones de compras." />
-            )}
+            {renderNotificationList(['purchase', 'shipping', 'orderUpdate', 'promotion'])}
           </TabsContent>
 
           <TabsContent value="system" className="space-y-4">
-            {notifications.filter(n => n.type === 'system').length > 0 ? (
-              notifications.filter(n => n.type === 'system').map((notif) => (
-                <NotificationItem 
-                  key={notif.id} 
-                  notif={notif} 
-                  onMarkRead={() => markAsRead(notif.id)}
-                  onDelete={() => deleteNotification(notif.id)}
-                />
-              ))
-            ) : (
-              <EmptyNotifications message="No tienes notificaciones del sistema." />
-            )}
+            {renderNotificationList('system')}
           </TabsContent>
         </Tabs>
 
@@ -232,18 +252,6 @@ export function Notifications() {
       </div>
     </div>
   );
-}
-
-interface Notification {
-  id: number;
-  type: string;
-  title: string;
-  description: string;
-  time: string;
-  read: boolean;
-  icon: LucideIcon;
-  color: string;
-  bgColor: string;
 }
 
 function NotificationItem({ notif, onMarkRead, onDelete }: { 

@@ -10,6 +10,23 @@ export interface UserProfileResponse {
   sales: number;
 }
 
+export interface NotificationItem {
+  notificationID: string;
+  type: 'message' | 'orderUpdate' | 'review' | 'purchase' | 'system' | 'sale' | 'shipping' | 'promotion';
+  title: string;
+  message: string;
+  createdAt: string;
+  read: boolean;
+  topicID: string;
+}
+
+export interface NotificationsResponse {
+  count: number;
+  pages: number;
+  page: number;
+  results: Record<string, NotificationItem>;
+}
+
 export interface UpdateProfileRequest {
   username?: string;
   career?: string;
@@ -28,6 +45,9 @@ export const userService = {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
+  },
+  async getNotifications(page: number = 1): Promise<NotificationsResponse> {
+    return apiRequest<NotificationsResponse>(`/api/notifications?page=${page}`);
   },
   async registerAsSeller(): Promise<{ token: string }> {
     return apiRequest<{ token: string }>('/api/seller/register', {
