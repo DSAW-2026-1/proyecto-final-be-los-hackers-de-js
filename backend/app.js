@@ -19,7 +19,7 @@ const jsonParseFailureHandler = require('./errorHandlers/jsonParseFailure')
 const salesRouter = require('./routes/sales/sale')
 const ordersRouter = require('./routes/orders/order')
 const sellerRouter = require('./routes/seller/seller')
-const notificationsRouter = require('./routes/notifications/notifications')
+const notificationsRouter = require('./routes/notifications/notification')
 
 const app = express();
 

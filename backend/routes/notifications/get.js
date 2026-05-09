@@ -1,11 +1,7 @@
 const express = require('express')
 const router = express.Router()
 const db = require("../../dbManager")
-const tokenValidatorMiddleware = require("../../middleware/auth/tokenValidator");
-const userAuthMiddleware = require("../../middleware/auth/userValidator");
 
-router.use('/', tokenValidatorMiddleware)
-router.use('/', userAuthMiddleware)
 // GET /api/notifications?page=X
 router.get('/', async (req, res) => {
     const pageQuery = parseInt(req.query.page) || 1
@@ -13,18 +9,31 @@ router.get('/', async (req, res) => {
     const limit = 12
 
     const UID = req.token && req.token.payload && req.token.payload.UID
-    if (!UID) return res.status(400).json({ error: "Invalid JWT token" })
+    if (!UID) return res.status(400).json({error: "Invalid JWT token"})
 
     // Ensure user exists (return 404 if not)
     const user = await db.findUserByUID(UID)
-    if (!user) return res.status(404).json({ error: "User not found" })
+    if (!user) return res.status(404).json({error: "User not found"})
+
+    // Parse optional `since` query param
+    let sinceDate = null
+    if (req.query.since) {
+        const parsed = new Date(req.query.since)
+        if (isNaN(parsed.getTime())) return res.status(400).json({ error: "Invalid 'since' date" })
+        sinceDate = parsed
+    }
 
     const zeroBasedPage = page - 1
-    const data = await db.findNotificationsByUser(UID, zeroBasedPage, limit)
+    const data = await db.findNotificationsByUser(UID, zeroBasedPage, limit, sinceDate)
     if (data === null) return res.status(500).json({ error: "Server error" })
 
     const { result, count } = data
-    if (!count || count === 0) return res.status(204).json({ "No notifications": true })
+
+    //Select err message depending on whether new notifications or all notifications were queried
+    if((!count || count === 0)){
+        if(sinceDate)  return res.status(204).json({ message: "No new notifications" })
+        else return res.status(204).json({ message: "No notifications" })
+    }
 
     const pages = Math.max(1, Math.ceil(count / limit))
     if (page > pages) return res.status(400).json({ error: "Result page out of range" })

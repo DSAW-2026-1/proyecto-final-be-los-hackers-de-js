@@ -301,11 +301,37 @@ class DbManager{
             return null
         }
     }
-    static async findNotificationsByUser(UID, page, limit){
+    static async findNotificationByID(id){
+        try{
+            return await this.#findByID(NOTIFICATIONS_DB, id)
+        }
+        catch (e){
+            return null
+        }
+    }
+    static async updateNotification(ID, newData){
+        try{
+            return await this.#updateItem(NOTIFICATIONS_DB, ID, newData)
+        }
+        catch (e){
+            return false
+        }
+    }
+    static async findNotificationsByUser(UID, page, limit, since = null){
         try{
             const p = Math.max(0, page)
             const lim = Math.max(1, limit)
             const query = { userID: UID }
+            if (since) {
+                try {
+                    const sinceDate = (since instanceof Date) ? since : new Date(since)
+                    if (!isNaN(sinceDate.getTime())) {
+                        query.createdAt = { $gte: sinceDate }
+                    }
+                } catch (e) {
+                    // ignore invalid date here; caller should validate if needed
+                }
+            }
             const cursor = client.db(MAIN_DB).collection(NOTIFICATIONS_DB).find(query)
                 .sort({ createdAt: -1 })
                 .skip(p * lim)
