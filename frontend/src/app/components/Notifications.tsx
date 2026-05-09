@@ -118,8 +118,24 @@ export function Notifications() {
     }
   };
 
-  const markAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  const markAllAsRead = async () => {
+    const unreadIds = notifications.filter(n => !n.read).map(n => n.id);
+    if (unreadIds.length === 0) return;
+
+    try {
+      // Optimistic update
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      
+      await userService.markAllNotificationsRead();
+      toast.success('Todas las notificaciones marcadas como leídas');
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+      // Revert is complex if we only have the current view, 
+      // but for "mark all read" usually a refetch or partial revert is better.
+      // For simplicity in this UI, we'll just show the error as it hits the backend.
+      toast.error('No se pudieron marcar todas las notificaciones como leídas');
+      fetchNotifications(1); // Refetch to be safe
+    }
   };
 
   const deleteNotification = (id: string) => {

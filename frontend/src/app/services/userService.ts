@@ -55,6 +55,11 @@ export const userService = {
       body: JSON.stringify({ read }),
     });
   },
+  async markAllNotificationsRead(): Promise<void> {
+    return apiRequest<void>('/api/notifications/readAll', {
+      method: 'PATCH',
+    });
+  },
   async registerAsSeller(): Promise<{ token: string }> {
     return apiRequest<{ token: string }>('/api/seller/register', {
       method: 'PATCH',
