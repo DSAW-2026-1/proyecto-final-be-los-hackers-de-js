@@ -77,9 +77,11 @@ export default function App() {
 
               {/* Communication & Utils */}
               <Route path="/chat" element={<ChatInterface />} />
-              <Route path="/notifications" element={<Notifications />} />
-              <Route path="/report/:id" element={<ReportView />} />
-              <Route path="/report/user/:id" element={<UserReportView />} />
+              <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+
+              {/* Reporting users and products */}
+              <Route path="/report/:id" element={<ProtectedRoute><ReportView /></ProtectedRoute>} />
+              <Route path="/report/user/:id" element={<ProtectedRoute><UserReportView /></ProtectedRoute>} />
 
               {/* Admin routes */}
               <Route path="/admin" element={<AdminProtectedRoute><AdminDashboard /></AdminProtectedRoute>} />
