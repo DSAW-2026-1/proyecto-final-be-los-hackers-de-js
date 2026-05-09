@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require("../../dbManager")
-const {createNotification} = require("../../services/notifications");
+const notifications = require("../../services/notifications");
 router.post('/', async(req, res) => {
     const UID = req.token.payload.UID
     const errorMsg = "Incomplete or malformed request"
@@ -39,14 +39,19 @@ router.post('/', async(req, res) => {
         let success = await db.addOrder(order)
         if(success) {
             await db.updateProduct(validated[i].productID, {stock: (validated[i].product.stock - validated[i].amount)})
-            //Create notification for seller
-            await createNotification({
-                userID: validated[i].product.sellerID,
-                type: "purchase",
-                title: "Nueva venta",
-                message: buyer.username + " compró "+validated[i].amount+" de tu \"" + validated[i].product.name + "\". Revisa los detalles para coordinar la entrega.",
-                topicID: order._id,
-            })
+            try{
+                //Create notification for seller
+                await notifications.createNotification({
+                    userID: validated[i].product.sellerID,
+                    type: "purchase",
+                    title: "Nueva venta",
+                    message: buyer.username + " compró "+validated[i].amount+" de tu \"" + validated[i].product.name + "\". Revisa los detalles para coordinar la entrega.",
+                    topicID: order._id,
+                })
+            }
+            catch (e){
+                console.error('Failed to create seller notification for purchase:', e)
+            }
         }
         else return res.status(500).json({error: "Unable to finalize transaction. Some orders were not processed."});
     }
