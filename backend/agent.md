@@ -124,6 +124,10 @@ All endpoints return JSON; protect with auth middleware where noted.
     - Behavior: verifies the authenticated user exists, then updates all notifications with `userID` equal to the user to set `read: true`.
     - Responses: `200 { "Notifications marked as read" }` on success; `404 { "No notifications" }` if the user has no notifications; `400` for invalid JWT; `500` on server error.
 
+    - GET /api/notifications/unreadCount — return the count of unread notifications for the authenticated user
+      - Behavior: Authenticated-only endpoint that counts notifications where `userID` matches the authenticated user's UID and `read` is `false`.
+      - Responses: `200 { count: <number> }` on success (count may be 0), `404 { "User not found" }` if the user does not exist, `400` for invalid JWT, `500` on server error.
+
 - Admin
   - POST /api/admin/dashboard — site activity summary (admin-only)
   - DELETE /api/admin/products/:productID — soft-delete product (admin-only)
@@ -183,19 +187,16 @@ All endpoints return JSON; protect with auth middleware where noted.
  - 2026-05-07: Implemented `DELETE /api/admin/products/:productID` to soft-delete products; added `findProductRawByID()` helper and mounted admin products router under `/api/admin/products`.
  - 2026-05-07: Implemented `PATCH /api/admin/users/:UID/suspend` to suspend users, store suspension reason, and soft-delete their products. Added `suspendUser()` helper in `dbManager.js`.
  - 2026-05-07: Implemented `POST /api/products/:productID/report` to allow authenticated users to report products. Added `reports` collection helpers in `dbManager.js` and mounted `routes/products/report.js`.
- - 2026-05-07: Recorded DB choice — MongoDB is the primary database for the backend.
- - 2026-05-07: Implemented `POST /api/products/:productID/report` to allow authenticated users to report products. Added `reports` collection helpers in `dbManager.js` and mounted `routes/products/report.js`.
  - 2026-05-07: Implemented `POST /api/users/:UID/report` to allow authenticated users to report users. Added `routes/users/report.js` and mounted it in `routes/users/user.js`. Reused `reports` collection helpers in `dbManager.js`.
- - 2026-05-07: Recorded DB choice — MongoDB is the primary database for the backend.
  - 2026-05-07: Implemented `GET /api/admin/reports/:reportID` to allow admins to fetch a report. Added `routes/admin/reports.js`, mounted under `/api/admin/reports`, and added `dbManager.findReportByID()` helper.
  - 2026-05-09: Implemented notifications subsystem:
    - Added `GET /api/notifications` (authenticated, paginated) and mounted it in `app.js`.
    - Added `dbManager.findNotificationsByUser()` to fetch notifications with pagination.
    - Added `dbManager.addNotification()` as the raw DB insert helper for notifications.
    - Added `services/notifications.js` with `createNotification()` to validate/default notification documents before inserting.
-  - Updated review creation handler (`routes/products/reviews/create.js`) to generate a `review` notification for the product seller after a successful review creation.
-  - Updated seller shipping status update handler (`routes/seller/shipping/update.js`) to create `orderUpdate` notifications for buyers when order status changes.
-  - Checkout flow (`routes/sales/checkout.js`) already creates `purchase` notifications for sellers when orders are placed.
+   - Updated review creation handler (`routes/products/reviews/create.js`) to generate a `review` notification for the product seller after a successful review creation.
+   - Updated seller shipping status update handler (`routes/seller/shipping/update.js`) to create `orderUpdate` notifications for buyers when order status changes.
+   - Checkout flow (`routes/sales/checkout.js`) already creates `purchase` notifications for sellers when orders are placed.
 
  - 2026-05-09: Enhanced `GET /api/notifications` endpoint:
    - Accepts optional `since` query parameter to filter notifications with `createdAt >= since`.
@@ -204,11 +205,11 @@ All endpoints return JSON; protect with auth middleware where noted.
    - Updated `dbManager.findNotificationsByUser(UID, page, limit, since)` to accept the `since` filter.
 
  - 2026-05-09: Refactored notifications routes and updated frontend integration:
-   - Split the notifications router into `routes/notifications/get.js` and `routes/notifications/updateReadStatus.js`, and composed them in `routes/notifications/notification.js` which is mounted in `app.js`.
+   - Split the notifications router into `routes/notifications/get.js`, `routes/notifications/updateReadStatus.js`, `routes/notifications/readAll.js`, and `routes/notifications/unreadCount.js`, and composed them in `routes/notifications/notification.js` which is mounted in `app.js`.
    - Standardized `204` responses to include a `message` field (`"No notifications"` / `"No new notifications"`).
    - Added `dbManager.findNotificationByID()` and `dbManager.updateNotification()` helpers (used by the PATCH handler).
-  - 2026-05-09: Implemented `PATCH /api/notifications/readAll` to allow users to mark all their notifications as read. Added `dbManager.markAllNotificationsRead()` helper and `routes/notifications/readAll.js`; mounted in `routes/notifications/notification.js`.
-
+   - Implemented `PATCH /api/notifications/readAll` to allow users to mark all their notifications as read. Added `dbManager.markAllNotificationsRead()` helper and `routes/notifications/readAll.js`; mounted in `routes/notifications/notification.js`.
+   - Implemented `GET /api/notifications/unreadCount` and added `dbManager.countUnreadNotifications()` to provide an authenticated unread-count-only endpoint for clients needing lightweight polling.
 ----
 
 ## 14. Decisions to make / Questions

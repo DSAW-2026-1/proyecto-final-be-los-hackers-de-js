@@ -356,6 +356,15 @@ class DbManager{
             return null
         }
     }
+    static async countUnreadNotifications(UID){
+        try{
+            // Count notifications for the user where read is explicitly false
+            return await client.db(MAIN_DB).collection(NOTIFICATIONS_DB).countDocuments({userID: UID, read: false})
+        }
+        catch (e){
+            return null
+        }
+    }
     static async findActiveReports(page, limit){
         try{
             const p = Math.max(0, page)
