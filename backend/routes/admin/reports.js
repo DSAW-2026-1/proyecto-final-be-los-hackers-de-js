@@ -11,7 +11,7 @@ router.get('/', async function (req, res) {
     const data = await db.findActiveReports(page - 1, limit)
     if (!data) return res.status(500).json({ error: 'Internal server error' })
     const { result, count } = data
-    if (!result || result.length === 0) return res.status(404).json({ error: 'No reports found' })
+    if (count === 0 || !result || result.length === 0) return res.status(404).json({ error: 'No reports found' })
 
     const pages = Math.max(1, Math.ceil(count / limit))
     if (page > pages) return res.status(400).json({ error: 'Result page out of range' })
