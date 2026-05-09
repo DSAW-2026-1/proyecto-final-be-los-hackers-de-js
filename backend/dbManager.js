@@ -357,10 +357,9 @@ class DbManager{
 
                     //Update seller review count and reputation
                     const sellerReviews = seller.reviews || 0
-                    await this.updateUser(sellerID, {reviews: sellerReviews+1})
-                    const currentSellerRating = product.rating || Number(0)
+                    const currentSellerRating = seller.reputation || Number(0)
                     const sellerAvg = Number(((currentSellerRating*sellerReviews) + rating) / (sellerReviews + 1))
-                    await this.updateUser(seller._id, {reputation: sellerAvg})
+                    await this.updateUser(seller._id, {reputation: sellerAvg, reviews: sellerReviews+1})
                     return true
                 }
             }

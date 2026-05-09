@@ -52,9 +52,9 @@ router.post('/:id/reviews', async(req, res) => {
     // Create notification for the seller about the new review
     try {
         const seller = await db.findUserByUID(String(product.sellerID))
-        const buyerName = (user && (user.name || user.email)) || 'Un comprador'
-        const productName = product.title || 'tu producto'
-        const message = `${buyerName} dejó una reseña de ${ratingInt} estrellas sobre ${productName}`
+        const buyerName = (user && (user.username || user.email)) || 'Un comprador'
+        const productName = product.name || 'tu producto'
+        const message = `${buyerName} dejó una reseña de ${ratingInt} estrellas sobre \"${productName}\"`
 
         if (seller) {
             await notifications.createNotification({
