@@ -34,6 +34,7 @@ import { ScrollToTop } from './components/ScrollToTop.tsx';
 
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AdminProtectedRoute } from './components/AdminProtectedRoute';
+import { NotificationPoller } from './components/NotificationPoller';
 
 function Home() {
   return (
@@ -48,6 +49,7 @@ export default function App() {
   return (
     <AuthProvider>
       <CartProvider>
+        <NotificationPoller />
         <Toaster position="top-right" expand={true} richColors />
         <ScrollToTop>
           <Routes>

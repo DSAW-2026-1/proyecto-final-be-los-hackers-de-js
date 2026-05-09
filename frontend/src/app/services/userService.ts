@@ -49,6 +49,9 @@ export const userService = {
   async getNotifications(page: number = 1): Promise<NotificationsResponse> {
     return apiRequest<NotificationsResponse>(`/api/notifications?page=${page}`);
   },
+  async getNotificationsSince(since: string): Promise<NotificationsResponse> {
+    return apiRequest<NotificationsResponse>(`/api/notifications?since=${since}`);
+  },
   async markNotificationState(notificationID: string, read: boolean): Promise<void> {
     return apiRequest<void>(`/api/notifications/${notificationID}`, {
       method: 'PATCH',
