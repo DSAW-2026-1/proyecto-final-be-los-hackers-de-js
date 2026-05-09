@@ -1,8 +1,10 @@
 # Marketplace Backend — Agent Notes
 
-Last updated: 2026-05-07
+Last updated: 2026-05-09
 
 This document is the single-source agent-facing summary of the backend: goals, constraints, architecture, data models, APIs, operational notes, and short-term priorities. Keep this file updated as decisions change.
+
+**Agent maintenance note:** Update this file whenever code or API changes are made. Add a concise changelog entry, update the API surface and data model sections, and increment the `Last updated` date so the file remains the single source of truth for architectural and operational decisions.
 
 **Project**: Marketplace (University) — backend
 **Purpose**: Provide a maintainable, testable Node.js + Express API that supports product listing, buying, messaging, reviews, and admin moderation for an institutional marketplace.
@@ -56,7 +58,7 @@ This document is the single-source agent-facing summary of the backend: goals, c
 - Review: id, product_id, reviewer_id, rating, comment, created_at
 - Conversation: id, product_id, participants[], last_message_at
 - Message: id, conversation_id, sender_id, body, created_at
-- Notification: id, user_id, type, payload, read, created_at
+ - Notification: id, userID, type, title, message, topicID, read, createdAt
 
 Use MongoDB ObjectId (or UUIDs) consistently. Add indexes on `products(title)`, `products(category)`, `products(seller_id)`, and `conversations(last_message_at)`.
 
@@ -101,9 +103,8 @@ All endpoints return JSON; protect with auth middleware where noted.
   - GET /conversations/:id/messages — fetch messages
   - POST /conversations/:id/messages — send message
 
-- Notifications
-  - GET /notifications — list
-  - POST /notifications/mark-read — mark read
+ - Notifications
+  - GET /notifications — list (authenticated users only; paginated)
 
 - Admin
   - POST /api/admin/dashboard — site activity summary (admin-only)
@@ -153,7 +154,7 @@ All endpoints return JSON; protect with auth middleware where noted.
 ## 12. Short-term roadmap (next tasks)
 1. DB choice confirmed (MongoDB). Add migration/tooling for MongoDB (e.g., `migrate-mongo` or custom migration scripts).
 2. Implement orders + review constraints (only buyers who purchased can review).
-3. Add notifications model + REST endpoints and basic Socket.io integration.
+3. Notifications: GET endpoint and service implemented; next: mark-read endpoint and Socket.io integration.
 
 ----
 
@@ -169,6 +170,12 @@ All endpoints return JSON; protect with auth middleware where noted.
  - 2026-05-07: Implemented `POST /api/users/:UID/report` to allow authenticated users to report users. Added `routes/users/report.js` and mounted it in `routes/users/user.js`. Reused `reports` collection helpers in `dbManager.js`.
  - 2026-05-07: Recorded DB choice — MongoDB is the primary database for the backend.
  - 2026-05-07: Implemented `GET /api/admin/reports/:reportID` to allow admins to fetch a report. Added `routes/admin/reports.js`, mounted under `/api/admin/reports`, and added `dbManager.findReportByID()` helper.
+ - 2026-05-09: Implemented notifications subsystem:
+   - Added `GET /api/notifications` (authenticated, paginated) and mounted it in `app.js`.
+   - Added `dbManager.findNotificationsByUser()` to fetch notifications with pagination.
+   - Added `dbManager.addNotification()` as the raw DB insert helper for notifications.
+   - Added `services/notifications.js` with `createNotification()` to validate/default notification documents before inserting.
+   - Updated review creation handler (`routes/products/reviews/create.js`) to generate a `review` notification for the product seller after a successful review creation.
 
 ----
 
