@@ -457,7 +457,7 @@ export function EditProfile() {
 
 
             {/* Preferences Container */}
-            <Card className="p-8">
+            <Card className="p-8 scroll-mt-24" id="notification-settings">
               <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
                 <Bell className="w-5 h-5 text-primary" />
                 Preferencias de Notificaciones

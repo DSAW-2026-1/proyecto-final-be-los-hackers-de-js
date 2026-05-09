@@ -9,13 +9,13 @@ import {
   Tag, 
   Info, 
   CheckCircle2, 
-  Trash2, 
   ShoppingBag,
   ArrowRight,
   LucideIcon,
   Loader2
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router';
 import { userService, NotificationItem as APINotification } from '../services/userService';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -54,6 +54,7 @@ const getNotificationStyles = (type: string) => {
 };
 
 export function Notifications() {
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -138,10 +139,6 @@ export function Notifications() {
     }
   };
 
-  const deleteNotification = (id: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
-  };
-
   const renderNotificationList = (filterType?: string | string[]) => {
     let filtered = notifications;
     if (filterType) {
@@ -183,7 +180,6 @@ export function Notifications() {
             key={notif.id} 
             notif={notif} 
             onToggleRead={() => toggleReadState(notif.id, notif.read)}
-            onDelete={() => deleteNotification(notif.id)}
           />
         ))}
         {page < totalPages && (
@@ -223,9 +219,6 @@ export function Notifications() {
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={markAllAsRead} disabled={notifications.filter(n => !n.read).length === 0}>
               Marcar todas como leídas
-            </Button>
-            <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">
-              Limpiar todo
             </Button>
           </div>
         </div>
@@ -270,7 +263,11 @@ export function Notifications() {
               <p className="text-sm text-muted-foreground mb-4">
                 Puedes configurar cómo recibes estas notificaciones (email, app, o ambos) en tus ajustes de perfil.
               </p>
-              <Button variant="link" className="p-0 h-auto text-primary">
+              <Button 
+                variant="link" 
+                className="p-0 h-auto text-primary"
+                onClick={() => navigate('/profile/edit#notification-settings')}
+              >
                 Configurar notificaciones <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
             </div>
@@ -281,10 +278,9 @@ export function Notifications() {
   );
 }
 
-function NotificationItem({ notif, onToggleRead, onDelete }: { 
+function NotificationItem({ notif, onToggleRead }: { 
   notif: Notification; 
   onToggleRead: () => void;
-  onDelete: () => void;
 }) {
   const Icon = notif.icon;
   
@@ -314,14 +310,6 @@ function NotificationItem({ notif, onToggleRead, onDelete }: {
             </Button>
             <Button size="sm" variant="ghost" className="h-8 text-muted-foreground">
               Ver detalle
-            </Button>
-            <Button 
-              size="icon" 
-              variant="ghost" 
-              className="h-8 w-8 ml-auto text-muted-foreground hover:text-destructive transition-colors"
-              onClick={onDelete}
-            >
-              <Trash2 className="w-4 h-4" />
             </Button>
           </div>
         </div>
