@@ -28,6 +28,7 @@ interface Notification {
   description: string;
   time: string;
   read: boolean;
+  topicID: string;
   icon: LucideIcon;
   color: string;
   bgColor: string;
@@ -75,6 +76,7 @@ export function Notifications() {
         description: item.message,
         time: formatDistanceToNow(new Date(item.createdAt), { addSuffix: true, locale: es }),
         read: item.read,
+        topicID: item.topicID,
         ...getNotificationStyles(item.type)
       }));
 
@@ -116,6 +118,31 @@ export function Notifications() {
       // Revert if error
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: currentState } : n));
       toast.error('No se pudo actualizar el estado de la notificación');
+    }
+  };
+
+  const handleViewDetail = (type: string, topicID: string) => {
+    if (!topicID) return;
+
+    switch (type) {
+      case 'review':
+      case 'promotion':
+        navigate(`/product/${topicID}`);
+        break;
+      case 'purchase':
+      case 'sale':
+        navigate(`/seller/orders/${topicID}/update`);
+        break;
+      case 'orderUpdate':
+      case 'shipping':
+        navigate(`/orders/${topicID}/status`);
+        break;
+      case 'message':
+        navigate(`/chat?uid=${topicID}`);
+        break;
+      default:
+        // System or other types might not have a specific view
+        break;
     }
   };
 
@@ -180,6 +207,11 @@ export function Notifications() {
             key={notif.id} 
             notif={notif} 
             onToggleRead={() => toggleReadState(notif.id, notif.read)}
+            onViewDetail={
+              ['review', 'promotion', 'purchase', 'sale', 'orderUpdate', 'shipping', 'message'].includes(notif.type) && notif.topicID 
+                ? () => handleViewDetail(notif.type, notif.topicID) 
+                : undefined
+            }
           />
         ))}
         {page < totalPages && (
@@ -278,9 +310,10 @@ export function Notifications() {
   );
 }
 
-function NotificationItem({ notif, onToggleRead }: { 
+function NotificationItem({ notif, onToggleRead, onViewDetail }: { 
   notif: Notification; 
   onToggleRead: () => void;
+  onViewDetail?: () => void;
 }) {
   const Icon = notif.icon;
   
@@ -308,9 +341,16 @@ function NotificationItem({ notif, onToggleRead }: {
             <Button size="sm" variant={notif.read ? "ghost" : "secondary"} onClick={onToggleRead} className="h-8">
               {notif.read ? "Marcar como no leída" : "Marcar como leída"}
             </Button>
-            <Button size="sm" variant="ghost" className="h-8 text-muted-foreground">
-              Ver detalle
-            </Button>
+            {onViewDetail && (
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                className="h-8 text-muted-foreground"
+                onClick={onViewDetail}
+              >
+                Ver detalle
+              </Button>
+            )}
           </div>
         </div>
         
