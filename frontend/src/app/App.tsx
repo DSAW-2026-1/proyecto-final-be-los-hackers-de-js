@@ -1,5 +1,5 @@
 import { Routes, Route } from 'react-router';
-import { Toaster } from 'sonner';
+import { Toaster } from './components/ui/sonner';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { NotificationProvider } from './context/NotificationContext';
