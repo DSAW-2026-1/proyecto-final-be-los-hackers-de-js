@@ -2,6 +2,7 @@ import { Menu, LogOut } from 'lucide-react';
 import { Link, useNavigate } from 'react-router';
 import { Button } from './ui/button';
 import { useAuth } from '../context/AuthContext';
+import { toast } from 'sonner';
 
 import UnisabanaLogo from "./../../../res/images/unisabana_logo_blue.png"
 
@@ -10,17 +11,18 @@ export function AdminNavigation() {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    // Navigate back to the marketplace home first.
-    // We use replace to ensure the admin dashboard isn't left in the history stack.
+    // Show toast notification first for immediate feedback
+    toast.success('Sesión de administrador cerrada');
+    
+    // Navigate home. Use replace to clear admin history.
     navigate('/', { replace: true });
     
-    // We defer the session clearance to the next event loop tick.
-    // This allows React Router to process the navigation and unmount the 
-    // AdminProtectedRoute-wrapped components before the admin session is cleared,
-    // preventing an unwanted redirect to the /admin/login page.
+    // Defer the clearance of the admin session. Increasing the timeout slightly
+    // ensures the protected admin components have time to unmount before 
+    // the state update can trigger a redirect to /admin/login.
     setTimeout(() => {
       adminLogout();
-    }, 0);
+    }, 100);
   };
 
   return (
