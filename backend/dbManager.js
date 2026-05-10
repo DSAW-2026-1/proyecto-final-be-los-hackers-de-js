@@ -19,6 +19,7 @@ const MAIN_DB = "marketplace"
 const ORDERS_DB = "orders"
 const REVIEWS_DB = "reviews"
 const REPORTS_DB = "reports"
+const NOTIFICATIONS_DB = "notifications"
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -227,6 +228,7 @@ class DbManager{
     static async #findLimitedInDb(database, query, page, limit){
         //let db = await this.#openConnection()
         const result = await client.db(MAIN_DB).collection(database).find(query)
+            .sort({_id: -1})
             .skip(page * limit)
             .limit(limit)
         const count = await client.db(MAIN_DB).collection(database).countDocuments(query)
@@ -239,6 +241,27 @@ class DbManager{
         try{
             query["deleted"] = {$ne: true}
             return this.#findLimitedInDb(PRODUCTS_DB, query, page, limit)
+        }
+        catch (e){
+            return null
+        }
+    }
+
+    // Admin-level product listing: includes soft-deleted items
+    static async findProductsAdmin(query, page, limit){
+        try{
+            // Do not enforce deleted filter; caller can pass any query
+            return this.#findLimitedInDb(PRODUCTS_DB, query || {}, page, limit)
+        }
+        catch (e){
+            return null
+        }
+    }
+
+    // Paginated users listing for admin views
+    static async findUsers(query, page, limit){
+        try{
+            return this.#findLimitedInDb(USERS_DB, query || {}, page, limit)
         }
         catch (e){
             return null
@@ -290,11 +313,94 @@ class DbManager{
             return null
         }
     }
+
+    static async updateReport(ID, newData){
+        try{
+            return await this.#updateItem(REPORTS_DB, ID, newData)
+        }
+        catch (e){
+            return false
+        }
+    }
+
+    // Notifications
+    static async addNotification(notification) {
+        try {
+            const result = await client.db(MAIN_DB).collection(NOTIFICATIONS_DB).insertOne(notification)
+            return result.insertedId
+        } catch (e) {
+            return null
+        }
+    }
+    static async findNotificationByID(id){
+        try{
+            return await this.#findByID(NOTIFICATIONS_DB, id)
+        }
+        catch (e){
+            return null
+        }
+    }
+    static async updateNotification(ID, newData){
+        try{
+            return await this.#updateItem(NOTIFICATIONS_DB, ID, newData)
+        }
+        catch (e){
+            return false
+        }
+    }
+    static async markAllNotificationsRead(UID){
+        try{
+            await client.db(MAIN_DB).collection(NOTIFICATIONS_DB).updateMany(
+                { userID: UID },
+                { $set: { read: true } }
+            )
+            return true
+        }
+        catch (e){
+            return false
+        }
+    }
+    static async findNotificationsByUser(UID, page, limit, since = null){
+        try{
+            const p = Math.max(0, page)
+            const lim = Math.max(1, limit)
+            const query = { userID: UID }
+            if (since) {
+                try {
+                    const sinceDate = (since instanceof Date) ? since : new Date(since)
+                    if (!isNaN(sinceDate.getTime())) {
+                        query.createdAt = { $gte: sinceDate }
+                    }
+                } catch (e) {
+                    // ignore invalid date here; caller should validate if needed
+                }
+            }
+            const cursor = client.db(MAIN_DB).collection(NOTIFICATIONS_DB).find(query)
+                .sort({ createdAt: -1 })
+                .skip(p * lim)
+                .limit(lim)
+            const results = await cursor.toArray()
+            const count = await client.db(MAIN_DB).collection(NOTIFICATIONS_DB).countDocuments(query)
+            return { result: results, count }
+        }
+        catch (e){
+            return null
+        }
+    }
+    static async countUnreadNotifications(UID){
+        try{
+            // Count notifications for the user where read is explicitly false
+            return await client.db(MAIN_DB).collection(NOTIFICATIONS_DB).countDocuments({userID: UID, read: false})
+        }
+        catch (e){
+            return null
+        }
+    }
     static async findActiveReports(page, limit){
         try{
             const p = Math.max(0, page)
             const lim = Math.max(1, limit)
-            const query = { resolved: { $ne: true } }
+            const query = { resolved: { $ne: true }, deleted: { $ne: true } }
             const cursor = client.db(MAIN_DB).collection(REPORTS_DB).find(query)
                 .sort({ createdAt: -1 })
                 .skip(p * lim)
@@ -329,10 +435,9 @@ class DbManager{
 
                     //Update seller review count and reputation
                     const sellerReviews = seller.reviews || 0
-                    await this.updateUser(sellerID, {reviews: sellerReviews+1})
-                    const currentSellerRating = product.rating || Number(0)
+                    const currentSellerRating = seller.reputation || Number(0)
                     const sellerAvg = Number(((currentSellerRating*sellerReviews) + rating) / (sellerReviews + 1))
-                    await this.updateUser(seller._id, {reputation: sellerAvg})
+                    await this.updateUser(seller._id, {reputation: sellerAvg, reviews: sellerReviews+1})
                     return true
                 }
             }

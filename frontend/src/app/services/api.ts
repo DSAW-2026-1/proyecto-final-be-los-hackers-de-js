@@ -52,10 +52,15 @@ export async function apiRequest<T = unknown>(
     // Detect expired JWT or invalid token
     if (response.status === 400 && errorMsg?.includes('Invalid JWT token')) {
       console.error(error)
-      window.dispatchEvent(new CustomEvent('auth-token-expired'));
+      const isAdminRoute = endpoint.startsWith('/api/admin') && !endpoint.includes('/api/admin/login');
+      window.dispatchEvent(new CustomEvent('auth-token-expired', { detail: { isAdmin: isAdminRoute } }));
     }
 
     throw error;
+  }
+
+  if (response.status === 204) {
+    return null as T;
   }
 
   return response.json();

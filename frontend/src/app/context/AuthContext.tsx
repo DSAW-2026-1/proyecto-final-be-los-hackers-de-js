@@ -40,6 +40,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const login = useCallback((token: string) => {
+    authService.setToken(token);
+    setIsAuthenticated(true);
+    setIsSeller(authService.isSeller());
+    setUid(authService.getUid());
+  }, []);
+
+  const adminLogin = useCallback((token: string) => {
+    authService.setAdminToken(token);
+    setIsAdminAuthenticated(true);
+  }, []);
+
+  const adminLogout = useCallback(() => {
+    authService.adminLogout();
+    setIsAdminAuthenticated(false);
+  }, []);
+
+  const setUserInfo = useCallback((userInfo: UserInfo) => {
+    setUser(userInfo);
+  }, []);
+
   useEffect(() => {
     // Sync state if token changes elsewhere (e.g. storage event)
     const handleStorageChange = () => {
@@ -50,9 +71,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
     window.addEventListener('storage', handleStorageChange);
 
-    const handleAuthExpired = () => {
-      logout(false);
-      toast.error('Tu sesión ha expirado. Por favor, ingresa de nuevo.');
+    const handleAuthExpired = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const isAdmin = customEvent.detail?.isAdmin;
+
+      if (isAdmin) {
+        adminLogout();
+        toast.error('Tu sesión de administrador ha expirado. Por favor, ingresa de nuevo.');
+      } else {
+        logout(false);
+        toast.error('Tu sesión ha expirado. Por favor, ingresa de nuevo.');
+      }
     };
     window.addEventListener('auth-token-expired', handleAuthExpired);
 
@@ -60,28 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('auth-token-expired', handleAuthExpired);
     };
-  }, [logout]);
-
-  const login = (token: string) => {
-    authService.setToken(token);
-    setIsAuthenticated(true);
-    setIsSeller(authService.isSeller());
-    setUid(authService.getUid());
-  };
-
-  const adminLogin = (token: string) => {
-    authService.setAdminToken(token);
-    setIsAdminAuthenticated(true);
-  };
-
-  const adminLogout = () => {
-    authService.adminLogout();
-    setIsAdminAuthenticated(false);
-  };
-
-  const setUserInfo = (userInfo: UserInfo) => {
-    setUser(userInfo);
-  };
+  }, [logout, adminLogout]);
 
   return (
     <AuthContext.Provider value={{ 

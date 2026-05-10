@@ -9,96 +9,242 @@ import {
   Tag, 
   Info, 
   CheckCircle2, 
-  Trash2, 
   ShoppingBag,
   ArrowRight,
-  LucideIcon
+  LucideIcon,
+  Loader2
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router';
+import { userService, NotificationItem as APINotification } from '../services/userService';
+import { useNotifications } from '../context/NotificationContext';
+import { formatDistanceToNow } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { toast } from 'sonner';
 
-const MOCK_NOTIFICATIONS = [
-  {
-    id: 1,
-    type: 'sale',
-    title: '¡Nueva venta!',
-    description: 'Has vendido "Calculadora TI-84 Plus". Revisa los detalles para coordinar la entrega.',
-    time: 'Hace 5 minutos',
-    read: false,
-    icon: ShoppingBag,
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-100',
-  },
-  {
-    id: 2,
-    type: 'shipping',
-    title: 'Producto en camino',
-    description: 'Tu pedido "MacBook Air M1" ha sido marcado como "En tránsito" por el vendedor.',
-    time: 'Hace 2 horas',
-    read: false,
-    icon: Package,
-    color: 'text-orange-600',
-    bgColor: 'bg-orange-100',
-  },
-  {
-    id: 3,
-    type: 'message',
-    title: 'Nuevo mensaje',
-    description: 'Ana Rodríguez te ha enviado un mensaje sobre "Libro Cálculo III".',
-    time: 'Hace 3 horas',
-    read: true,
-    icon: MessageCircle,
-    color: 'text-green-600',
-    bgColor: 'bg-green-100',
-  },
-  {
-    id: 4,
-    type: 'system',
-    title: 'Cuenta Verificada',
-    description: '¡Felicidades! Tu cuenta ha sido verificada exitosamente con tu correo institucional.',
-    time: 'Ayer, 4:30 PM',
-    read: true,
-    icon: CheckCircle2,
-    color: 'text-purple-600',
-    bgColor: 'bg-purple-100',
-  },
-  {
-    id: 5,
-    type: 'promotion',
-    title: 'Baja de precio',
-    description: 'Un producto en tus favoritos, "iPad 9na Gen", ha bajado de precio a $1.400.000.',
-    time: 'Ayer, 10:15 AM',
-    read: true,
-    icon: Tag,
-    color: 'text-pink-600',
-    bgColor: 'bg-pink-100',
-  },
-  {
-    id: 6,
-    type: 'system',
-    title: 'Actualización de políticas',
-    description: 'Hemos actualizado nuestros términos de uso para mejorar la seguridad en el campus.',
-    time: 'hace 2 días',
-    read: true,
-    icon: Info,
-    color: 'text-gray-600',
-    bgColor: 'bg-gray-100',
+interface Notification {
+  id: string;
+  type: string;
+  title: string;
+  description: string;
+  time: string;
+  read: boolean;
+  topicID: string;
+  icon: LucideIcon;
+  color: string;
+  bgColor: string;
+}
+
+const getNotificationStyles = (type: string) => {
+  switch (type) {
+    case 'purchase':
+    case 'sale':
+      return { icon: ShoppingBag, color: 'text-blue-600', bgColor: 'bg-blue-100' };
+    case 'shipping':
+    case 'orderUpdate':
+      return { icon: Package, color: 'text-orange-600', bgColor: 'bg-orange-100' };
+    case 'message':
+      return { icon: MessageCircle, color: 'text-green-600', bgColor: 'bg-green-100' };
+    case 'review':
+    case 'promotion':
+      return { icon: Tag, color: 'text-pink-600', bgColor: 'bg-pink-100' };
+    case 'system':
+      return { icon: CheckCircle2, color: 'text-purple-600', bgColor: 'bg-purple-100' };
+    default:
+      return { icon: Info, color: 'text-gray-600', bgColor: 'bg-gray-100' };
   }
-];
+};
 
 export function Notifications() {
-  const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const navigate = useNavigate();
+  const { unreadCount, setUnreadCount, decrementUnreadCount, incrementUnreadCount, refreshUnreadCount } = useNotifications();
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const markAsRead = (id: number) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+  const fetchNotifications = async (pageNum: number, isLoadMore: boolean = false) => {
+    try {
+      if (isLoadMore) setLoadingMore(true);
+      else setLoading(true);
+
+      const response = await userService.getNotifications(pageNum);
+      
+      const newNotifications = Object.values(response.results).map((item: APINotification) => ({
+        id: item.notificationID,
+        type: item.type,
+        title: item.title,
+        description: item.message,
+        time: formatDistanceToNow(new Date(item.createdAt), { addSuffix: true, locale: es }),
+        read: item.read,
+        topicID: item.topicID,
+        ...getNotificationStyles(item.type)
+      }));
+
+      if (isLoadMore) {
+        setNotifications(prev => [...prev, ...newNotifications]);
+      } else {
+        setNotifications(newNotifications);
+      }
+      
+      setTotalPages(response.pages);
+      // Refresh global count to match
+      refreshUnreadCount();
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
   };
 
-  const markAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  useEffect(() => {
+    fetchNotifications(1);
+  }, [refreshUnreadCount]);
+
+  const loadMore = () => {
+    if (page < totalPages) {
+      const nextPage = page + 1;
+      setPage(nextPage);
+      fetchNotifications(nextPage, true);
+    }
   };
 
-  const deleteNotification = (id: number) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
+  const toggleReadState = async (id: string, currentState: boolean) => {
+    try {
+      const newState = !currentState;
+      // Optimistic update
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: newState } : n));
+      
+      if (newState) {
+        decrementUnreadCount();
+      } else {
+        incrementUnreadCount();
+      }
+
+      await userService.markNotificationState(id, newState);
+    } catch (error) {
+      console.error('Error toggling notification state:', error);
+      // Revert if error
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: currentState } : n));
+      if (!currentState) {
+        decrementUnreadCount();
+      } else {
+        incrementUnreadCount();
+      }
+      toast.error('No se pudo actualizar el estado de la notificación');
+    }
+  };
+
+  const handleViewDetail = (type: string, topicID: string) => {
+    if (!topicID) return;
+
+    switch (type) {
+      case 'review':
+      case 'promotion':
+        navigate(`/product/${topicID}`);
+        break;
+      case 'purchase':
+      case 'sale':
+        navigate(`/seller/orders/${topicID}/update`);
+        break;
+      case 'orderUpdate':
+      case 'shipping':
+        navigate(`/orders/${topicID}/status`);
+        break;
+      case 'message':
+        navigate(`/chat?uid=${topicID}`);
+        break;
+      default:
+        // System or other types might not have a specific view
+        break;
+    }
+  };
+
+  const markAllAsRead = async () => {
+    if (unreadCount === 0) return;
+
+    try {
+      // Optimistic update for currently visible notifications
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      setUnreadCount(0);
+      
+      await userService.markAllNotificationsRead();
+      toast.success('Todas las notificaciones marcadas como leídas');
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+      // Revert is complex if we only have the current view, 
+      // but for "mark all read" usually a refetch or partial revert is better.
+      // For simplicity in this UI, we'll just show the error as it hits the backend.
+      toast.error('No se pudieron marcar todas las notificaciones como leídas');
+      fetchNotifications(1); // Refetch to be safe
+    }
+  };
+
+  const renderNotificationList = (filterType?: string | string[]) => {
+    let filtered = notifications;
+    if (filterType) {
+      if (Array.isArray(filterType)) {
+        filtered = notifications.filter(n => filterType.includes(n.type));
+      } else if (filterType === 'unread') {
+        filtered = notifications.filter(n => !n.read);
+      } else {
+        filtered = notifications.filter(n => n.type === filterType);
+      }
+    }
+
+    if (loading && page === 1) {
+      return (
+        <div className="space-y-4">
+          {[1, 2, 3].map(i => (
+            <Card key={i} className="p-6 animate-pulse">
+              <div className="flex gap-4">
+                <div className="w-12 h-12 rounded-xl bg-muted" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 bg-muted rounded w-1/4" />
+                  <div className="h-3 bg-muted rounded w-3/4" />
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      );
+    }
+
+    if (filtered.length === 0) {
+      return <EmptyNotifications message={filterType === 'unread' ? "No tienes notificaciones sin leer." : undefined} />;
+    }
+
+    return (
+      <div className="space-y-4">
+        {filtered.map((notif) => (
+          <NotificationItem 
+            key={notif.id} 
+            notif={notif} 
+            onToggleRead={() => toggleReadState(notif.id, notif.read)}
+            onViewDetail={
+              ['review', 'promotion', 'purchase', 'sale', 'orderUpdate', 'shipping', 'message'].includes(notif.type) && notif.topicID 
+                ? () => handleViewDetail(notif.type, notif.topicID) 
+                : undefined
+            }
+          />
+        ))}
+        {page < totalPages && (
+          <div className="flex justify-center pt-4">
+            <Button 
+              variant="outline" 
+              onClick={loadMore} 
+              disabled={loadingMore}
+              className="gap-2"
+            >
+              {loadingMore && <Loader2 className="w-4 h-4 animate-spin" />}
+              Cargar más notificaciones
+            </Button>
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -110,7 +256,7 @@ export function Notifications() {
               <h1 className="text-4xl font-bold text-primary">Notificaciones</h1>
               {unreadCount > 0 && (
                 <Badge variant="destructive" className="h-6 px-2">
-                  {unreadCount} nuevas
+                  {unreadCount} {unreadCount === 1 ? 'nueva' : 'nuevas'}
                 </Badge>
               )}
             </div>
@@ -121,9 +267,6 @@ export function Notifications() {
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={markAllAsRead} disabled={unreadCount === 0}>
               Marcar todas como leídas
-            </Button>
-            <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">
-              Limpiar todo
             </Button>
           </div>
         </div>
@@ -138,78 +281,23 @@ export function Notifications() {
           </TabsList>
 
           <TabsContent value="all" className="space-y-4">
-            {notifications.length > 0 ? (
-              notifications.map((notif) => (
-                <NotificationItem 
-                  key={notif.id} 
-                  notif={notif} 
-                  onMarkRead={() => markAsRead(notif.id)}
-                  onDelete={() => deleteNotification(notif.id)}
-                />
-              ))
-            ) : (
-              <EmptyNotifications />
-            )}
+            {renderNotificationList()}
           </TabsContent>
 
           <TabsContent value="unread" className="space-y-4">
-            {notifications.filter(n => !n.read).length > 0 ? (
-              notifications.filter(n => !n.read).map((notif) => (
-                <NotificationItem 
-                  key={notif.id} 
-                  notif={notif} 
-                  onMarkRead={() => markAsRead(notif.id)}
-                  onDelete={() => deleteNotification(notif.id)}
-                />
-              ))
-            ) : (
-              <EmptyNotifications message="No tienes notificaciones sin leer." />
-            )}
+            {renderNotificationList('unread')}
           </TabsContent>
 
           <TabsContent value="sales" className="space-y-4">
-            {notifications.filter(n => n.type === 'sale').length > 0 ? (
-              notifications.filter(n => n.type === 'sale').map((notif) => (
-                <NotificationItem 
-                  key={notif.id} 
-                  notif={notif} 
-                  onMarkRead={() => markAsRead(notif.id)}
-                  onDelete={() => deleteNotification(notif.id)}
-                />
-              ))
-            ) : (
-              <EmptyNotifications message="No tienes notificaciones de ventas." />
-            )}
+            {renderNotificationList('sale')}
           </TabsContent>
 
           <TabsContent value="purchases" className="space-y-4">
-            {notifications.filter(n => n.type === 'shipping' || n.type === 'promotion').length > 0 ? (
-              notifications.filter(n => n.type === 'shipping' || n.type === 'promotion').map((notif) => (
-                <NotificationItem 
-                  key={notif.id} 
-                  notif={notif} 
-                  onMarkRead={() => markAsRead(notif.id)}
-                  onDelete={() => deleteNotification(notif.id)}
-                />
-              ))
-            ) : (
-              <EmptyNotifications message="No tienes notificaciones de compras." />
-            )}
+            {renderNotificationList(['purchase', 'shipping', 'orderUpdate', 'promotion'])}
           </TabsContent>
 
           <TabsContent value="system" className="space-y-4">
-            {notifications.filter(n => n.type === 'system').length > 0 ? (
-              notifications.filter(n => n.type === 'system').map((notif) => (
-                <NotificationItem 
-                  key={notif.id} 
-                  notif={notif} 
-                  onMarkRead={() => markAsRead(notif.id)}
-                  onDelete={() => deleteNotification(notif.id)}
-                />
-              ))
-            ) : (
-              <EmptyNotifications message="No tienes notificaciones del sistema." />
-            )}
+            {renderNotificationList('system')}
           </TabsContent>
         </Tabs>
 
@@ -223,7 +311,11 @@ export function Notifications() {
               <p className="text-sm text-muted-foreground mb-4">
                 Puedes configurar cómo recibes estas notificaciones (email, app, o ambos) en tus ajustes de perfil.
               </p>
-              <Button variant="link" className="p-0 h-auto text-primary">
+              <Button 
+                variant="link" 
+                className="p-0 h-auto text-primary"
+                onClick={() => navigate('/profile/edit#notification-settings')}
+              >
                 Configurar notificaciones <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
             </div>
@@ -234,22 +326,10 @@ export function Notifications() {
   );
 }
 
-interface Notification {
-  id: number;
-  type: string;
-  title: string;
-  description: string;
-  time: string;
-  read: boolean;
-  icon: LucideIcon;
-  color: string;
-  bgColor: string;
-}
-
-function NotificationItem({ notif, onMarkRead, onDelete }: { 
+function NotificationItem({ notif, onToggleRead, onViewDetail }: { 
   notif: Notification; 
-  onMarkRead: () => void;
-  onDelete: () => void;
+  onToggleRead: () => void;
+  onViewDetail?: () => void;
 }) {
   const Icon = notif.icon;
   
@@ -274,22 +354,19 @@ function NotificationItem({ notif, onMarkRead, onDelete }: {
           </p>
           
           <div className="flex items-center gap-2">
-            {!notif.read && (
-              <Button size="sm" variant="secondary" onClick={onMarkRead} className="h-8">
-                Marcar como leída
+            <Button size="sm" variant={notif.read ? "ghost" : "secondary"} onClick={onToggleRead} className="h-8">
+              {notif.read ? "Marcar como no leída" : "Marcar como leída"}
+            </Button>
+            {onViewDetail && (
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                className="h-8 text-muted-foreground"
+                onClick={onViewDetail}
+              >
+                Ver detalle
               </Button>
             )}
-            <Button size="sm" variant="ghost" className="h-8 text-muted-foreground">
-              Ver detalle
-            </Button>
-            <Button 
-              size="icon" 
-              variant="ghost" 
-              className="h-8 w-8 ml-auto text-muted-foreground hover:text-destructive transition-colors"
-              onClick={onDelete}
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
           </div>
         </div>
         

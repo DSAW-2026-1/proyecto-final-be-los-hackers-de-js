@@ -1,12 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const db = require("../../dbManager")
+const notifications = require("../../services/notifications");
 router.post('/', async(req, res) => {
     const UID = req.token.payload.UID
     const errorMsg = "Incomplete or malformed request"
     const {products, shippingAddress} = req.body || {};
 
     if (!products || !shippingAddress) return res.status(400).json({error: errorMsg});
+    const buyer = await db.findUserByUID(UID)
+    if(!buyer) return res.status(400).json({error: "User not found"})
     //Validate everything first
     const validated = []
     const productArray = Object.values(products)
@@ -25,15 +28,31 @@ router.post('/', async(req, res) => {
     }
     //If everything is valid then start processing each request
     for (let i = 0; i < validated.length; i++) {
-        let success = await db.addOrder({
+        const order = {
             productID: validated[i].productID,
             sellerID: validated[i].product.sellerID,
             buyerID: UID,
             shippingAddress: shippingAddress,
             amount: validated[i].amount,
             status: "Pending",
-        })
-        if(success) await db.updateProduct(validated[i].productID, {stock: (validated[i].product.stock - validated[i].amount)})
+        }
+        let success = await db.addOrder(order)
+        if(success) {
+            await db.updateProduct(validated[i].productID, {stock: (validated[i].product.stock - validated[i].amount)})
+            try{
+                //Create notification for seller
+                await notifications.createNotification({
+                    userID: validated[i].product.sellerID,
+                    type: "purchase",
+                    title: "Nueva venta",
+                    message: buyer.username + " compró "+validated[i].amount+" de tu \"" + validated[i].product.name + "\". Revisa los detalles para coordinar la entrega.",
+                    topicID: order._id,
+                })
+            }
+            catch (e){
+                console.error('Failed to create seller notification for purchase:', e)
+            }
+        }
         else return res.status(500).json({error: "Unable to finalize transaction. Some orders were not processed."});
     }
     return res.json({body: "Transaction completed successfully"})
