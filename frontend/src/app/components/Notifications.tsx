@@ -257,7 +257,7 @@ export function Notifications() {
               <h1 className="text-4xl font-bold text-primary">Notificaciones</h1>
               {notifications.filter(n => !n.read).length > 0 && (
                 <Badge variant="destructive" className="h-6 px-2">
-                  {notifications.filter(n => !n.read).length} nuevas
+                  {notifications.filter(n => !n.read).length} {notifications.filter(n => !n.read).length === 1 ? 'nueva' : 'nuevas'}
                 </Badge>
               )}
             </div>
