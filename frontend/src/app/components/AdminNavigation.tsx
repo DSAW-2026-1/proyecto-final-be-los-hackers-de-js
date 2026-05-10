@@ -1,48 +1,19 @@
-import { ShoppingCart, Bell, User, Search, Menu, LogIn, UserPlus, Settings, LogOut, ShoppingBag } from 'lucide-react';
-import { Link, NavLink, useNavigate } from 'react-router';
-import { useEffect } from 'react';
+import { Menu, LogOut } from 'lucide-react';
+import { Link, useNavigate } from 'react-router';
 import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Badge } from './ui/badge';
 import { useAuth } from '../context/AuthContext';
-import { useCart } from '../context/CartContext';
-import { useNotifications } from '../context/NotificationContext';
-import { userService } from '../services/userService';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from './ui/dropdown-menu';
 
 import UnisabanaLogo from "./../../../res/images/unisabana_logo_blue.png"
 
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-
 export function AdminNavigation() {
-  const { isAuthenticated, user, setUserInfo, adminLogout, isSeller } = useAuth();
-  const { totalItems } = useCart();
-  const { unreadCount } = useNotifications();
+  const {adminLogout} = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (isAuthenticated && !user) {
-      userService.getProfile().then(profile => {
-        setUserInfo({
-          username: profile.username,
-          email: profile.email
-        });
-      }).catch(err => {
-        console.error('Failed to fetch user profile in navigation:', err);
-      });
-    }
-  }, [isAuthenticated, user, setUserInfo]);
-
   const handleLogout = () => {
+    // Navigate first to avoid being intercepted by AdminProtectedRoute which redirects to /admin/login
+    navigate('/', { replace: true });
+    // Then clear the admin session
     adminLogout();
-    navigate('/');
   };
 
   return (
@@ -68,8 +39,7 @@ export function AdminNavigation() {
 
               <div className="flex items-center gap-2">
                   <Button variant="ghost" className="hidden sm:flex" onClick={handleLogout}>
-                    {/*TODO: Replace the icon with a more logical logout icon*/}
-                    <LogIn className="w-4 h-4 mr-2" />
+                    <LogOut className="w-4 h-4 mr-2" />
                     Cerrar sesión
                   </Button>
               </div>
