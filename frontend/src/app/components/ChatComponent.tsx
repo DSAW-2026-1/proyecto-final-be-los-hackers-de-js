@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Send, User, Search, Circle, MoreVertical, Phone, MessageSquare } from 'lucide-react';
 
+//TODO: Este archivo está duplicado. Integrar funcionalidad a ChatInterface.tsx, que tiene una mejor interfaz
+
 // --- COMPONENTES DE UI INTEGRADOS (Para evitar errores de ruta) ---
 const Card = ({ children, className = "" }: { children: React.ReactNode, className?: string }) => (
   <div className={`bg-white rounded-xl border border-slate-200 shadow-sm ${className}`}>{children}</div>
