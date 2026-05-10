@@ -3,7 +3,7 @@ const router = express.Router();
 const db = require("../../dbManager");
 const ITEMS_PER_PAGE = 12
 
-router.get('/', async function (req, res, next) {
+router.get('/', async function (req, res) {
     let {
         page, query, categories, fromPrice, toPrice, conditions, searchDescription, minRating, sellerID, includeOutOfStock
     } = req.query

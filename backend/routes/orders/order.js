@@ -2,7 +2,6 @@ const express = require('express');
 const tokenValidatorMiddleware = require("../../middleware/auth/tokenValidator");
 const userAuthMiddleware = require("../../middleware/auth/userValidator");
 const router = express.Router();
-const db = require("../../dbManager");
 const orders = require('./getOwn')
 const getById = require('./getById')
 

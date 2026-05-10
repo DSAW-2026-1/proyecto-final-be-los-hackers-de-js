@@ -4,7 +4,7 @@ const db = require("../../../dbManager");
 
 const ITEMS_PER_PAGE = 12
 
-router.get('/', async function (req, res, next) {
+router.get('/', async function (req, res) {
     const UID = req.token.payload.UID
     const user = await db.findUserByUID(UID)
 

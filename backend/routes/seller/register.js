@@ -9,7 +9,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_change_me';
 router.use('/', tokenValidatorMiddleware);
 router.use('/', userAuthMiddleware);
 //The router inherently requires the use of tokenValidator and userValidator, as otherwise there won't be any UID
-router.patch('/', async function (req, res, next) {
+router.patch('/', async function (req, res) {
     const UID = req.token.payload.UID
     const user = await db.findUserByUID(UID)
 
