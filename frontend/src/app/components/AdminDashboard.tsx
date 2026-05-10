@@ -7,15 +7,15 @@ import {
   Users,
   Package,
   TrendingUp,
-  MoreVertical,
   CheckCircle,
-  XCircle,
   Loader2,
   Flag,
-  Box
+  Box,
+  Search,
+  Trash2
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { adminService, AdminDashboardStats, AdminReport } from '../services/adminService';
+import { adminService, AdminDashboardStats, AdminReport, AdminProduct, AdminUser } from '../services/adminService';
 import { userService } from '../services/userService';
 import { productService } from '../services/productService';
 import { toast } from 'sonner';
@@ -132,24 +132,10 @@ function ReportItemRow({ report }: { report: AdminReport }) {
         <div className="flex gap-2">
           <Button 
             size="sm" 
-            variant="destructive"
-            className="shadow-sm"
-            onClick={() => {
-              if (report.type === 'productReport') navigate(`/admin/delete-product/${report.reportedID}`);
-              else navigate(`/admin/suspend-user/${report.reportedID}`);
-            }}
-          >
-            <XCircle className="w-4 h-4 mr-2" />
-            <span className="hidden lg:inline">{report.type === 'productReport' ? 'Retirar' : 'Suspender'}</span>
-            <span className="lg:hidden">Acción</span>
-          </Button>
-          <Button 
-            size="sm" 
             variant="outline"
             className="hover:bg-primary/5 hover:text-primary transition-all shadow-sm"
             onClick={() => navigate(`/admin/reports/${report.reportID}`)}
           >
-            <CheckCircle className="w-4 h-4 mr-2" />
             <span className="hidden lg:inline">Ver reporte</span>
             <span className="lg:hidden">Ver</span>
           </Button>
@@ -159,15 +145,131 @@ function ReportItemRow({ report }: { report: AdminReport }) {
   );
 }
 
-const RECENT_PRODUCTS = [
-  { id: 1, title: 'MacBook Air M1', seller: 'Ana R.', status: 'Aprobado', date: '2024-04-18' },
-  { id: 2, title: 'Calculadora TI-84', seller: 'María G.', status: 'Pendiente', date: '2024-04-18' },
-  { id: 3, title: 'Libro Cálculo III', seller: 'Juan P.', status: 'Aprobado', date: '2024-04-17' },
-];
+function ProductItemRow({ product }: { product: AdminProduct }) {
+  const navigate = useNavigate();
+  
+  return (
+    <div className="p-6 flex items-center justify-between hover:bg-muted/50 transition-colors">
+      <div className="flex items-center gap-4 flex-1">
+        <div className="w-16 h-16 rounded bg-stone-100 border flex items-center justify-center overflow-hidden shadow-sm">
+          {product.image ? (
+            <Base64ImageLoader data={product.image} alt={product.name} className="w-full h-full object-cover" />
+          ) : (
+            <Box className="w-8 h-8 text-muted-foreground/40" />
+          )}
+        </div>
+        <div className="flex-1">
+          <h4 className="font-medium mb-1 hover:text-primary cursor-pointer" onClick={() => navigate(`/product/${product.productID}`)}>{product.name}</h4>
+          <p className="text-sm text-muted-foreground">
+            {product.price.toLocaleString('es-CO', { style: 'currency', currency: 'COP' })} • Stock: {product.stock}
+          </p>
+          <p className="text-xs text-muted-foreground/50">ID: {product.productID.substring(0, 8)}</p>
+        </div>
+      </div>
+      <div className="flex items-center gap-3">
+        <Badge
+          variant={product.deleted ? 'destructive' : 'default'}
+          className={!product.deleted ? 'bg-green-600' : ''}
+        >
+          {product.deleted ? 'Eliminado' : 'Activo'}
+        </Badge>
+        <div className="flex gap-2">
+          {!product.deleted && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="text-destructive hover:bg-destructive/10"
+              onClick={() => navigate(`/admin/delete-product/${product.productID}`)}
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function UserItemRow({ user }: { user: AdminUser }) {
+  const navigate = useNavigate();
+  const initials = user.username.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+
+  return (
+    <div className="p-6 flex items-center justify-between hover:bg-muted/50 transition-colors text-left">
+      <div className="flex items-center gap-4 flex-1">
+        <Avatar className="w-12 h-12 border shadow-sm">
+          {user.photo ? (
+            <Base64ImageLoader data={user.photo} alt={user.username} className="w-full h-full object-cover" />
+          ) : (
+            <AvatarFallback className="bg-primary/10 text-primary font-bold">
+              {initials}
+            </AvatarFallback>
+          )}
+        </Avatar>
+        <div className="flex-1">
+          <h4 
+            className="font-medium mb-1 hover:text-primary cursor-pointer truncate max-w-[200px] md:max-w-md" 
+            onClick={() => navigate(`/profile/${user.UID}`)}
+          >
+            {user.username}
+          </h4>
+          <p className="text-sm text-muted-foreground truncate max-w-[250px]">{user.email}</p>
+          <div className="flex items-center gap-2 mt-1">
+            <Badge variant="outline" className="text-[10px] py-0 h-4">
+              {user.isSeller ? 'Vendedor' : 'Comprador'}
+            </Badge>
+            {user.career && (
+              <span className="text-[10px] text-muted-foreground truncate max-w-[150px]">{user.career}</span>
+            )}
+            {user.reputation !== null && (
+              <span className="text-[10px] text-muted-foreground">★ {user.reputation}</span>
+            )}
+          </div>
+        </div>
+      </div>
+      <div className="flex items-center gap-3">
+        <Badge
+          variant={user.isSuspended ? 'destructive' : 'default'}
+          className={!user.isSuspended ? 'bg-green-600' : ''}
+        >
+          {user.isSuspended ? 'Suspendido' : 'Activo'}
+        </Badge>
+        <div className="flex gap-2">
+          {!user.isSuspended && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => navigate(`/admin/suspend-user/${user.UID}`)}
+              className="hidden sm:inline-flex"
+            >
+              Suspender
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function AdminDashboard() {
   const [stats, setStats] = useState<AdminDashboardStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
+
+  // Users state
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(true);
+  const [loadingMoreUsers, setLoadingMoreUsers] = useState(false);
+  const [usersPage, setUsersPage] = useState(1);
+  const [totalUsersPages, setTotalUsersPages] = useState(0);
+  const [usersQuery, setUsersQuery] = useState('');
+
+  // Products state
+  const [products, setProducts] = useState<AdminProduct[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
+  const [loadingMoreProducts, setLoadingMoreProducts] = useState(false);
+  const [productsPage, setProductsPage] = useState(1);
+  const [totalProductsPages, setTotalProductsPages] = useState(0);
+  const [productsQuery, setProductsQuery] = useState('');
 
   // Reports state
   const [reports, setReports] = useState<AdminReport[]>([]);
@@ -191,7 +293,104 @@ export function AdminDashboard() {
     }
     fetchStats();
     fetchReports(1, true);
+    fetchProducts(1, true, '');
+    fetchUsers(1, true, '');
   }, []);
+
+  async function fetchUsers(page: number, initial: boolean = false, query: string = '') {
+    try {
+      if (initial) setLoadingUsers(true);
+      else setLoadingMoreUsers(true);
+
+      const response = await adminService.getUsers(page, query);
+      
+      if (!response || !response.results) {
+        if (initial) setUsers([]);
+        setUsersPage(page);
+        setTotalUsersPages(0);
+        return;
+      }
+
+      const usersArray = Object.values(response.results);
+      
+      if (initial) {
+        setUsers(usersArray);
+      } else {
+        setUsers(prev => [...prev, ...usersArray]);
+      }
+      
+      setUsersPage(response.page);
+      setTotalUsersPages(response.pages);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      if (initial) {
+        setUsers([]);
+        setTotalUsersPages(0);
+      }
+    } finally {
+      setLoadingUsers(false);
+      setLoadingMoreUsers(false);
+    }
+  }
+
+  const handleSearchUsers = (e: React.FormEvent) => {
+    e.preventDefault();
+    fetchUsers(1, true, usersQuery);
+  };
+
+  const handleLoadMoreUsers = () => {
+    if (usersPage < totalUsersPages) {
+      fetchUsers(usersPage + 1, false, usersQuery);
+    }
+  };
+
+  async function fetchProducts(page: number, initial: boolean = false, query: string = '') {
+    try {
+      if (initial) setLoadingProducts(true);
+      else setLoadingMoreProducts(true);
+
+      const response = await adminService.getProducts(page, query);
+      
+      // Handle potential 204/404 via apiRequest null return
+      if (!response || !response.results) {
+        if (initial) setProducts([]);
+        setProductsPage(page);
+        setTotalProductsPages(0);
+        return;
+      }
+
+      const productsArray = Object.values(response.results);
+      
+      if (initial) {
+        setProducts(productsArray);
+      } else {
+        setProducts(prev => [...prev, ...productsArray]);
+      }
+      
+      setProductsPage(response.page);
+      setTotalProductsPages(response.pages);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      if (initial) {
+        setProducts([]);
+        setTotalProductsPages(0);
+      }
+    } finally {
+      setLoadingProducts(false);
+      setLoadingMoreProducts(false);
+    }
+  }
+
+  const handleSearchProducts = (e: React.FormEvent) => {
+    e.preventDefault();
+    fetchProducts(1, true, productsQuery);
+  };
+
+  const handleLoadMoreProducts = () => {
+    if (productsPage < totalProductsPages) {
+      fetchProducts(productsPage + 1, false, productsQuery);
+    }
+  };
 
   async function fetchReports(page: number, initial: boolean = false) {
     try {
@@ -199,6 +398,15 @@ export function AdminDashboard() {
       else setLoadingMoreReports(true);
 
       const response = await adminService.getReports(page);
+      
+      // Handle 204 or empty response
+      if (!response || !response.results) {
+        if (initial) setReports([]);
+        setReportsPage(page);
+        setTotalReportsPages(0);
+        return;
+      }
+
       const reportsArray = Object.values(response.results);
       
       if (initial) {
@@ -279,80 +487,128 @@ export function AdminDashboard() {
 
           <TabsContent value="products">
             <Card>
-              <div className="p-6 border-b text-left">
-                <h3 className="font-semibold text-lg">Productos Recientes</h3>
+              <div className="p-6 border-b flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="text-left">
+                  <h3 className="font-semibold text-lg">Catálogo de Productos</h3>
+                  <p className="text-sm text-muted-foreground">Monitorea y gestiona las publicaciones</p>
+                </div>
+                <form onSubmit={handleSearchProducts} className="relative w-full md:w-80">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input 
+                    placeholder="Buscar producto por nombre..." 
+                    className="pl-9 pr-4"
+                    value={productsQuery}
+                    onChange={(e) => setProductsQuery(e.target.value)}
+                  />
+                </form>
               </div>
               <div className="divide-y text-left">
-                {RECENT_PRODUCTS.map((product) => (
-                  <div key={product.id} className="p-6 flex items-center justify-between hover:bg-muted/50">
-                    <div className="flex items-center gap-4 flex-1">
-                      <div className="w-16 h-16 bg-muted rounded-lg" />
-                      <div className="flex-1">
-                        <h4 className="font-medium mb-1">{product.title}</h4>
-                        <p className="text-sm text-muted-foreground">
-                          Por {product.seller} • {product.date}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Badge
-                        variant={product.status === 'Aprobado' ? 'default' : 'secondary'}
-                        className={product.status === 'Aprobado' ? 'bg-green-600' : ''}
-                      >
-                        {product.status}
-                      </Badge>
-                      <Button variant="ghost" size="icon">
-                        <MoreVertical className="w-4 h-4" />
-                      </Button>
-                    </div>
+                {loadingProducts ? (
+                  <div className="p-12 text-center">
+                    <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary mb-2" />
+                    <p className="text-muted-foreground">Cargando productos...</p>
                   </div>
-                ))}
+                ) : products.length === 0 ? (
+                  <div className="p-12 text-center">
+                    <Box className="w-12 h-12 mx-auto text-muted-foreground mb-4 opacity-20" />
+                    <p className="text-xl font-bold">No se encontraron productos</p>
+                    <p className="text-muted-foreground">
+                      {productsQuery ? `No hay resultados para "${productsQuery}"` : 'El catálogo está vacío.'}
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    {products.map((product) => (
+                      <ProductItemRow 
+                        key={product.productID} 
+                        product={product} 
+                      />
+                    ))}
+                    
+                    {productsPage < totalProductsPages && (
+                      <div className="p-6 border-t flex justify-center">
+                        <Button 
+                          variant="outline" 
+                          onClick={handleLoadMoreProducts}
+                          disabled={loadingMoreProducts}
+                        >
+                          {loadingMoreProducts ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Cargando...
+                            </>
+                          ) : (
+                            'Cargar más productos'
+                          )}
+                        </Button>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             </Card>
           </TabsContent>
 
           <TabsContent value="users">
             <Card>
-              <div className="p-6 border-b flex items-center justify-between">
-                <h3 className="font-semibold text-lg">Gestión de Usuarios</h3>
-                <div className="flex gap-2">
-                  <Input placeholder="Buscar usuario..." className="w-64" />
+              <div className="p-6 border-b flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="text-left">
+                  <h3 className="font-semibold text-lg">Directorio de Usuarios</h3>
+                  <p className="text-sm text-muted-foreground">Gestiona las cuentas y moderación de accesos</p>
                 </div>
+                <form onSubmit={handleSearchUsers} className="relative w-full md:w-80">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input 
+                    placeholder="Buscar usuario por nombre o email..." 
+                    className="pl-9 pr-4"
+                    value={usersQuery}
+                    onChange={(e) => setUsersQuery(e.target.value)}
+                  />
+                </form>
               </div>
               <div className="divide-y text-left">
-                {[
-                  { id: 1, name: 'Ana Rodríguez', email: 'ana.r@unisabana.edu.co', role: 'Vendedor', status: 'Activo' },
-                  { id: 2, name: 'Juan Pérez', email: 'juan.p@unisabana.edu.co', role: 'Comprador', status: 'Activo' },
-                  { id: 3, name: 'María García', email: 'maria.g@unisabana.edu.co', role: 'Vendedor', status: 'Suspendido' },
-                ].map((user) => (
-                  <div key={user.id} className="p-6 flex items-center justify-between hover:bg-muted/50">
-                    <div className="flex items-center gap-4 flex-1">
-                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                        {user.name.split(' ').map(n => n[0]).join('')}
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-medium mb-1">{user.name}</h4>
-                        <p className="text-sm text-muted-foreground">{user.email} • {user.role}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Badge
-                        variant={user.status === 'Activo' ? 'default' : 'destructive'}
-                        className={user.status === 'Activo' ? 'bg-green-600' : ''}
-                      >
-                        {user.status}
-                      </Badge>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm">
-                          {user.status === 'Activo' ? 'Suspender' : 'Activar'}
-                        </Button>
-                        <Button variant="ghost" size="icon" className="text-destructive">
-                          <XCircle className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
+                {loadingUsers ? (
+                  <div className="p-12 text-center">
+                    <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary mb-2" />
+                    <p className="text-muted-foreground">Cargando usuarios...</p>
                   </div>
-                ))}
+                ) : users.length === 0 ? (
+                  <div className="p-12 text-center">
+                    <Users className="w-12 h-12 mx-auto text-muted-foreground mb-4 opacity-20" />
+                    <p className="text-xl font-bold">No se encontraron usuarios</p>
+                    <p className="text-muted-foreground">
+                      {usersQuery ? `No hay resultados para "${usersQuery}"` : 'No hay usuarios registrados.'}
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    {users.map((user) => (
+                      <UserItemRow 
+                        key={user.UID} 
+                        user={user} 
+                      />
+                    ))}
+                    
+                    {usersPage < totalUsersPages && (
+                      <div className="p-6 border-t flex justify-center">
+                        <Button 
+                          variant="outline" 
+                          onClick={handleLoadMoreUsers}
+                          disabled={loadingMoreUsers}
+                        >
+                          {loadingMoreUsers ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Cargando...
+                            </>
+                          ) : (
+                            'Cargar más usuarios'
+                          )}
+                        </Button>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             </Card>
           </TabsContent>

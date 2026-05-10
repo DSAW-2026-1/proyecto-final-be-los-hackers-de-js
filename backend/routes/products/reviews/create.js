@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require("../../../dbManager")
+const notifications = require("../../../services/notifications")
 
 // POST /api/products/:id/reviews/
 router.post('/:id/reviews', async(req, res) => {
@@ -48,6 +49,27 @@ router.post('/:id/reviews', async(req, res) => {
     const success = await db.addReview(review)
 
     if(!success) return res.status(500).json({error: 'Failed to create review'})
+    // Create notification for the seller about the new review
+    try {
+        const seller = await db.findUserByUID(String(product.sellerID))
+        const buyerName = (user && (user.username || user.email)) || 'Un comprador'
+        const productName = product.name || 'tu producto'
+        const message = `${buyerName} dejó una reseña de ${ratingInt} estrellas sobre \"${productName}\"`
+
+        if (seller) {
+            await notifications.createNotification({
+                userID: String(seller._id || product.sellerID),
+                type: 'review',
+                title: 'Nueva reseña',
+                message,
+                topicID: product._id
+            })
+        }
+    }
+    catch (e){
+        console.error('Failed to create seller notification for review:', e)
+    }
+
     return res.status(201).json({message: 'Review created'})
 });
 

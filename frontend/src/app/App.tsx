@@ -1,7 +1,8 @@
 import { Routes, Route } from 'react-router';
-import { Toaster } from 'sonner';
+import { Toaster } from './components/ui/sonner';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
+import { NotificationProvider } from './context/NotificationContext';
 import { Login } from './components/Login';
 import { Register } from './components/Register';
 import { HeroSection } from './components/HeroSection';
@@ -34,6 +35,8 @@ import { ScrollToTop } from './components/ScrollToTop.tsx';
 
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AdminProtectedRoute } from './components/AdminProtectedRoute';
+import { NotificationPoller } from './components/NotificationPoller';
+import { AdminLayout } from './components/AdminLayout.tsx'
 
 function Home() {
   return (
@@ -47,10 +50,12 @@ function Home() {
 export default function App() {
   return (
     <AuthProvider>
-      <CartProvider>
-        <Toaster position="top-right" expand={true} richColors />
-        <ScrollToTop>
-          <Routes>
+      <NotificationProvider>
+        <CartProvider>
+          <NotificationPoller />
+          <Toaster position="top-right" expand={true} richColors />
+          <ScrollToTop>
+            <Routes>
             {/* Main app routes with MainLayout */}
             <Route element={<MainLayout />}>
               <Route path="/" element={<Home />} />
@@ -77,24 +82,29 @@ export default function App() {
 
               {/* Communication & Utils */}
               <Route path="/chat" element={<ChatInterface />} />
-              <Route path="/notifications" element={<Notifications />} />
-              <Route path="/report/:id" element={<ReportView />} />
-              <Route path="/report/user/:id" element={<UserReportView />} />
+              <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
 
+              {/* Reporting users and products */}
+              <Route path="/report/:id" element={<ProtectedRoute><ReportView /></ProtectedRoute>} />
+              <Route path="/report/user/:id" element={<ProtectedRoute><UserReportView /></ProtectedRoute>} />
+
+              {/* Admin login uses the normal layout so that regular users who somehow get here can easily get back to the marketplace */}
+              <Route path="/admin/login" element={<AdminLogin />} />
+            </Route>
+            <Route element={<AdminLayout />}>
               {/* Admin routes */}
               <Route path="/admin" element={<AdminProtectedRoute><AdminDashboard /></AdminProtectedRoute>} />
               <Route path="/admin/reports/:id" element={<AdminProtectedRoute><AdminReportView /></AdminProtectedRoute>} />
               <Route path="/admin/suspend-user/:id" element={<AdminProtectedRoute><AdminSuspendUser /></AdminProtectedRoute>} />
               <Route path="/admin/delete-product/:id" element={<AdminProtectedRoute><AdminDeleteProduct /></AdminProtectedRoute>} />
-
-              <Route path="/admin/login" element={<AdminLogin />} />
-
-              {/* TODO: For now, 404 is fine here but the admin panel will use its own distinct layout. How do we handle that? */}
+            </Route>
+            <Route element={<MainLayout />}>
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>
         </ScrollToTop>
       </CartProvider>
-    </AuthProvider>
-  );
+    </NotificationProvider>
+  </AuthProvider>
+);
 }

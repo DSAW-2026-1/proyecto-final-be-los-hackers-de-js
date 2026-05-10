@@ -19,6 +19,7 @@ const jsonParseFailureHandler = require('./errorHandlers/jsonParseFailure')
 const salesRouter = require('./routes/sales/sale')
 const ordersRouter = require('./routes/orders/order')
 const sellerRouter = require('./routes/seller/seller')
+const notificationsRouter = require('./routes/notifications/notification')
 
 const app = express();
 
@@ -54,6 +55,7 @@ app.use('/api/products', productRouter)
 app.use('/api/sales', salesRouter)
 
 app.use('/api/shipping', ordersRouter)
+app.use('/api/notifications', notificationsRouter)
 
 
 app.use(jsonParseFailureHandler)
