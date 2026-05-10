@@ -3,7 +3,7 @@ const router = express.Router();
 const db = require("../../dbManager");
 
 //The router inherently requires the use of tokenValidator and userValidator, as otherwise there won't be any UID
-router.get('/', async function (req, res, next) {
+router.get('/', async function (req, res) {
     const UID = req.token.payload.UID
     const user = await db.findUserByUID(UID)
 

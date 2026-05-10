@@ -4,6 +4,7 @@ const db = require("../../dbManager")
 
 // GET /api/notifications?page=X
 router.get('/', async (req, res) => {
+    const {since} = req.query || null
     const pageQuery = parseInt(req.query.page) || 1
     const page = Math.max(1, pageQuery)
     const limit = 12
@@ -17,8 +18,8 @@ router.get('/', async (req, res) => {
 
     // Parse optional `since` query param
     let sinceDate = null
-    if (req.query.since) {
-        const parsed = new Date(req.query.since)
+    if (since) {
+        const parsed = new Date(since)
         if (isNaN(parsed.getTime())) return res.status(400).json({ error: "Invalid 'since' date" })
         sinceDate = parsed
     }

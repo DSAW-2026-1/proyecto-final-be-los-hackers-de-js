@@ -20,7 +20,7 @@ function getFriendlyStatus(dbStatus){
             return dbStatus
     }
 }
-router.patch('/:saleID', async function (req, res, next) {
+router.patch('/:saleID', async function (req, res) {
     const UID = req.token.payload.UID
     const { saleID } = req.params
     const { status } = req.body || {}

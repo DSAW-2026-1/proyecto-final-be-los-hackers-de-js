@@ -521,9 +521,16 @@ class DbManager{
         }
     }
 
-    static async countOrders() {
+    static async countTotalOrders() {
         try {
             return await client.db(MAIN_DB).collection(ORDERS_DB).countDocuments({})
+        } catch (e) {
+            return 0
+        }
+    }
+    static async countOrders(IDs, query) {
+        try {
+            return await client.db(MAIN_DB).collection(ORDERS_DB).countDocuments({_id: {$in: IDs}, ...query})
         } catch (e) {
             return 0
         }

@@ -10,10 +10,6 @@ const loginRouter = require('./routes/auth/login');
 const adminLoginRouter = require('./routes/auth/admin/login');
 const adminRouter = require('./routes/admin/admin');
 const registerRouter = require('./routes/auth/register');
-const tokenValidatorMiddleware = require('./middleware/auth/tokenValidator');
-const userAuthMiddleware = require('./middleware/auth/userValidator')
-const sellerAuthMiddleware = require("./middleware/auth/sellerValidator")
-const testRouter = require('./routes/test')
 const productRouter = require('./routes/products/product')
 const jsonParseFailureHandler = require('./errorHandlers/jsonParseFailure')
 const salesRouter = require('./routes/sales/sale')
@@ -45,10 +41,6 @@ app.use('/api/admin/login', adminLoginRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/seller', sellerRouter)
 app.use('/api/users', usersRouter);
-
-app.use('/api/test', tokenValidatorMiddleware)
-app.use('/api/test', sellerAuthMiddleware)
-app.use('/api/test', testRouter)
 
 app.use('/api/products', productRouter)
 

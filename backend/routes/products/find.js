@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require("../../dbManager");
 
-router.get('/:id', async function (req, res, next) {
+router.get('/:id', async function (req, res) {
     const ID = req.params.id
     const product = await db.findProductByID(ID)
 
