@@ -58,7 +58,7 @@ router.get('/', async function (req, res) {
         isSeller: !!u.isSeller,
         photo: u.photo || null,
         sales: u.sales || 0,
-        reviews: u.rewiews || 0,
+        reviews: u.reviews || 0,
         reputation: u.reputation || null
     }))
 

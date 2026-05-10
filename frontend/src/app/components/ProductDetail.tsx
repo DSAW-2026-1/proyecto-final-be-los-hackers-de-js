@@ -364,7 +364,7 @@ export function ProductDetail() {
                 <Package className="w-5 h-5 text-primary" />
                 Descripción
               </h3>
-              <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
+              <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap break-words">
                 {product.description}
               </p>
 
@@ -449,7 +449,7 @@ export function ProductDetail() {
                           </p>
                         </div>
                       </div>
-                      <p className="text-sm text-muted-foreground leading-relaxed max-w-prose">
+                      <p className="text-sm text-muted-foreground leading-relaxed max-w-prose break-words">
                         {review.reviewBody}
                       </p>
                     </div>

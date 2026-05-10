@@ -1,12 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const db = require("../../dbManager");
-const jwt = require("jsonwebtoken");
-const bcrypt = require("bcrypt");
 const VALID_CAREERS = (process.env.VALID_CAREERS)? process.env.VALID_CAREERS.split(',') : [
     'Ingeniería Informática', 'Ingeniería Industrial', 'Ingeniería Civil', 'Ingeniería Mecánica', 'Ingeniería Química', 'Medicina', 'Enfermería', 'Fisioterapia', 'Comunicación Social', 'Comunicación Audiovisual', 'Periodismo', 'Derecho', 'Ciencias Políticas', 'Administración de Empresas', 'Economía', 'Negocios Internacionales', 'Administración de Instituciones de Servicio'
 ] //sample careers idk if they all actually exist
-router.patch('/', async function (req, res, next) {
+router.patch('/', async function (req, res) {
     const UID = req.token.payload.UID
     const user = await db.findUserByUID(UID)
     if (!user) return res.status(404).json({error: 'User not found'})
