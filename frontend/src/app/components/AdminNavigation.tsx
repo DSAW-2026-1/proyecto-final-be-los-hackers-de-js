@@ -10,10 +10,17 @@ export function AdminNavigation() {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    // Navigate first to avoid being intercepted by AdminProtectedRoute which redirects to /admin/login
+    // Navigate back to the marketplace home first.
+    // We use replace to ensure the admin dashboard isn't left in the history stack.
     navigate('/', { replace: true });
-    // Then clear the admin session
-    adminLogout();
+    
+    // We defer the session clearance to the next event loop tick.
+    // This allows React Router to process the navigation and unmount the 
+    // AdminProtectedRoute-wrapped components before the admin session is cleared,
+    // preventing an unwanted redirect to the /admin/login page.
+    setTimeout(() => {
+      adminLogout();
+    }, 0);
   };
 
   return (
