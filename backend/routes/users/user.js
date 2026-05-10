@@ -5,10 +5,12 @@ const router = express.Router();
 const findUser = require("./find")
 const getSelf = require("./getSelf")
 const editSelf = require("./edit")
+const reportUser = require("./report")
 
 router.use('/', findUser)
 router.use('/', tokenValidatorMiddleware)
 router.use('/', userrAuthMiddleware)
+router.use('/', reportUser)
 router.use('/', getSelf)
 router.use('/', editSelf)
 

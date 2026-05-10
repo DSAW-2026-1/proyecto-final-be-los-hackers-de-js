@@ -8,20 +8,24 @@ const logger = require('morgan');
 const usersRouter = require('./routes/users/user');
 const loginRouter = require('./routes/auth/login');
 const adminLoginRouter = require('./routes/auth/admin/login');
+const adminRouter = require('./routes/admin/admin');
 const registerRouter = require('./routes/auth/register');
 const tokenValidatorMiddleware = require('./middleware/auth/tokenValidator');
 const userAuthMiddleware = require('./middleware/auth/userValidator')
-const sellerRegisterRouter  = require('./routes/seller/register')
 const sellerAuthMiddleware = require("./middleware/auth/sellerValidator")
 const testRouter = require('./routes/test')
 const productRouter = require('./routes/products/product')
 const jsonParseFailureHandler = require('./errorHandlers/jsonParseFailure')
 const salesRouter = require('./routes/sales/sale')
+const ordersRouter = require('./routes/orders/order')
+const sellerRouter = require('./routes/seller/seller')
+const notificationsRouter = require('./routes/notifications/notification')
 
 const app = express();
 
 const corsOptions = {
-    origin: process.env.CORS_ORIGIN || '*'
+    origin: process.env.CORS_ORIGIN || '*',
+    credentials: true
 };
 if(!process.env.CORS_ORIGIN) console.warn("Could not find CORS environment variable. Allowing all CORS requests...")
 
@@ -38,7 +42,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/api/auth/login', loginRouter);
 app.use('/api/auth/register', registerRouter);
 app.use('/api/admin/login', adminLoginRouter);
-app.use('/api/seller/register', sellerRegisterRouter)
+app.use('/api/admin', adminRouter);
+app.use('/api/seller', sellerRouter)
 app.use('/api/users', usersRouter);
 
 app.use('/api/test', tokenValidatorMiddleware)
@@ -48,6 +53,10 @@ app.use('/api/test', testRouter)
 app.use('/api/products', productRouter)
 
 app.use('/api/sales', salesRouter)
+
+app.use('/api/shipping', ordersRouter)
+app.use('/api/notifications', notificationsRouter)
+
 
 app.use(jsonParseFailureHandler)
 

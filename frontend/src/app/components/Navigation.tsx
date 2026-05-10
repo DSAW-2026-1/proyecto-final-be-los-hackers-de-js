@@ -1,4 +1,4 @@
-import { ShoppingCart, Bell, User, Search, Menu, LogIn, UserPlus, Settings, LogOut } from 'lucide-react';
+import { ShoppingCart, Bell, User, Search, Menu, LogIn, UserPlus, Settings, LogOut, ShoppingBag } from 'lucide-react';
 import { Link, NavLink, useNavigate } from 'react-router';
 import { useEffect } from 'react';
 import { Button } from './ui/button';
@@ -6,6 +6,7 @@ import { Input } from './ui/input';
 import { Badge } from './ui/badge';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import { useNotifications } from '../context/NotificationContext';
 import { userService } from '../services/userService';
 import {
   DropdownMenu,
@@ -15,11 +16,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
+
+import UnisabanaLogo from "./../../../res/images/unisabana_logo_blue.png"
+
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 
 export function Navigation() {
   const { isAuthenticated, user, setUserInfo, logout, isSeller } = useAuth();
   const { totalItems } = useCart();
+  const { unreadCount } = useNotifications();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -46,7 +51,7 @@ export function Navigation() {
           <div className="flex items-center gap-8">
             <Link to="/" className="flex items-center gap-2">
               <img
-                src="/res/images/unisabana_logo_blue.png"
+                src={UnisabanaLogo}
                 alt="Unisabana Logo"
                 className="w-10 h-10 object-contain"
                 referrerPolicy="no-referrer"
@@ -136,9 +141,11 @@ export function Navigation() {
                 <Link to="/notifications">
                   <Button variant="ghost" size="icon" className="relative">
                     <Bell className="w-5 h-5" />
-                    <Badge className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center p-0 bg-accent text-xs">
-                      3
-                    </Badge>
+                    {unreadCount > 0 && (
+                      <Badge className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center p-0 bg-accent text-xs">
+                        {unreadCount}
+                      </Badge>
+                    )}
                   </Button>
                 </Link>
 
@@ -167,6 +174,12 @@ export function Navigation() {
                       <Link to="/profile" className="cursor-pointer w-full flex items-center">
                         <User className="mr-2 h-4 w-4" />
                         <span>Perfil</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/orders" className="cursor-pointer w-full flex items-center">
+                        <ShoppingBag className="mr-2 h-4 w-4" />
+                        <span>Mis Pedidos</span>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>

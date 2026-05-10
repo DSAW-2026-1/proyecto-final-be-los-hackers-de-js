@@ -12,6 +12,8 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { productService, Product } from '../services/productService';
 import { userService } from '../services/userService';
+import Base64ImageLoader from './Base64ImageLoader';
+import PseLogo from "./../../../res/images/logo_PSE.png"
 
 export function Checkout() {
   const { cart, clearCart } = useCart();
@@ -249,7 +251,7 @@ export function Checkout() {
                   <RadioGroupItem value="pse" id="pse" />
                   <label htmlFor="pse" className="flex items-center gap-3 font-medium cursor-pointer flex-1">
                     <div className="flex items-center gap-3">
-                      <img src="/res/images/logo-PSE_.png" alt="PSE" className="h-8 w-auto" />
+                      <img src={PseLogo} alt="PSE" className="h-8 w-auto" />
                       <span>Pago por PSE</span>
                     </div>
                   </label>
@@ -267,8 +269,8 @@ export function Checkout() {
                   <div key={item.productID} className="flex gap-3">
                     <div className="w-16 h-16 rounded overflow-hidden bg-muted flex-shrink-0">
                       {item.images[0] ? (
-                        <img
-                          src={item.images[0].startsWith('data:') ? item.images[0] : `data:image/jpeg;base64,${item.images[0]}`}
+                        <Base64ImageLoader
+                          data={item.images[0]}
                           alt={item.name}
                           className="w-full h-full object-cover"
                         />

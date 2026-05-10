@@ -1,7 +1,8 @@
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost';
-const PORT = import.meta.env.VITE_API_PORT || '8080';
+const PORT = import.meta.env.VITE_API_PORT || null;
 
-export const API_URL = `${BASE_URL}:${PORT}/api`;
+const FULL_URL = (PORT)? `${BASE_URL}:${PORT}` : `${BASE_URL}`;
+export const API_URL = (PORT)? `${BASE_URL}:${PORT}/api` : `${BASE_URL}/api`;
 
 export interface ApiError extends Error {
   status?: number;
@@ -12,9 +13,17 @@ export async function apiRequest<T = unknown>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const url = `${BASE_URL}:${PORT}${endpoint}`;
+  const url = `${FULL_URL}${endpoint}`;
   
-  const token = localStorage.getItem('token');
+  let token = localStorage.getItem('token');
+  
+  // Use admin token for admin routes
+  if (endpoint.startsWith('/api/admin') && !endpoint.includes('/api/admin/login')) {
+    const adminToken = localStorage.getItem('admin_token');
+    if (adminToken) {
+      token = adminToken;
+    }
+  }
   
   const headers = new Headers({
     'Content-Type': 'application/json',
@@ -26,8 +35,9 @@ export async function apiRequest<T = unknown>(
   }
 
   const response = await fetch(url, {
+    credentials: 'include',
     ...options,
-    headers,
+    headers
   });
 
   if (!response.ok) {
@@ -42,10 +52,15 @@ export async function apiRequest<T = unknown>(
     // Detect expired JWT or invalid token
     if (response.status === 400 && errorMsg?.includes('Invalid JWT token')) {
       console.error(error)
-      window.dispatchEvent(new CustomEvent('auth-token-expired'));
+      const isAdminRoute = endpoint.startsWith('/api/admin') && !endpoint.includes('/api/admin/login');
+      window.dispatchEvent(new CustomEvent('auth-token-expired', { detail: { isAdmin: isAdminRoute } }));
     }
 
     throw error;
+  }
+
+  if (response.status === 204) {
+    return null as T;
   }
 
   return response.json();

@@ -8,6 +8,7 @@ import { useCart } from '../context/CartContext';
 import { productService, Product } from '../services/productService';
 import { userService } from '../services/userService';
 import { useNavigate } from 'react-router';
+import Base64ImageLoader from './Base64ImageLoader';
 
 interface CartProductInfo extends Product {
   cartIndex: number;
@@ -153,8 +154,8 @@ export function ShoppingCart() {
                 <Card key={item.productID} className="p-6">
                   <div className="flex gap-6">
                     <div className="w-32 h-32 flex-shrink-0 rounded-lg overflow-hidden bg-muted">
-                      <img
-                        src={item.images[0]?.startsWith('data:') ? item.images[0] : `data:image/jpeg;base64,${item.images[0]}`}
+                      <Base64ImageLoader
+                        data={item.images[0]}
                         alt={item.name}
                         className="w-full h-full object-cover"
                       />

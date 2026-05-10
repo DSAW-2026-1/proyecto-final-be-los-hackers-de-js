@@ -9,6 +9,7 @@ import { Link, useNavigate } from 'react-router';
 import { authService } from '../services/authService';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
+import UnisabanaLogoText from "./../../../res/images/unisabana_logo_with_text_blue.png";
 
 export function AdminLogin() {
   const [email, setEmail] = useState('');
@@ -68,10 +69,10 @@ export function AdminLogin() {
           <div className="text-center mb-8">
             <div className="flex items-center justify-center mb-6">
               <img
-                src="/res/images/unisabana_logo_with_text_blue.png"
-                alt="Unisabana Logo"
-                className="h-24 object-contain"
-                referrerPolicy="no-referrer"
+                  src={UnisabanaLogoText}
+                  alt="Unisabana Logo"
+                  className="h-24 object-contain"
+                  referrerPolicy="no-referrer"
               />
             </div>
             <h1 className="text-3xl font-bold text-primary mb-2">Panel de administración</h1>
@@ -134,9 +135,9 @@ export function AdminLogin() {
                   Recordarme
                 </label>
               </div>
-              <a href="#" className="text-sm text-primary hover:underline">
+              <Link to="#" className="text-sm text-primary hover:underline">
                 ¿Olvidaste tu contraseña?
-              </a>
+              </Link>
             </div>
 
             <Button 

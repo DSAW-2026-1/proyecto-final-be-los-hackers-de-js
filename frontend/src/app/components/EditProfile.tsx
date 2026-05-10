@@ -6,7 +6,7 @@ import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { Avatar, AvatarFallback } from './ui/avatar';
 import { Badge } from './ui/badge';
 import { 
   User, 
@@ -31,6 +31,7 @@ import { ConnectionError } from './ConnectionError';
 import { useAuth } from '../context/AuthContext';
 import { ApiError } from '../services/api';
 import { FACULTIES } from '../constants';
+import Base64ImageLoader from './Base64ImageLoader';
 
 export function EditProfile() {
   const navigate = useNavigate();
@@ -268,7 +269,11 @@ export function EditProfile() {
                 <div className="relative">
                   <Avatar className="w-32 h-32 border-4 border-white shadow-xl ring-1 ring-border">
                     {photoPreview ? (
-                      <AvatarImage src={photoPreview} alt={user.username} />
+                      <Base64ImageLoader 
+                        data={photoPreview} 
+                        alt={user.username} 
+                        className="w-full h-full object-cover"
+                      />
                     ) : null}
                     <AvatarFallback>{userInitial}</AvatarFallback>
                   </Avatar>
@@ -452,7 +457,7 @@ export function EditProfile() {
 
 
             {/* Preferences Container */}
-            <Card className="p-8">
+            <Card className="p-8 scroll-mt-24" id="notification-settings">
               <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
                 <Bell className="w-5 h-5 text-primary" />
                 Preferencias de Notificaciones

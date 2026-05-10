@@ -1,5 +1,7 @@
 import { Facebook, Instagram, Twitter, Mail, MapPin, Phone } from 'lucide-react';
 import { Separator } from './ui/separator';
+import { Link } from 'react-router';
+import UnisabanaWhiteLogo from "./../../../res/images/unisabana_logo_white.png"
 
 export function Footer() {
   return (
@@ -7,9 +9,9 @@ export function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           <div>
-            <div className="flex items-center gap-2 mb-4">
+            <Link to="/" className="flex items-center gap-2 mb-4 shrink-0">
               <img
-                src="/res/images/unisabana_logo_white.png"
+                src={UnisabanaWhiteLogo}
                 alt="Unisabana Logo"
                 className="w-10 h-10 object-contain"
                 referrerPolicy="no-referrer"
@@ -18,7 +20,7 @@ export function Footer() {
                 <div className="font-bold">Unisabana</div>
                 <div className="text-sm text-white/70">Marketplace</div>
               </div>
-            </div>
+            </Link>
             <p className="text-sm text-white/80 leading-relaxed">
               Plataforma segura para compra y venta dentro de la comunidad universitaria
             </p>
@@ -27,20 +29,20 @@ export function Footer() {
           <div>
             <h3 className="font-semibold mb-4">Enlaces Rápidos</h3>
             <ul className="space-y-2 text-sm text-white/80">
-              <li><a href="#" className="hover:text-accent transition-colors">Inicio</a></li>
-              <li><a href="#" className="hover:text-accent transition-colors">Productos</a></li>
-              <li><a href="#" className="hover:text-accent transition-colors">Vender</a></li>
-              <li><a href="#" className="hover:text-accent transition-colors">Ayuda</a></li>
+              <li><Link to="/" className="hover:text-accent transition-colors">Inicio</Link></li>
+              <li><Link to="/search" className="hover:text-accent transition-colors">Productos</Link></li>
+              <li><Link to="/profile/edit#seller-section" className="hover:text-accent transition-colors">Vender</Link></li>
+              <li><Link to="#" className="hover:text-accent transition-colors">Ayuda</Link></li>
             </ul>
           </div>
 
           <div>
             <h3 className="font-semibold mb-4">Categorías</h3>
             <ul className="space-y-2 text-sm text-white/80">
-              <li><a href="#" className="hover:text-accent transition-colors">Electrónica</a></li>
-              <li><a href="#" className="hover:text-accent transition-colors">Libros</a></li>
-              <li><a href="#" className="hover:text-accent transition-colors">Deportes</a></li>
-              <li><a href="#" className="hover:text-accent transition-colors">Accesorios</a></li>
+              <li><Link to="/search?category=Electrónica" className="hover:text-accent transition-colors">Electrónica</Link></li>
+              <li><Link to="/search?category=Libros" className="hover:text-accent transition-colors">Libros</Link></li>
+              <li><Link to="/search?category=Deportes" className="hover:text-accent transition-colors">Deportes</Link></li>
+              <li><Link to="/search?category=Accesorios" className="hover:text-accent transition-colors">Accesorios</Link></li>
             </ul>
           </div>
 
@@ -71,13 +73,13 @@ export function Footer() {
           </p>
 
           <div className="flex items-center gap-4">
-            <a href="#" className="w-8 h-8 rounded-full bg-white/10 hover:bg-accent flex items-center justify-center transition-colors">
+            <a href="#" target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-full bg-white/10 hover:bg-accent flex items-center justify-center transition-colors">
               <Facebook className="w-4 h-4" />
             </a>
-            <a href="#" className="w-8 h-8 rounded-full bg-white/10 hover:bg-accent flex items-center justify-center transition-colors">
+            <a href="#" target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-full bg-white/10 hover:bg-accent flex items-center justify-center transition-colors">
               <Instagram className="w-4 h-4" />
             </a>
-            <a href="#" className="w-8 h-8 rounded-full bg-white/10 hover:bg-accent flex items-center justify-center transition-colors">
+            <a href="#" target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-full bg-white/10 hover:bg-accent flex items-center justify-center transition-colors">
               <Twitter className="w-4 h-4" />
             </a>
           </div>

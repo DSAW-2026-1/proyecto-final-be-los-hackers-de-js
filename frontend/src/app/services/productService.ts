@@ -56,6 +56,36 @@ export interface SearchResponse {
   page: number;
   results: { [key: number]: SearchResultItem };
 }
+export interface ShippingResponseItem {
+  saleID: string;
+  productID: string;
+  sellerID?: string;
+  buyerID?: string;
+  shippingAddress: string;
+  amount: number;
+  status: string;
+}
+export interface ShippingResponse {
+  count: number;
+  pages: number;
+  page: number;
+  results: { [key: number]: ShippingResponseItem };
+}
+
+export interface ReviewItem {
+  buyerID: string;
+  rating: number;
+  reviewTitle: string;
+  reviewBody: string;
+  reviewDate: number;
+}
+
+export interface ReviewsResponse {
+  count: number;
+  pages: number;
+  page: number;
+  results: { [key: number]: ReviewItem };
+}
 
 export const productService = {
   async createProduct(data: CreateProductRequest): Promise<ProductResponse> {
@@ -98,5 +128,42 @@ export const productService = {
       method: 'POST',
       body: JSON.stringify(data),
     });
-  }
+  },
+
+  async getShippingStatus(page: number = 1): Promise<ShippingResponse> {
+    return apiRequest<ShippingResponse>(`/api/shipping/status?page=${page}`);
+  },
+
+  async getSellerShippingStatus(page: number = 1): Promise<ShippingResponse> {
+    return apiRequest<ShippingResponse>(`/api/seller/shipping/status?page=${page}`);
+  },
+
+  async getShippingDetail(saleID: string): Promise<ShippingResponseItem> {
+    return apiRequest<ShippingResponseItem>(`/api/shipping/${saleID}`);
+  },
+
+  async updateShippingStatus(saleID: string, status: string): Promise<void> {
+    return apiRequest<void>(`/api/seller/shipping/${saleID}/`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+  },
+
+  async createReview(productID: string, data: { rating: number, title: string, body: string }): Promise<void> {
+    return apiRequest<void>(`/api/products/${productID}/reviews/`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async getReviews(productID: string, page: number = 1): Promise<ReviewsResponse> {
+    return apiRequest<ReviewsResponse>(`/api/products/${productID}/reviews?page=${page}`);
+  },
+
+  async createReport(productID: string, data: { category: string, reportTitle: string, reportBody: string }): Promise<void> {
+    return apiRequest<void>(`/api/products/${productID}/report`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
 };
