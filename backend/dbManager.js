@@ -292,6 +292,15 @@ class DbManager{
         }
     }
 
+    static async updateReport(ID, newData){
+        try{
+            return await this.#updateItem(REPORTS_DB, ID, newData)
+        }
+        catch (e){
+            return false
+        }
+    }
+
     // Notifications
     static async addNotification(notification) {
         try {
@@ -369,7 +378,7 @@ class DbManager{
         try{
             const p = Math.max(0, page)
             const lim = Math.max(1, limit)
-            const query = { resolved: { $ne: true } }
+            const query = { resolved: { $ne: true }, deleted: { $ne: true } }
             const cursor = client.db(MAIN_DB).collection(REPORTS_DB).find(query)
                 .sort({ createdAt: -1 })
                 .skip(p * lim)
