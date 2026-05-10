@@ -4,7 +4,12 @@ Last updated: 2026-05-09
 
 This document is the single-source agent-facing summary of the backend: goals, constraints, architecture, data models, APIs, operational notes, and short-term priorities. Keep this file updated as decisions change.
 
-**Agent maintenance note (REQUIRED):** THIS FILE IS THE AGENT-FACING SOURCE OF TRUTH. Every code, API, or config change must be recorded here before or immediately after merging/deploying. Add a concise changelog entry, update the API surface and data model sections, and increment the `Last updated` date. Agents are required to update this file on every relevant change — omissions cause coordination drift.
+**Agent maintenance note:** THIS FILE IS THE AGENT-FACING SOURCE OF TRUTH for architecture-, API-, or configuration-affecting changes. Agents and humans should document any change that meaningfully affects other collaborators, the API contract, the data model, or deployment configuration by adding:
+- a concise changelog entry,
+- relevant updates to the API surface and data model sections, and
+- an updated `Last updated` date.
+
+Record these updates before merging when possible, or immediately after merging when necessary. Trivial edits that do not alter behavior, contracts, or deployment (formatting, small local refactors, or comments) do not always require a changelog entry — when in doubt, document it. Aim for clarity: a single-line summary plus one bullet describing the impact is sufficient.
 
 **Project**: Marketplace (University) — backend
 **Purpose**: Provide a maintainable, testable Node.js + Express API that supports product listing, buying, messaging, reviews, and admin moderation for an institutional marketplace.
@@ -135,7 +140,10 @@ All endpoints return JSON; protect with auth middleware where noted.
   - GET /api/admin/reports/:reportID — fetch a specific report (admin-only)
   - GET /api/admin/reports?page=X — list active reports, paginated (admin-only)
   - GET /admin/stats — metrics (future)
-  - POST /admin/reports/:id/action — moderate content
+   - GET /api/admin/products — list products (admin view; includes soft-deleted items)
+   - GET /api/admin/users — list users (admin view; includes suspended users)
+   - GET /admin/stats — metrics (future)
+   - PATCH /api/admin/reports/:reportID/resolve — resolve a report and optionally perform corrective action (admin-only)
 
 ----
 
@@ -210,6 +218,15 @@ All endpoints return JSON; protect with auth middleware where noted.
    - Added `dbManager.findNotificationByID()` and `dbManager.updateNotification()` helpers (used by the PATCH handler).
    - Implemented `PATCH /api/notifications/readAll` to allow users to mark all their notifications as read. Added `dbManager.markAllNotificationsRead()` helper and `routes/notifications/readAll.js`; mounted in `routes/notifications/notification.js`.
    - Implemented `GET /api/notifications/unreadCount` and added `dbManager.countUnreadNotifications()` to provide an authenticated unread-count-only endpoint for clients needing lightweight polling.
+ - 2026-05-09: Implemented resolve flow for reports (admin-only):
+   - Added `PATCH /api/admin/reports/:reportID/resolve` to allow admins to resolve reports and optionally take corrective action.
+   - Added `dbManager.updateReport()` helper and wired report-resolution metadata (fields: `resolved`, `deleted`, `resolutionReason`, `actionTaken`, `resolvedAt`, `resolvedBy`).
+   - `deleteOffending` now performs the appropriate corrective action based on report `type`: for `userReport` it suspends the reported user and soft-deletes their products; for `productReport` it soft-deletes the offending product.
+ - 2026-05-09: Admin listing endpoints and DB helpers:
+   - Added `GET /api/admin/products` to return paginated products for admin views; this endpoint includes soft-deleted products and supports filters similar to the public product search.
+   - Added `GET /api/admin/users` to return paginated users for admin views; this endpoint includes suspended users and supports basic search by `name` or `email` and an `isSeller` filter.
+   - Added `dbManager.findProductsAdmin()` and `dbManager.findUsers()` helpers to support paginated admin listings.
+   - Updated `routes/admin/users.js` to accept flexible boolean formats for the `isSeller` query parameter (`true|false`, `1|0`, `yes|no`). Invalid values return `400`.
 ----
 
 ## 14. Decisions to make / Questions

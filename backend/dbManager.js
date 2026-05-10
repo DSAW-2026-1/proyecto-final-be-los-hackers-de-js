@@ -228,6 +228,7 @@ class DbManager{
     static async #findLimitedInDb(database, query, page, limit){
         //let db = await this.#openConnection()
         const result = await client.db(MAIN_DB).collection(database).find(query)
+            .sort({_id: -1})
             .skip(page * limit)
             .limit(limit)
         const count = await client.db(MAIN_DB).collection(database).countDocuments(query)
@@ -240,6 +241,27 @@ class DbManager{
         try{
             query["deleted"] = {$ne: true}
             return this.#findLimitedInDb(PRODUCTS_DB, query, page, limit)
+        }
+        catch (e){
+            return null
+        }
+    }
+
+    // Admin-level product listing: includes soft-deleted items
+    static async findProductsAdmin(query, page, limit){
+        try{
+            // Do not enforce deleted filter; caller can pass any query
+            return this.#findLimitedInDb(PRODUCTS_DB, query || {}, page, limit)
+        }
+        catch (e){
+            return null
+        }
+    }
+
+    // Paginated users listing for admin views
+    static async findUsers(query, page, limit){
+        try{
+            return this.#findLimitedInDb(USERS_DB, query || {}, page, limit)
         }
         catch (e){
             return null
