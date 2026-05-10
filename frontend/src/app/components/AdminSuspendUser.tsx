@@ -139,7 +139,7 @@ export function AdminSuspendUser() {
             <div>
               <h3 className="text-lg font-bold text-destructive mb-1">Zona de Peligro</h3>
               <p className="text-sm text-destructive/80">
-                Al suspender a este usuario, se le revocará el acceso inmediato a su cuenta y se ocultarán todos sus productos publicados.
+                Al suspender a este usuario, se le revocará el acceso inmediato a su cuenta y se eliminarán todos sus productos publicados. Esta acción no se puede deshacer, incluso si el usuario es restaurado en el futuro.
               </p>
             </div>
           </div>

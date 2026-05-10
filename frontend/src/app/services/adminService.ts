@@ -42,6 +42,26 @@ export interface AdminProductsResponse {
   results: Record<string, AdminProduct>;
 }
 
+export interface AdminUser {
+  UID: string;
+  username: string;
+  email: string;
+  career: string | null;
+  isSuspended: boolean;
+  isSeller: boolean;
+  photo: string | null;
+  sales: number;
+  reviews: number;
+  reputation: number | null;
+}
+
+export interface AdminUsersResponse {
+  count: number;
+  pages: number;
+  page: number;
+  results: Record<string, AdminUser>;
+}
+
 export const adminService = {
   async getDashboardStats(): Promise<AdminDashboardStats> {
     return apiRequest<AdminDashboardStats>('/api/admin/dashboard');
@@ -51,6 +71,12 @@ export const adminService = {
     const queryParams = new URLSearchParams({ page: page.toString() });
     if (query) queryParams.append('query', query);
     return apiRequest<AdminProductsResponse>(`/api/admin/products?${queryParams.toString()}`);
+  },
+
+  async getUsers(page: number = 1, query: string = ''): Promise<AdminUsersResponse> {
+    const queryParams = new URLSearchParams({ page: page.toString() });
+    if (query) queryParams.append('query', query);
+    return apiRequest<AdminUsersResponse>(`/api/admin/users?${queryParams.toString()}`);
   },
 
   async deleteProduct(productID: string): Promise<void> {
