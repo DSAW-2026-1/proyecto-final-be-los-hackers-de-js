@@ -24,9 +24,33 @@ export interface AdminReportsResponse {
   results: Record<string, AdminReport>;
 }
 
+export interface AdminProduct {
+  productID: string;
+  name: string;
+  price: number;
+  rating: number;
+  image: string;
+  stock: number;
+  sellerID: string;
+  deleted: boolean;
+}
+
+export interface AdminProductsResponse {
+  count: number;
+  pages: number;
+  page: number;
+  results: Record<string, AdminProduct>;
+}
+
 export const adminService = {
   async getDashboardStats(): Promise<AdminDashboardStats> {
     return apiRequest<AdminDashboardStats>('/api/admin/dashboard');
+  },
+
+  async getProducts(page: number = 1, query: string = ''): Promise<AdminProductsResponse> {
+    const queryParams = new URLSearchParams({ page: page.toString() });
+    if (query) queryParams.append('query', query);
+    return apiRequest<AdminProductsResponse>(`/api/admin/products?${queryParams.toString()}`);
   },
 
   async deleteProduct(productID: string): Promise<void> {

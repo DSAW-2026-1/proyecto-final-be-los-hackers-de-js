@@ -7,15 +7,16 @@ import {
   Users,
   Package,
   TrendingUp,
-  MoreVertical,
   CheckCircle,
   XCircle,
   Loader2,
   Flag,
-  Box
+  Box,
+  Search,
+  Trash2
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { adminService, AdminDashboardStats, AdminReport } from '../services/adminService';
+import { adminService, AdminDashboardStats, AdminReport, AdminProduct } from '../services/adminService';
 import { userService } from '../services/userService';
 import { productService } from '../services/productService';
 import { toast } from 'sonner';
@@ -145,15 +146,62 @@ function ReportItemRow({ report }: { report: AdminReport }) {
   );
 }
 
-const RECENT_PRODUCTS = [
-  { id: 1, title: 'MacBook Air M1', seller: 'Ana R.', status: 'Aprobado', date: '2024-04-18' },
-  { id: 2, title: 'Calculadora TI-84', seller: 'María G.', status: 'Pendiente', date: '2024-04-18' },
-  { id: 3, title: 'Libro Cálculo III', seller: 'Juan P.', status: 'Aprobado', date: '2024-04-17' },
-];
+function ProductItemRow({ product }: { product: AdminProduct }) {
+  const navigate = useNavigate();
+  
+  return (
+    <div className="p-6 flex items-center justify-between hover:bg-muted/50 transition-colors">
+      <div className="flex items-center gap-4 flex-1">
+        <div className="w-16 h-16 rounded bg-stone-100 border flex items-center justify-center overflow-hidden shadow-sm">
+          {product.image ? (
+            <Base64ImageLoader data={product.image} alt={product.name} className="w-full h-full object-cover" />
+          ) : (
+            <Box className="w-8 h-8 text-muted-foreground/40" />
+          )}
+        </div>
+        <div className="flex-1">
+          <h4 className="font-medium mb-1 hover:text-primary cursor-pointer" onClick={() => navigate(`/product/${product.productID}`)}>{product.name}</h4>
+          <p className="text-sm text-muted-foreground">
+            {product.price.toLocaleString('es-CO', { style: 'currency', currency: 'COP' })} • Stock: {product.stock}
+          </p>
+          <p className="text-xs text-muted-foreground/50">ID: {product.productID.substring(0, 8)}</p>
+        </div>
+      </div>
+      <div className="flex items-center gap-3">
+        <Badge
+          variant={product.deleted ? 'destructive' : 'default'}
+          className={!product.deleted ? 'bg-green-600' : ''}
+        >
+          {product.deleted ? 'Eliminado' : 'Activo'}
+        </Badge>
+        <div className="flex gap-2">
+          {!product.deleted && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="text-destructive hover:bg-destructive/10"
+              onClick={() => navigate(`/admin/delete-product/${product.productID}`)}
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function AdminDashboard() {
   const [stats, setStats] = useState<AdminDashboardStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
+
+  // Products state
+  const [products, setProducts] = useState<AdminProduct[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
+  const [loadingMoreProducts, setLoadingMoreProducts] = useState(false);
+  const [productsPage, setProductsPage] = useState(1);
+  const [totalProductsPages, setTotalProductsPages] = useState(0);
+  const [productsQuery, setProductsQuery] = useState('');
 
   // Reports state
   const [reports, setReports] = useState<AdminReport[]>([]);
@@ -177,7 +225,56 @@ export function AdminDashboard() {
     }
     fetchStats();
     fetchReports(1, true);
+    fetchProducts(1, true, '');
   }, []);
+
+  async function fetchProducts(page: number, initial: boolean = false, query: string = '') {
+    try {
+      if (initial) setLoadingProducts(true);
+      else setLoadingMoreProducts(true);
+
+      const response = await adminService.getProducts(page, query);
+      
+      // Handle potential 204/404 via apiRequest null return
+      if (!response || !response.results) {
+        if (initial) setProducts([]);
+        setProductsPage(page);
+        setTotalProductsPages(0);
+        return;
+      }
+
+      const productsArray = Object.values(response.results);
+      
+      if (initial) {
+        setProducts(productsArray);
+      } else {
+        setProducts(prev => [...prev, ...productsArray]);
+      }
+      
+      setProductsPage(response.page);
+      setTotalProductsPages(response.pages);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      if (initial) {
+        setProducts([]);
+        setTotalProductsPages(0);
+      }
+    } finally {
+      setLoadingProducts(false);
+      setLoadingMoreProducts(false);
+    }
+  }
+
+  const handleSearchProducts = (e: React.FormEvent) => {
+    e.preventDefault();
+    fetchProducts(1, true, productsQuery);
+  };
+
+  const handleLoadMoreProducts = () => {
+    if (productsPage < totalProductsPages) {
+      fetchProducts(productsPage + 1, false, productsQuery);
+    }
+  };
 
   async function fetchReports(page: number, initial: boolean = false) {
     try {
@@ -274,34 +371,64 @@ export function AdminDashboard() {
 
           <TabsContent value="products">
             <Card>
-              <div className="p-6 border-b text-left">
-                <h3 className="font-semibold text-lg">Productos Recientes</h3>
+              <div className="p-6 border-b flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="text-left">
+                  <h3 className="font-semibold text-lg">Catálogo de Productos</h3>
+                  <p className="text-sm text-muted-foreground">Monitorea y gestiona las publicaciones</p>
+                </div>
+                <form onSubmit={handleSearchProducts} className="relative w-full md:w-80">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input 
+                    placeholder="Buscar producto por nombre..." 
+                    className="pl-9 pr-4"
+                    value={productsQuery}
+                    onChange={(e) => setProductsQuery(e.target.value)}
+                  />
+                </form>
               </div>
               <div className="divide-y text-left">
-                {RECENT_PRODUCTS.map((product) => (
-                  <div key={product.id} className="p-6 flex items-center justify-between hover:bg-muted/50">
-                    <div className="flex items-center gap-4 flex-1">
-                      <div className="w-16 h-16 bg-muted rounded-lg" />
-                      <div className="flex-1">
-                        <h4 className="font-medium mb-1">{product.title}</h4>
-                        <p className="text-sm text-muted-foreground">
-                          Por {product.seller} • {product.date}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Badge
-                        variant={product.status === 'Aprobado' ? 'default' : 'secondary'}
-                        className={product.status === 'Aprobado' ? 'bg-green-600' : ''}
-                      >
-                        {product.status}
-                      </Badge>
-                      <Button variant="ghost" size="icon">
-                        <MoreVertical className="w-4 h-4" />
-                      </Button>
-                    </div>
+                {loadingProducts ? (
+                  <div className="p-12 text-center">
+                    <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary mb-2" />
+                    <p className="text-muted-foreground">Cargando productos...</p>
                   </div>
-                ))}
+                ) : products.length === 0 ? (
+                  <div className="p-12 text-center">
+                    <Box className="w-12 h-12 mx-auto text-muted-foreground mb-4 opacity-20" />
+                    <p className="text-xl font-bold">No se encontraron productos</p>
+                    <p className="text-muted-foreground">
+                      {productsQuery ? `No hay resultados para "${productsQuery}"` : 'El catálogo está vacío.'}
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    {products.map((product) => (
+                      <ProductItemRow 
+                        key={product.productID} 
+                        product={product} 
+                      />
+                    ))}
+                    
+                    {productsPage < totalProductsPages && (
+                      <div className="p-6 border-t flex justify-center">
+                        <Button 
+                          variant="outline" 
+                          onClick={handleLoadMoreProducts}
+                          disabled={loadingMoreProducts}
+                        >
+                          {loadingMoreProducts ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Cargando...
+                            </>
+                          ) : (
+                            'Cargar más productos'
+                          )}
+                        </Button>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             </Card>
           </TabsContent>
