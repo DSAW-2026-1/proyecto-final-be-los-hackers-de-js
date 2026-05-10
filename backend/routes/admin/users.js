@@ -51,12 +51,15 @@ router.get('/', async function (req, res) {
 
     const returnUsers = users.map(u => ({
         UID: u._id,
-        name: u.name,
+        username: u.username,
         email: u.email,
-        roles: u.roles || [],
+        career : u.career || null,
         isSuspended: !!u.isSuspended,
         isSeller: !!u.isSeller,
-        createdAt: u.createdAt || null
+        photo: u.photo || null,
+        sales: u.sales || 0,
+        reviews: u.rewiews || 0,
+        reputation: u.reputation || null
     }))
 
     return res.json({
