@@ -1,8 +1,6 @@
 const express = require('express')
 const router = express.Router()
 const db = require('../../dbManager')
-const tokenValidatorMiddleware = require("../../middleware/auth/tokenValidator");
-const adminValidatorMiddleware = require("../../middleware/auth/adminValidator");
 
 // POST /api/admin/dashboard
 router.get('/', async function (req, res) {
@@ -11,7 +9,7 @@ router.get('/', async function (req, res) {
             db.countUsers(),
             db.countActiveSellers(),
             db.countProducts(),
-            db.countOrders()
+            db.countTotalOrders()
         ])
 
         return res.status(200).json({

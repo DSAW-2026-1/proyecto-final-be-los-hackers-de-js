@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require("../../dbManager");
 
-router.get('/:id', async function (req, res, next) {
+router.get('/:id', async function (req, res) {
     const UID = req.params.id
     const user = await db.findUserByUID(UID)
 

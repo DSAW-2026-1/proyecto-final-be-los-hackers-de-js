@@ -4,7 +4,7 @@ const db = require("../../../dbManager");
 
 const ITEMS_PER_PAGE = 12
 
-router.get('/', async function (req, res, next) {
+router.get('/', async function (req, res) {
     const UID = req.token.payload.UID
     const user = await db.findUserByUID(UID)
 
@@ -19,6 +19,7 @@ router.get('/', async function (req, res, next) {
         const saleIDs = user.saleData
         if(!saleIDs || saleIDs.length === 0) return res.status(404).json({error: 'No sales found'})
         const search = await db.getOrders(saleIDs, (pageInt-1), ITEMS_PER_PAGE)
+        const active = await db.countOrders(saleIDs, {status: {$nin: ["Delivered", "Cancelled"]}})
         if(!search) return res.status(404).json({error: 'No sales found'})
         const orders = search.result
         if (!orders || orders.length === 0) {
@@ -39,6 +40,7 @@ router.get('/', async function (req, res, next) {
             }
             return res.json({
                 count: search.count,
+                active,
                 pages: Math.ceil(search.count/ITEMS_PER_PAGE),
                 page: pageInt,
                 results: Object.assign({}, returnResults)

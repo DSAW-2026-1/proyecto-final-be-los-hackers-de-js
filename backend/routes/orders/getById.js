@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../../dbManager');
 
-router.get('/:saleID', async function (req, res, next) {
+router.get('/:saleID', async function (req, res) {
     const UID = req.token.payload.UID
     const { saleID } = req.params
 

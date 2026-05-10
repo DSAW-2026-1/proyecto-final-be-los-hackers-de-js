@@ -67,6 +67,7 @@ export interface ShippingResponseItem {
 }
 export interface ShippingResponse {
   count: number;
+  active?: number;
   pages: number;
   page: number;
   results: { [key: number]: ShippingResponseItem };
