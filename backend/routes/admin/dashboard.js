@@ -11,7 +11,7 @@ router.get('/', async function (req, res) {
             db.countUsers(),
             db.countActiveSellers(),
             db.countProducts(),
-            db.countOrders()
+            db.countTotalOrders()
         ])
 
         return res.status(200).json({

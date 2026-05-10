@@ -54,6 +54,7 @@ export function SellerDashboard() {
   const [salesTotalPages, setSalesTotalPages] = useState(1);
   const [loadingSales, setLoadingSales] = useState(false);
   const [loadingMoreSales, setLoadingMoreSales] = useState(false);
+  const [activeOrders, setActiveOrders] = useState(0)
 
   const fetchSales = async (pageNum: number, isLoadMore: boolean = false) => {
     try {
@@ -83,10 +84,10 @@ export function SellerDashboard() {
       
       setSalesTotalPages(response.pages);
       setSalesPage(response.page);
+      setActiveOrders(response.active || 0)
     } catch (err: unknown) {
       if (err instanceof Error && err.message.includes('No sales found')) {
         setSales([]);
-        setSalesCount(0);
       } else {
         console.error('Error fetching sales:', err);
       }
@@ -185,7 +186,8 @@ export function SellerDashboard() {
     return <Badge variant="outline" className="gap-1.5 py-1 px-3">{status}</Badge>;
   }
 
-  const activeOrders = sales.filter((s) => !s.status.toLowerCase().includes("delivered") && !s.status.toLowerCase().includes("entregado") && !s.status.toLowerCase().includes("cancelled") && !s.status.toLowerCase().includes("cancelado")).length;
+  //TODO: activeOrders set locally can become inconsistent with db
+  //const activeOrders = sales.filter((s) => !s.status.toLowerCase().includes("delivered") && !s.status.toLowerCase().includes("entregado") && !s.status.toLowerCase().includes("cancelled") && !s.status.toLowerCase().includes("cancelado")).length;
   const unreadMessages = 0; // placeholder
   const rating = user?.reputation ? parseFloat(user.reputation) : 0;
 
