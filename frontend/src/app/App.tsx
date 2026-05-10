@@ -36,6 +36,7 @@ import { ScrollToTop } from './components/ScrollToTop.tsx';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AdminProtectedRoute } from './components/AdminProtectedRoute';
 import { NotificationPoller } from './components/NotificationPoller';
+import { AdminLayout } from './components/AdminLayout.tsx'
 
 function Home() {
   return (
@@ -87,15 +88,17 @@ export default function App() {
               <Route path="/report/:id" element={<ProtectedRoute><ReportView /></ProtectedRoute>} />
               <Route path="/report/user/:id" element={<ProtectedRoute><UserReportView /></ProtectedRoute>} />
 
+              {/* Admin login uses the normal layout so that regular users who somehow get here can easily get back to the marketplace */}
+              <Route path="/admin/login" element={<AdminLogin />} />
+            </Route>
+            <Route element={<AdminLayout />}>
               {/* Admin routes */}
               <Route path="/admin" element={<AdminProtectedRoute><AdminDashboard /></AdminProtectedRoute>} />
               <Route path="/admin/reports/:id" element={<AdminProtectedRoute><AdminReportView /></AdminProtectedRoute>} />
               <Route path="/admin/suspend-user/:id" element={<AdminProtectedRoute><AdminSuspendUser /></AdminProtectedRoute>} />
               <Route path="/admin/delete-product/:id" element={<AdminProtectedRoute><AdminDeleteProduct /></AdminProtectedRoute>} />
-
-              <Route path="/admin/login" element={<AdminLogin />} />
-
-              {/* TODO: For now, 404 is fine here but the admin panel will use its own distinct layout. How do we handle that? */}
+            </Route>
+            <Route element={<MainLayout />}>
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>
