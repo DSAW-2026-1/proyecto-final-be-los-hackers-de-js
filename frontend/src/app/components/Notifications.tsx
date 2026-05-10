@@ -57,7 +57,7 @@ const getNotificationStyles = (type: string) => {
 
 export function Notifications() {
   const navigate = useNavigate();
-  const { setUnreadCount, decrementUnreadCount, incrementUnreadCount, refreshUnreadCount } = useNotifications();
+  const { unreadCount, setUnreadCount, decrementUnreadCount, incrementUnreadCount, refreshUnreadCount } = useNotifications();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -163,11 +163,10 @@ export function Notifications() {
   };
 
   const markAllAsRead = async () => {
-    const unreadIds = notifications.filter(n => !n.read).map(n => n.id);
-    if (unreadIds.length === 0) return;
+    if (unreadCount === 0) return;
 
     try {
-      // Optimistic update
+      // Optimistic update for currently visible notifications
       setNotifications(prev => prev.map(n => ({ ...n, read: true })));
       setUnreadCount(0);
       
@@ -255,9 +254,9 @@ export function Notifications() {
           <div>
             <div className="flex items-center gap-3 mb-2">
               <h1 className="text-4xl font-bold text-primary">Notificaciones</h1>
-              {notifications.filter(n => !n.read).length > 0 && (
+              {unreadCount > 0 && (
                 <Badge variant="destructive" className="h-6 px-2">
-                  {notifications.filter(n => !n.read).length} {notifications.filter(n => !n.read).length === 1 ? 'nueva' : 'nuevas'}
+                  {unreadCount} {unreadCount === 1 ? 'nueva' : 'nuevas'}
                 </Badge>
               )}
             </div>
@@ -266,7 +265,7 @@ export function Notifications() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={markAllAsRead} disabled={notifications.filter(n => !n.read).length === 0}>
+            <Button variant="outline" size="sm" onClick={markAllAsRead} disabled={unreadCount === 0}>
               Marcar todas como leídas
             </Button>
           </div>
