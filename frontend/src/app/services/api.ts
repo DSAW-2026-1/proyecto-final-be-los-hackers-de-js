@@ -58,5 +58,9 @@ export async function apiRequest<T = unknown>(
     throw error;
   }
 
+  if (response.status === 204) {
+    return null as T;
+  }
+
   return response.json();
 }

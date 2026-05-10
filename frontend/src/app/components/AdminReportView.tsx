@@ -20,9 +20,11 @@ export function AdminReportView() {
   const [reporter, setReporter] = useState<UserProfileResponse | null>(null);
   const [reportedEntity, setReportedEntity] = useState<Product | UserProfileResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [status, setStatus] = useState<'pending' | 'approved' | 'rejected'>('pending');
-  const [showRejectReason, setShowRejectReason] = useState(false);
-  const [rejectReason, setRejectReason] = useState('');
+  const [resolving, setResolving] = useState(false);
+  const [status, setStatus] = useState<'pending' | 'resolved'>('pending');
+  const [showResolutionForm, setShowResolutionForm] = useState(false);
+  const [resolutionType, setResolutionType] = useState<'deleteOffending' | 'rejectReport' | null>(null);
+  const [reason, setReason] = useState('');
 
   useEffect(() => {
     async function fetchData() {
@@ -63,17 +65,10 @@ export function AdminReportView() {
     fetchData();
   }, [reportID]);
 
-  function handleApprove() {
-    if (!report) return;
-    if (report.type === 'productReport') {
-      navigate(`/admin/delete-product/${report.reportedID}`);
-    } else {
-      navigate(`/admin/suspend-user/${report.reportedID}`);
-    }
-  }
-
-  function handleStartReject() {
-    setShowRejectReason(true);
+  function handleStartResolve(type: 'deleteOffending' | 'rejectReport') {
+    setResolutionType(type);
+    setShowResolutionForm(true);
+    setReason('');
   }
 
   function handleViewItem() {
@@ -85,15 +80,25 @@ export function AdminReportView() {
     }
   }
 
-  function handleConfirmReject() {
-    if (!rejectReason.trim()) {
-      toast.error('Por favor ingresa un motivo de rechazo');
+  async function handleConfirmResolution() {
+    if (!reportID || !resolutionType) return;
+    if (!reason.trim()) {
+      toast.error('Por favor ingresa un motivo para la acción');
       return;
     }
-    // TODO: Connect to report rejection API when available
-    toast.info('La API de rechazo de reportes se implementará pronto');
-    setStatus('rejected');
-    setShowRejectReason(false);
+
+    try {
+      setResolving(true);
+      const res = await adminService.resolveReport(reportID, resolutionType, reason);
+      toast.success(res.message);
+      setStatus('resolved');
+      setShowResolutionForm(false);
+    } catch (error) {
+      console.error('Error resolving report:', error);
+      toast.error('Error al resolver el reporte');
+    } finally {
+      setResolving(false);
+    }
   }
 
   if (loading) {
@@ -136,9 +141,9 @@ export function AdminReportView() {
               ID #{report.reportID.substring(0, 8)}...
             </Badge>
             <Badge
-              variant={status === 'pending' ? 'outline' : status === 'approved' ? 'default' : 'destructive'}
+              variant={status === 'pending' ? 'outline' : 'default'}
             >
-              {status === 'pending' ? 'Pendiente' : status === 'approved' ? 'Aprobado' : 'Rechazado'}
+              {status === 'pending' ? 'Pendiente' : 'Resuelto'}
             </Badge>
           </div>
         </div>
@@ -152,7 +157,7 @@ export function AdminReportView() {
               </div>
               <h3 className="text-xl font-semibold mb-2">{report.reportTitle}</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                Reportado {reporter ? `por ${reporter.username}` : 'por Usuario Anónimo'} • 2026-04-21
+                Reportado {reporter ? `por ${reporter.username}` : 'por Usuario Anónimo'}
               </p>
               
               <div className="bg-muted/50 p-4 rounded-lg mb-6 border">
@@ -216,39 +221,48 @@ export function AdminReportView() {
                 <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Acciones Administrativas</h4>
                 <div className="flex flex-col gap-3">
                   <Button 
-                    onClick={handleApprove} 
+                    onClick={() => handleStartResolve('deleteOffending')} 
                     size="sm" 
                     variant="destructive" 
-                    disabled={status !== 'pending'}
+                    disabled={status !== 'pending' || resolving}
                     className="w-full"
                   >
                     <XCircle className="w-4 h-4 mr-2" /> 
-                    {report.type === 'productReport' ? 'Retirar Publicación' : 'Suspender Usuario'}
+                    {report.type === 'productReport' ? 'Eliminar Producto' : 'Suspender Usuario'}
                   </Button>
                   <Button 
-                    onClick={handleStartReject} 
+                    onClick={() => handleStartResolve('rejectReport')} 
                     size="sm" 
                     variant="outline" 
-                    disabled={status !== 'pending' || showRejectReason}
+                    disabled={status !== 'pending' || resolving}
                     className="w-full"
                   >
                     <CheckCircle className="w-4 h-4 mr-2" /> Rechazar Reporte
                   </Button>
 
-                  {showRejectReason && (
+                  {showResolutionForm && (
                     <div className="space-y-3 pt-3 border-t mt-2">
-                      <Label className="text-xs font-bold text-destructive">MOTIVO DEL RECHAZO</Label>
+                      <Label className="text-xs font-bold text-primary">
+                        MOTIVO DE LA {resolutionType === 'deleteOffending' ? 'ACCIÓN' : 'RECHAZO'}
+                      </Label>
                       <textarea
                         className="w-full rounded-md border bg-background p-2 text-sm min-h-[100px]"
-                        value={rejectReason}
-                        onChange={(e) => setRejectReason(e.target.value)}
-                        placeholder="Explica por qué este reporte no procede..."
+                        value={reason}
+                        onChange={(e) => setReason(e.target.value)}
+                        placeholder={resolutionType === 'deleteOffending' ? "Explica por qué se toma esta medida disciplinaria..." : "Explica por qué este reporte no procede..."}
+                        disabled={resolving}
                       />
                       <div className="flex gap-2">
-                        <Button size="sm" variant="destructive" onClick={handleConfirmReject} className="flex-1">
-                          Confirmar
+                        <Button 
+                          size="sm" 
+                          variant={resolutionType === 'deleteOffending' ? "destructive" : "default"} 
+                          onClick={handleConfirmResolution} 
+                          className="flex-1"
+                          disabled={resolving}
+                        >
+                          {resolving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirmar'}
                         </Button>
-                        <Button size="sm" variant="ghost" onClick={() => {setShowRejectReason(false); setRejectReason('');}} className="flex-1">
+                        <Button size="sm" variant="ghost" onClick={() => setShowResolutionForm(false)} className="flex-1" disabled={resolving}>
                           Cancelar
                         </Button>
                       </div>
@@ -257,20 +271,14 @@ export function AdminReportView() {
                 </div>
               </Card>
 
-              {status !== 'pending' && (
+              {status === 'resolved' && (
                 <div className="mt-4 p-4 bg-muted rounded-lg border-2 border-dashed flex flex-col items-center text-center">
                   <div className="w-12 h-12 rounded-full bg-background flex items-center justify-center mb-3 border shadow-sm">
-                    {status === 'approved' ? (
-                      <CheckCircle className="w-6 h-6 text-green-600" />
-                    ) : (
-                      <XCircle className="w-6 h-6 text-destructive" />
-                    )}
+                    <CheckCircle className="w-6 h-6 text-green-600" />
                   </div>
-                  <p className="font-bold text-sm uppercase tracking-tight">Decisión Final</p>
+                  <p className="font-bold text-sm uppercase tracking-tight">Reporte Resuelto</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {status === 'approved' 
-                      ? 'Acción correctiva ejecutada' 
-                      : 'Reporte archivado sin acción'}
+                    La acción administrativa ha sido procesada correctamente.
                   </p>
                 </div>
               )}

@@ -49,4 +49,11 @@ export const adminService = {
   async getReports(page: number = 1): Promise<AdminReportsResponse> {
     return apiRequest<AdminReportsResponse>(`/api/admin/reports?page=${page}`);
   },
+
+  async resolveReport(reportID: string, solution: 'deleteOffending' | 'rejectReport', reason: string): Promise<{ message: string }> {
+    return apiRequest<{ message: string }>(`/api/admin/reports/${reportID}/resolve`, {
+      method: 'PATCH',
+      body: JSON.stringify({ solution, reason }),
+    });
+  },
 };

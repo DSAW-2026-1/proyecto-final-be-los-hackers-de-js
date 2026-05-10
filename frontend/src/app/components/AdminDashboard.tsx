@@ -132,24 +132,10 @@ function ReportItemRow({ report }: { report: AdminReport }) {
         <div className="flex gap-2">
           <Button 
             size="sm" 
-            variant="destructive"
-            className="shadow-sm"
-            onClick={() => {
-              if (report.type === 'productReport') navigate(`/admin/delete-product/${report.reportedID}`);
-              else navigate(`/admin/suspend-user/${report.reportedID}`);
-            }}
-          >
-            <XCircle className="w-4 h-4 mr-2" />
-            <span className="hidden lg:inline">{report.type === 'productReport' ? 'Retirar' : 'Suspender'}</span>
-            <span className="lg:hidden">Acción</span>
-          </Button>
-          <Button 
-            size="sm" 
             variant="outline"
             className="hover:bg-primary/5 hover:text-primary transition-all shadow-sm"
             onClick={() => navigate(`/admin/reports/${report.reportID}`)}
           >
-            <CheckCircle className="w-4 h-4 mr-2" />
             <span className="hidden lg:inline">Ver reporte</span>
             <span className="lg:hidden">Ver</span>
           </Button>
@@ -199,6 +185,15 @@ export function AdminDashboard() {
       else setLoadingMoreReports(true);
 
       const response = await adminService.getReports(page);
+      
+      // Handle 204 or empty response
+      if (!response || !response.results) {
+        if (initial) setReports([]);
+        setReportsPage(page);
+        setTotalReportsPages(0);
+        return;
+      }
+
       const reportsArray = Object.values(response.results);
       
       if (initial) {
