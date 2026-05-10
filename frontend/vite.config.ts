@@ -11,22 +11,6 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
-  resolve: {
-    alias: {
-      // Alias @ to the src directory
-      '@': path.resolve(__dirname, './src'),
-    },
-  },
-
-  // Allow Vite to serve files when workspace is a symlink/shortcut
-  // or when the resolved real path is different (e.g. mounted drive with spaces).
-  server: {
-    fs: {
-      // Include both the current working directory and its real path
-      // to handle drive shortcuts, symlinks, or mounted paths with spaces.
-      allow: [path.resolve(__dirname), process.cwd(), fs.realpathSync(process.cwd())],
-    },
-  },
 
   // File types to support raw imports. Never add .css, .tsx, or .ts files to this.
   assetsInclude: ['**/*.svg', '**/*.csv'],
