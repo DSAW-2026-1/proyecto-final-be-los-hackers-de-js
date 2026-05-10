@@ -21,7 +21,7 @@ router.patch('/:UID/suspend', async function (req, res) {
 })
 
 // GET /api/admin/users?page=X&query=... (includes suspended users)
-// Allows queries and filtering by whether the user is a seller (mostly unused as the frontend doesn't send any query or filters, could be used at some point in the future)
+// Allows queries and filtering by whether the user is a seller (mostly unused as the frontend doesn't send any filters, could be used at some point in the future)
 router.get('/', async function (req, res) {
     let { page, query, isSeller } = req.query
     if(!page) page = 1

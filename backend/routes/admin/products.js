@@ -23,7 +23,7 @@ router.delete('/:productID', async function (req, res) {
 })
 
 // GET /api/admin/products?page=X&query=... (includes soft-deleted products)
-// Allows similar searching as the normal product search (mostly unused as the frontend doesn't send any query or filters, could be used at some point in the future)
+// Allows similar searching as the normal product search (mostly unused as the frontend doesn't send any filters, could be used at some point in the future)
 router.get('/', async function (req, res) {
     let { page, query, categories, fromPrice, toPrice, conditions, minRating, sellerID } = req.query
     if(!page) page = 1
