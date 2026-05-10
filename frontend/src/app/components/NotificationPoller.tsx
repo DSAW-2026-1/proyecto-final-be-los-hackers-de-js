@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { userService, NotificationItem } from '../services/userService';
+import { useNotifications } from '../context/NotificationContext';
 import { toast } from 'sonner';
 import { MessageCircle, Package, ShoppingBag, Tag, Info, CheckCircle2 } from 'lucide-react';
 import { Button } from './ui/button';
@@ -29,6 +30,7 @@ const getNotificationStyles = (type: string) => {
 
 export function NotificationPoller() {
   const { isAuthenticated } = useAuth();
+  const { refreshUnreadCount } = useNotifications();
   const navigate = useNavigate();
   const lastCheckRef = useRef<string>(new Date().toISOString());
   const pollingInterval = Number(import.meta.env.VITE_NOTIFICATION_POLLING_INTERVAL) || 30000;
@@ -46,6 +48,11 @@ export function NotificationPoller() {
         if (response && response.results) {
           const newNotifications = Object.values(response.results);
           
+          if (newNotifications.length > 0) {
+            // New notifications found, refresh global unread count
+            refreshUnreadCount();
+          }
+
           newNotifications.forEach((notif: NotificationItem) => {
             const styles = getNotificationStyles(notif.type);
             const Icon = styles.icon;
@@ -103,7 +110,7 @@ export function NotificationPoller() {
       clearInterval(interval);
       clearTimeout(initialTimeout);
     };
-  }, [isAuthenticated, pollingInterval, navigate]);
+  }, [isAuthenticated, pollingInterval, navigate, refreshUnreadCount]);
 
   return null; // This component doesn't render anything itself
 }

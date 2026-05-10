@@ -63,6 +63,9 @@ export const userService = {
       method: 'PATCH',
     });
   },
+  async getUnreadCount(): Promise<{ count: number }> {
+    return apiRequest<{ count: number }>('/api/notifications/unreadCount');
+  },
   async registerAsSeller(): Promise<{ token: string }> {
     return apiRequest<{ token: string }>('/api/seller/register', {
       method: 'PATCH',

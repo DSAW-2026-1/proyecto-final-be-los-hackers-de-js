@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router';
 import { Toaster } from 'sonner';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
+import { NotificationProvider } from './context/NotificationContext';
 import { Login } from './components/Login';
 import { Register } from './components/Register';
 import { HeroSection } from './components/HeroSection';
@@ -48,11 +49,12 @@ function Home() {
 export default function App() {
   return (
     <AuthProvider>
-      <CartProvider>
-        <NotificationPoller />
-        <Toaster position="top-right" expand={true} richColors />
-        <ScrollToTop>
-          <Routes>
+      <NotificationProvider>
+        <CartProvider>
+          <NotificationPoller />
+          <Toaster position="top-right" expand={true} richColors />
+          <ScrollToTop>
+            <Routes>
             {/* Main app routes with MainLayout */}
             <Route element={<MainLayout />}>
               <Route path="/" element={<Home />} />
@@ -99,6 +101,7 @@ export default function App() {
           </Routes>
         </ScrollToTop>
       </CartProvider>
-    </AuthProvider>
-  );
+    </NotificationProvider>
+  </AuthProvider>
+);
 }

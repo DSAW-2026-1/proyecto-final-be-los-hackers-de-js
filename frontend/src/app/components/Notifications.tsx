@@ -17,6 +17,7 @@ import {
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { userService, NotificationItem as APINotification } from '../services/userService';
+import { useNotifications } from '../context/NotificationContext';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -56,6 +57,7 @@ const getNotificationStyles = (type: string) => {
 
 export function Notifications() {
   const navigate = useNavigate();
+  const { setUnreadCount, decrementUnreadCount, incrementUnreadCount, refreshUnreadCount } = useNotifications();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -87,6 +89,8 @@ export function Notifications() {
       }
       
       setTotalPages(response.pages);
+      // Refresh global count to match
+      refreshUnreadCount();
     } catch (error) {
       console.error('Error fetching notifications:', error);
     } finally {
@@ -97,7 +101,7 @@ export function Notifications() {
 
   useEffect(() => {
     fetchNotifications(1);
-  }, []);
+  }, [refreshUnreadCount]);
 
   const loadMore = () => {
     if (page < totalPages) {
@@ -112,11 +116,23 @@ export function Notifications() {
       const newState = !currentState;
       // Optimistic update
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: newState } : n));
+      
+      if (newState) {
+        decrementUnreadCount();
+      } else {
+        incrementUnreadCount();
+      }
+
       await userService.markNotificationState(id, newState);
     } catch (error) {
       console.error('Error toggling notification state:', error);
       // Revert if error
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: currentState } : n));
+      if (!currentState) {
+        decrementUnreadCount();
+      } else {
+        incrementUnreadCount();
+      }
       toast.error('No se pudo actualizar el estado de la notificación');
     }
   };
@@ -153,6 +169,7 @@ export function Notifications() {
     try {
       // Optimistic update
       setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      setUnreadCount(0);
       
       await userService.markAllNotificationsRead();
       toast.success('Todas las notificaciones marcadas como leídas');
