@@ -104,7 +104,7 @@ export function Navigation() {
             </div>
           </div>
 
-          <div className="flex-1 flex items-center justify-center min-w-0 px-2 sm:px-4">
+          <div className="flex-1 flex items-center justify-center lg:justify-end min-w-0 px-2 sm:px-4">
             <form 
               className="relative w-full lg:w-80"
               onSubmit={(e) => {
