@@ -18,6 +18,14 @@ import {
   SearchX
 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
+import { 
+  Sheet, 
+  SheetContent, 
+  SheetDescription, 
+  SheetHeader, 
+  SheetTitle, 
+  SheetTrigger 
+} from './ui/sheet';
 import { CATEGORIES, CONDITIONS } from '../constants';
 import { useSearchParams } from 'react-router';
 import { productService, SearchResultItem } from '../services/productService';
@@ -30,6 +38,7 @@ export function ProductSearch() {
   const [pages, setPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
 
   // Filter states
   const [priceRange, setPriceRange] = useState([
@@ -176,6 +185,125 @@ export function ProductSearch() {
   const startItem = count > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0;
   const endItem = (currentPage - 1) * itemsPerPage + results.length;
 
+  const FiltersContent = () => (
+    <div className="space-y-6">
+      <div className="space-y-6">
+        {/* Category */}
+        <div>
+          <h4 className="font-semibold mb-4 flex items-center justify-between cursor-pointer group">
+            Categorías
+            <ChevronDown className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+          </h4>
+          <div className="space-y-3">
+            {CATEGORIES.map((cat) => (
+              <div key={cat} className="flex items-center gap-3">
+                <Checkbox 
+                  id={`cat-${cat}`} 
+                  checked={selectedCategories.includes(cat)}
+                  onCheckedChange={(checked) => handleCategoryChange(cat, !!checked)}
+                />
+                <Label htmlFor={`cat-${cat}`} className="text-sm cursor-pointer hover:text-primary transition-colors">
+                  {cat}
+                </Label>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Price Range */}
+        <div>
+          <h4 className="font-semibold mb-6">Rango de Precio (COP)</h4>
+          <Slider 
+            value={priceRange} 
+            max={5000000} 
+            step={50000} 
+            className="mb-4"
+            onValueChange={handlePriceChange}
+            onValueCommit={applyPriceFilter}
+          />
+          <div className="flex items-center gap-3">
+            <div className="flex-1">
+              <Label className="text-xs text-muted-foreground mb-1 block">Mínimo</Label>
+              <div className="relative">
+                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
+                <Input value={priceRange[0].toLocaleString()} readOnly className="h-8 pl-5 text-xs font-mono bg-muted/30" />
+              </div>
+            </div>
+            <div className="flex-1">
+              <Label className="text-xs text-muted-foreground mb-1 block">Máximo</Label>
+              <div className="relative">
+                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
+                <Input value={priceRange[1].toLocaleString()} readOnly className="h-8 pl-5 text-xs font-mono bg-muted/30" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Condition */}
+        <div>
+          <h4 className="font-semibold mb-4">Estado</h4>
+          <div className="space-y-3">
+            {CONDITIONS.map((cond) => (
+              <div key={cond} className="flex items-center gap-3">
+                <Checkbox 
+                  id={`cond-${cond}`} 
+                  checked={selectedConditions.includes(cond)}
+                  onCheckedChange={(checked) => handleConditionChange(cond, !!checked)}
+                />
+                <Label htmlFor={`cond-${cond}`} className="text-sm cursor-pointer hover:text-primary transition-colors">
+                  {cond}
+                </Label>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Rating */}
+        <div>
+          <h4 className="font-semibold mb-4">Reputación Mínima</h4>
+          <div className="space-y-3">
+            {[4, 3, 2].map((stars) => (
+              <div key={stars} className="flex items-center gap-3">
+                <Checkbox 
+                  id={`rating-${stars}`} 
+                  checked={minRating === stars}
+                  onCheckedChange={(checked) => handleRatingChange(stars, !!checked)}
+                />
+                <Label htmlFor={`rating-${stars}`} className="flex items-center gap-1 cursor-pointer group">
+                  <span className="text-sm group-hover:text-primary transition-colors">{stars}+</span>
+                  <Star className="w-3 h-3 fill-accent text-accent" />
+                </Label>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Advanced */}
+        <div>
+          <h4 className="font-semibold mb-4">Avanzado</h4>
+          <div className="flex items-center gap-3">
+            <Checkbox 
+              id="searchDescription" 
+              checked={searchDescription}
+              onCheckedChange={(checked) => handleSearchDescriptionChange(!!checked)}
+            />
+            <Label htmlFor="searchDescription" className="text-sm cursor-pointer hover:text-primary transition-colors">
+              Incluir descripción en búsqueda
+            </Label>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="bg-background py-12 border-t">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -190,128 +318,40 @@ export function ProductSearch() {
           {/* Sidebar Filters */}
           <aside className="lg:col-span-1 space-y-8">
             <div className="hidden lg:block p-6 rounded-xl border bg-muted/20">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-6">
                 <h3 className="font-bold text-lg">Filtros</h3>
                 <Button variant="ghost" size="sm" className="text-muted-foreground h-8 px-2 hover:text-primary" onClick={clearFilters}>
                   Limpiar todo
                 </Button>
               </div>
-
-              <div className="space-y-6">
-                {/* Category */}
-                <div>
-                  <h4 className="font-semibold mb-4 flex items-center justify-between cursor-pointer">
-                    Categorías
-                    <ChevronDown className="w-4 h-4" />
-                  </h4>
-                  <div className="space-y-3">
-                    {CATEGORIES.map((cat) => (
-                      <div key={cat} className="flex items-center gap-3">
-                        <Checkbox 
-                          id={`cat-${cat}`} 
-                          checked={selectedCategories.includes(cat)}
-                          onCheckedChange={(checked) => handleCategoryChange(cat, !!checked)}
-                        />
-                        <Label htmlFor={`cat-${cat}`} className="text-sm cursor-pointer hover:text-primary transition-colors">
-                          {cat}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Price Range */}
-                <div>
-                  <h4 className="font-semibold mb-6">Rango de Precio (COP)</h4>
-                  <Slider 
-                    value={priceRange} 
-                    max={5000000} 
-                    step={50000} 
-                    className="mb-4"
-                    onValueChange={handlePriceChange}
-                    onValueCommit={applyPriceFilter}
-                  />
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1">
-                      <Label className="text-xs text-muted-foreground mb-1 block">Mínimo</Label>
-                      <Input value={`$${priceRange[0].toLocaleString()}`} readOnly className="h-8 text-xs font-mono" />
-                    </div>
-                    <div className="flex-1">
-                      <Label className="text-xs text-muted-foreground mb-1 block">Máximo</Label>
-                      <Input value={`$${priceRange[1].toLocaleString()}`} readOnly className="h-8 text-xs font-mono" />
-                    </div>
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Condition */}
-                <div>
-                  <h4 className="font-semibold mb-4">Estado</h4>
-                  <div className="space-y-3">
-                    {CONDITIONS.map((cond) => (
-                      <div key={cond} className="flex items-center gap-3">
-                        <Checkbox 
-                          id={`cond-${cond}`} 
-                          checked={selectedConditions.includes(cond)}
-                          onCheckedChange={(checked) => handleConditionChange(cond, !!checked)}
-                        />
-                        <Label htmlFor={`cond-${cond}`} className="text-sm cursor-pointer">
-                          {cond}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Rating */}
-                <div>
-                  <h4 className="font-semibold mb-4">Reputación Mínima</h4>
-                  <div className="space-y-3">
-                    {[4, 3, 2].map((stars) => (
-                      <div key={stars} className="flex items-center gap-3">
-                        <Checkbox 
-                          id={`rating-${stars}`} 
-                          checked={minRating === stars}
-                          onCheckedChange={(checked) => handleRatingChange(stars, !!checked)}
-                        />
-                        <Label htmlFor={`rating-${stars}`} className="flex items-center gap-1 cursor-pointer">
-                          <span className="text-sm">{stars}+</span>
-                          <Star className="w-3 h-3 fill-accent text-accent" />
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Advanced */}
-                <div>
-                  <h4 className="font-semibold mb-4">Avanzado</h4>
-                  <div className="flex items-center gap-3">
-                    <Checkbox 
-                      id="searchDescription" 
-                      checked={searchDescription}
-                      onCheckedChange={(checked) => handleSearchDescriptionChange(!!checked)}
-                    />
-                    <Label htmlFor="searchDescription" className="text-sm cursor-pointer">
-                      Incluir descripción en búsqueda
-                    </Label>
-                  </div>
-                </div>
-              </div>
+              <FiltersContent />
             </div>
 
             {/* Mobile Filter Trigger */}
-            <Button variant="outline" className="w-full lg:hidden flex items-center justify-center gap-2">
-              <SlidersHorizontal className="w-4 h-4" />
-              Ver Filtros
-            </Button>
+            <Sheet open={isMobileFiltersOpen} onOpenChange={setIsMobileFiltersOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline" className="w-full lg:hidden flex items-center justify-center gap-2">
+                  <SlidersHorizontal className="w-4 h-4" />
+                  Ver Filtros
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[300px] sm:w-[400px] p-0 flex flex-col">
+                <SheetHeader className="p-6 pb-4 border-b bg-muted/10">
+                  <div className="flex items-center justify-between">
+                    <SheetTitle className="text-xl font-bold">Filtros</SheetTitle>
+                    <Button variant="ghost" size="sm" className="text-xs h-7 px-2" onClick={clearFilters}>
+                      Limpiar
+                    </Button>
+                  </div>
+                  <SheetDescription className="text-xs">
+                    Ajusta los filtros para encontrar lo que buscas.
+                  </SheetDescription>
+                </SheetHeader>
+                <div className="flex-1 overflow-y-auto p-6 scrollbar-hide">
+                  <FiltersContent />
+                </div>
+              </SheetContent>
+            </Sheet>
           </aside>
 
           {/* Results Area */}
