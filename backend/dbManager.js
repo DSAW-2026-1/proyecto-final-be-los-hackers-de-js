@@ -459,6 +459,9 @@ class DbManager{
             return null
         }
     }
+    static async findReviewsBySeller(sellerID, page, limit){
+        return await this.#findLimitedInDb(REVIEWS_DB, { sellerID: sellerID }, page, limit)
+    }
     static async #findLimitedByIDs(database, IDs, page, limit) {
         try {
             //let db = await this.#openConnection()
