@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Star, MapPin, Calendar, Package, ShoppingBag, MessageCircle, Edit, Loader2, Flag } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { authService } from '../services/authService';
-import { userService, UserProfileResponse } from '../services/userService';
+import { userService, UserProfileResponse, UserReviewItem } from '../services/userService';
 import { productService, SearchResultItem } from '../services/productService';
 import { ApiError } from '../services/api';
 import { NotFound } from './NotFound';
@@ -17,34 +17,22 @@ import { ProductCard } from './ProductCard';
 import { ConnectionError } from './ConnectionError';
 import Base64ImageLoader from './Base64ImageLoader';
 
-const REVIEWS = [
-  {
-    id: 1,
-    reviewer: 'Carlos López',
-    rating: 5,
-    comment: 'Excelente vendedor, producto tal como se describió. Muy recomendado!',
-    date: '15 Abril 2026'
-  },
-  {
-    id: 2,
-    reviewer: 'María García',
-    rating: 4,
-    comment: 'Buena comunicación y entrega rápida. El producto llegó en buen estado.',
-    date: '10 Abril 2026'
-  },
-];
-
 export function UserProfile() {
   const { isAuthenticated, user: contextUser, setUserInfo } = useAuth();
   const { uid } = useParams<{ uid?: string }>();
   const navigate = useNavigate();
   const [user, setUser] = useState<UserProfileResponse | null>(null);
   const [products, setProducts] = useState<SearchResultItem[]>([]);
+  const [reviews, setReviews] = useState<UserReviewItem[]>([]);
+  const [reviewBuyerNames, setReviewBuyerNames] = useState<Record<string, string>>({});
+  const [reviewBuyerPhotos, setReviewBuyerPhotos] = useState<Record<string, string>>({});
+  const [reviewProductNames, setReviewProductNames] = useState<Record<string, string>>({});
   const [count, setCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [loadingProducts, setLoadingProducts] = useState(false);
+  const [loadingReviews, setLoadingReviews] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [errorStatus, setErrorStatus] = useState<number | null>(null);
 
@@ -98,6 +86,28 @@ export function UserProfile() {
               }
             }
           }
+
+          // Fetch reviews
+          const profileUid = uid || authService.getUid();
+          if (profileUid) {
+            setLoadingReviews(true);
+            try {
+              const reviewResp = await userService.getUserReviews(profileUid);
+              if (isMounted) {
+                const reviewsList = Object.values(reviewResp.results);
+                setReviews(reviewsList);
+                
+                // Fetch associated names (buyer names and product names)
+                resolveReviewDetails(reviewsList, isMounted);
+              }
+            } catch (err) {
+              console.error('Error fetching reviews:', err);
+            } finally {
+              if (isMounted) {
+                setLoadingReviews(false);
+              }
+            }
+          }
         }
       } catch (error) {
         if (!isMounted) return;
@@ -124,6 +134,42 @@ export function UserProfile() {
       isMounted = false;
     };
   }, [isAuthenticated, navigate, uid, isOwnProfile, contextUser, setUserInfo]);
+
+  const resolveReviewDetails = async (reviewList: UserReviewItem[], isMounted: boolean) => {
+    const buyerIds = Array.from(new Set(reviewList.map(r => r.buyerID)));
+    const productIds = Array.from(new Set(reviewList.map(r => r.productID)));
+
+    // Resolve buyers
+    buyerIds.forEach(async (bid) => {
+      try {
+        const profile = await userService.getProfileByUid(bid);
+        if (isMounted) {
+          setReviewBuyerNames(prev => ({ ...prev, [bid]: profile.username }));
+          if (profile.photo) {
+            setReviewBuyerPhotos(prev => ({ ...prev, [bid]: profile.photo }));
+          }
+        }
+      } catch {
+        if (isMounted) {
+          setReviewBuyerNames(prev => ({ ...prev, [bid]: 'Usuario Unisabana' }));
+        }
+      }
+    });
+
+    // Resolve products
+    productIds.forEach(async (pid) => {
+      try {
+        const product = await productService.getProduct(pid);
+        if (isMounted) {
+          setReviewProductNames(prev => ({ ...prev, [pid]: product.name }));
+        }
+      } catch {
+        if (isMounted) {
+          setReviewProductNames(prev => ({ ...prev, [pid]: 'Producto no disponible' }));
+        }
+      }
+    });
+  };
 
   const loadMoreProducts = async () => {
     if (loadingMore || currentPage >= totalPages) return;
@@ -284,7 +330,7 @@ export function UserProfile() {
             <Tabs defaultValue="products" className="mt-8">
               <TabsList className="w-full justify-start">
                 <TabsTrigger value="products">Productos Activos</TabsTrigger>
-                <TabsTrigger value="reviews">Reseñas ({REVIEWS.length})</TabsTrigger>
+                <TabsTrigger value="reviews">Reseñas ({reviews.length})</TabsTrigger>
                 <TabsTrigger value="about">Acerca de</TabsTrigger>
               </TabsList>
 
@@ -362,32 +408,68 @@ export function UserProfile() {
 
               <TabsContent value="reviews" className="mt-6">
                 <div className="space-y-6">
-                  {REVIEWS.map((review) => (
-                    <Card key={review.id} className="p-6">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="w-10 h-10">
-                            <div className="w-full h-full bg-primary/20 flex items-center justify-center text-sm font-medium text-primary">
-                              {review.reviewer.split(' ').map(n => n[0]).join('')}
+                  {loadingReviews ? (
+                    <div className="flex justify-center py-12">
+                      <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                    </div>
+                  ) : reviews.length > 0 ? (
+                    reviews.map((review, index) => {
+                      const buyerName = reviewBuyerNames[review.buyerID] || 'Cargando...';
+                      const buyerPhoto = reviewBuyerPhotos[review.buyerID];
+                      const productName = reviewProductNames[review.productID] || 'Cargando...';
+                      const date = new Date(review.reviewDate).toLocaleDateString('es-CO', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                      });
+
+                      return (
+                        <Card key={index} className="p-6">
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="w-10 h-10">
+                                {buyerPhoto ? (
+                                  <Base64ImageLoader 
+                                    data={buyerPhoto} 
+                                    alt={buyerName} 
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full bg-primary/20 flex items-center justify-center text-sm font-medium text-primary">
+                                    {buyerName.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase() || 'U'}
+                                  </div>
+                                )}
+                              </Avatar>
+                              <div>
+                                <h4 className="font-medium">{buyerName}</h4>
+                                <p className="text-sm text-muted-foreground">{date}</p>
+                              </div>
                             </div>
-                          </Avatar>
-                          <div>
-                            <h4 className="font-medium">{review.reviewer}</h4>
-                            <p className="text-sm text-muted-foreground">{review.date}</p>
+                            <div className="flex items-center gap-1">
+                              {Array.from({ length: 5 }).map((_, i) => (
+                                <Star 
+                                  key={i} 
+                                  className={`w-4 h-4 ${i < review.rating ? 'fill-accent text-accent' : 'text-muted/30'}`} 
+                                />
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          {Array.from({ length: review.rating }).map((_, i) => (
-                            <Star key={i} className="w-4 h-4 fill-accent text-accent" />
-                          ))}
-                        </div>
-                      </div>
-                      <p className="text-muted-foreground leading-relaxed">{review.comment}</p>
-                    </Card>
-                  ))}
-                  {REVIEWS.length === 0 && (
-                    <div className="text-center py-8">
-                      <p className="text-muted-foreground">Aún no hay reseñas.</p>
+                          <div className="space-y-1">
+                            {review.reviewTitle && (
+                              <h5 className="font-semibold text-foreground">{review.reviewTitle}</h5>
+                            )}
+                            <p className="text-muted-foreground leading-relaxed">{review.reviewBody}</p>
+                            <p className="text-xs text-muted-foreground italic mt-2">
+                              Item: {productName}
+                            </p>
+                          </div>
+                        </Card>
+                      );
+                    })
+                  ) : (
+                    <div className="text-center py-12 bg-muted/20 rounded-lg">
+                      <MessageCircle className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
+                      <p className="text-muted-foreground">Aún no hay reseñas para este usuario.</p>
                     </div>
                   )}
                 </div>

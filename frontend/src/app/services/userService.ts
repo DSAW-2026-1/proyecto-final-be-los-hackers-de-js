@@ -33,6 +33,22 @@ export interface UpdateProfileRequest {
   photo?: string;
 }
 
+export interface UserReviewItem {
+  buyerID: string;
+  productID: string;
+  rating: number;
+  reviewTitle: string;
+  reviewBody: string;
+  reviewDate: number;
+}
+
+export interface UserReviewsResponse {
+  count: number;
+  pages: number;
+  page: number;
+  results: Record<string, UserReviewItem>;
+}
+
 export const userService = {
   async getProfile(): Promise<UserProfileResponse> {
     return apiRequest<UserProfileResponse>('/api/users/');
@@ -76,5 +92,8 @@ export const userService = {
       method: 'POST',
       body: JSON.stringify(data),
     });
+  },
+  async getUserReviews(uid: string, page: number = 1): Promise<UserReviewsResponse> {
+    return apiRequest<UserReviewsResponse>(`/api/users/${uid}/reviews?page=${page}`);
   },
 };
