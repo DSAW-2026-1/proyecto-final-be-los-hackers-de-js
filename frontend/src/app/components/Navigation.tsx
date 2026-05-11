@@ -202,20 +202,58 @@ export function Navigation() {
                 </DropdownMenu>
               </>
             ) : (
-              <div className="flex items-center gap-2">
-                <Link to="/login">
-                  <Button variant="ghost" className="hidden sm:flex">
-                    <LogIn className="w-4 h-4 mr-2" />
-                    Ingresar
-                  </Button>
-                </Link>
-                <Link to="/register">
-                  <Button className="bg-primary hover:bg-primary/90">
-                    <UserPlus className="w-4 h-4 mr-2" />
-                    Registrarse
-                  </Button>
-                </Link>
-              </div>
+              <>
+                <div className="hidden sm:flex items-center gap-2">
+                  <Link to="/login">
+                    <Button variant="ghost">
+                      <LogIn className="w-4 h-4 mr-2" />
+                      Ingresar
+                    </Button>
+                  </Link>
+                  <Link to="/register">
+                    <Button className="bg-primary hover:bg-primary/90">
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      Registrarse
+                    </Button>
+                  </Link>
+                </div>
+                <div className="flex sm:hidden items-center">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="relative h-8 w-8 rounded-full ring-1 ring-border">
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback>
+                            <User className="h-4 w-4" />
+                          </AvatarFallback>
+                        </Avatar>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-56" align="end">
+                      <DropdownMenuLabel className="font-normal">
+                        <div className="flex flex-col space-y-1">
+                          <p className="text-sm font-medium leading-none">Invitado</p>
+                          <p className="text-xs leading-none text-muted-foreground italic">
+                            No has iniciado sesión
+                          </p>
+                        </div>
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <Link to="/login" className="cursor-pointer w-full flex items-center">
+                          <LogIn className="mr-2 h-4 w-4" />
+                          <span>Ingresar</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/register" className="cursor-pointer w-full flex items-center">
+                          <UserPlus className="mr-2 h-4 w-4" />
+                          <span>Registrarse</span>
+                        </Link>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </>
             )}
 
             <DropdownMenu>
@@ -240,17 +278,6 @@ export function Navigation() {
                     )}
                     <DropdownMenuItem asChild>
                       <Link to="/chat" className="w-full">Mensajes</Link>
-                    </DropdownMenuItem>
-                  </>
-                )}
-                {!isAuthenticated && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link to="/login" className="w-full">Ingresar</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/register" className="w-full">Registrarse</Link>
                     </DropdownMenuItem>
                   </>
                 )}
