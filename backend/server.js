@@ -1,10 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const cors = require('cors');
 
-const app = express();
-app.use(cors());
-app.use(express.json());
+const router = express.Router();
 
 // 1. Conexión a MongoDB
 mongoose.connect('mongodb://localhost:27017/marketplace-chat');
@@ -45,7 +42,7 @@ const authMiddleware = (req, res, next) => {
 // 4. RUTAS DEL TIQUET
 
 // POST /api/chat/ - Iniciar nuevo chat
-app.post('/api/chat/', authMiddleware, async (req, res) => {
+router.post('/api/chat/', authMiddleware, async (req, res) => {
     const { productID } = req.body;
     const buyerID = req.user.id;
 
@@ -90,13 +87,13 @@ app.post('/api/chat/', authMiddleware, async (req, res) => {
 });
 
 // GET /api/messages/:chatId - Obtener mensajes
-app.get('/api/messages/:chatId', async (req, res) => {
+router.get('/api/messages/:chatId', async (req, res) => {
     const messages = await Message.find({ chatId: req.params.chatId }).sort('timestamp');
     res.json(messages);
 });
 
 // POST /api/messages - Enviar mensaje
-app.post('/api/messages', authMiddleware, async (req, res) => {
+router.post('/api/messages', authMiddleware, async (req, res) => {
     const { chatId, text } = req.body;
     const newMessage = await new Message({ 
         chatId, 
@@ -106,4 +103,4 @@ app.post('/api/messages', authMiddleware, async (req, res) => {
     res.status(201).json(newMessage);
 });
 
-app.listen(3001, () => console.log('Backend del Chat corriendo en puerto 3001'));
+module.exports = router;
