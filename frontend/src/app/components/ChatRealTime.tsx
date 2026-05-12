@@ -5,6 +5,7 @@ import { Send, Circle } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { ScrollArea } from './ui/scroll-area';
+import {FULL_URL} from "./../services/api.ts";
 
 type Message = {
   chatId: string;
@@ -14,7 +15,8 @@ type Message = {
 };
 
 // Conexión fuera del componente para evitar duplicados
-const socket = io('http://localhost:3001');
+// TODO: Move API communication logic to existing api.ts, where all API calls and stuff should be
+const socket = io(FULL_URL);
 
 export function ChatRealTime({ currentUser }: { currentUser: { id: string } | null }) {
   const { chatId } = useParams();
