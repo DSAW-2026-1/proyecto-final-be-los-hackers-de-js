@@ -1,18 +1,12 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const DbManager = require('./dbManager');
 
 const router = express.Router();
 
-// 1. Conexión a MongoDB
-mongoose.connect('mongodb://localhost:27017/marketplace-chat');
-
-// 2. Modelos Actualizados (Según el nuevo tiquet)
-const ProductSchema = new mongoose.Schema({
-    name: String,
-    sellerID: String, // UID del vendedor
-    price: Number
-});
-const Product = mongoose.model('Product', ProductSchema);
+// 1. Conexión a MongoDB (mongoose is used for chat/message models)
+// TODO: Integrate into dbManager
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/marketplace');
 
 const ChatSchema = new mongoose.Schema({
     buyerID: { type: String, required: true },
@@ -30,13 +24,22 @@ const MessageSchema = new mongoose.Schema({
 });
 const Message = mongoose.model('Message', MessageSchema);
 
-// 3. Middleware de Autenticación (Simulado)
-// IMPORTANTE: Para las pruebas, envía un header 'user-id' con el ID del comprador
+// 3. Middleware de Autenticación — use existing validators
+const tokenValidator = require('./middleware/auth/tokenValidator');
+const userValidator = require('./middleware/auth/userValidator');
+
+// Compose tokenValidator -> userValidator and attach `req.user.id` from token payload
 const authMiddleware = (req, res, next) => {
-    const userId = req.headers['user-id']; 
-    if (!userId) return res.status(401).json({ error: "No autorizado. Falta user-id en headers." });
-    req.user = { id: userId };
-    next();
+    tokenValidator(req, res, function () {
+        if (res.headersSent) return;
+        // userValidator may be async; call and let it call its next
+        userValidator(req, res, function () {
+            if (res.headersSent) return;
+            const UID = req.token && req.token.payload && req.token.payload.UID;
+            req.user = { id: UID };
+            next();
+        });
+    });
 };
 
 // 4. RUTAS DEL TIQUET
@@ -48,7 +51,7 @@ router.post('/api/chat/', authMiddleware, async (req, res) => {
 
     try {
         // A. Verificar que el productID exista
-        const product = await Product.findById(productID);
+        const product = await DbManager.findProductByID(productID);
         if (!product) {
             return res.status(404).json({ error: "Product not found" });
         }
