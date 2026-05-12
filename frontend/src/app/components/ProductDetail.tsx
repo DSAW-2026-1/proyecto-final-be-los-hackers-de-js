@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router';
+import { useParams, useNavigate, Link } from 'react-router';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Card } from './ui/card';
@@ -270,37 +270,39 @@ export function ProductDetail() {
               </div>
             )}
 
-            <Card className="p-6 bg-secondary/50 border-primary/10">
-              <div className="flex items-center gap-4">
-                <Avatar className="w-16 h-16">
-                  {seller?.photo ? (
-                    <Base64ImageLoader 
-                      data={seller.photo} 
-                      alt={seller.username} 
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <AvatarFallback className="bg-primary text-white text-xl font-bold">
-                      {seller?.username.substring(0, 2).toUpperCase() || 'UN'}
-                    </AvatarFallback>
-                  )}
-                </Avatar>
-                <div className="flex-1">
-                  <h3 className="font-semibold">{seller?.username || 'Vendedor Unisabana'}</h3>
-                  <div className="flex flex-col gap-1 text-sm text-muted-foreground">
-                    <span>{seller?.career || 'Estudiante'}</span>
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-1">
-                        <Star className="w-4 h-4 fill-accent text-accent" />
-                        <span className="font-medium text-foreground">{seller?.reputation || 'N/A'}</span>
+            <Link to={`/profile/${product.sellerID}`} className="block">
+              <Card className="p-6 bg-secondary/50 border-primary/10 hover:bg-secondary/80 transition-colors cursor-pointer group">
+                <div className="flex items-center gap-4">
+                  <Avatar className="w-16 h-16">
+                    {seller?.photo ? (
+                      <Base64ImageLoader 
+                        data={seller.photo} 
+                        alt={seller.username} 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <AvatarFallback className="bg-primary text-white text-xl font-bold">
+                        {seller?.username.substring(0, 2).toUpperCase() || 'UN'}
+                      </AvatarFallback>
+                    )}
+                  </Avatar>
+                  <div className="flex-1">
+                    <h3 className="font-semibold group-hover:text-primary transition-colors">{seller?.username || 'Vendedor Unisabana'}</h3>
+                    <div className="flex flex-col gap-1 text-sm text-muted-foreground">
+                      <span>{seller?.career || 'Estudiante'}</span>
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1">
+                          <Star className="w-4 h-4 fill-accent text-accent" />
+                          <span className="font-medium text-foreground">{seller?.reputation || 'N/A'}</span>
+                        </div>
+                        <span>•</span>
+                        <span>({seller?.sales || 0} ventas)</span>
                       </div>
-                      <span>•</span>
-                      <span>({seller?.sales || 0} ventas)</span>
                     </div>
                   </div>
                 </div>
-              </div>
-            </Card>
+              </Card>
+            </Link>
 
             {!isOwner && product.stock > 0 && (
               <div className="flex items-center gap-4">

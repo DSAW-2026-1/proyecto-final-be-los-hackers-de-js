@@ -47,8 +47,8 @@ export function Navigation() {
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-white shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          <div className="flex items-center gap-8">
+        <div className="flex items-center gap-4 h-16">
+          <div className="flex items-center gap-2 sm:gap-8 shrink-0">
             <Link to="/" className="flex items-center gap-2">
               <img
                 src={UnisabanaLogo}
@@ -56,7 +56,7 @@ export function Navigation() {
                 className="w-10 h-10 object-contain"
                 referrerPolicy="no-referrer"
               />
-              <div>
+              <div className="hidden lg:block">
                 <div className="font-bold text-primary">Unisabana</div>
                 <div className="text-xs text-muted-foreground">Marketplace</div>
               </div>
@@ -104,9 +104,9 @@ export function Navigation() {
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex-1 flex items-center justify-center lg:justify-end min-w-0 px-2 sm:px-4">
             <form 
-              className="hidden lg:flex items-center relative w-80"
+              className="relative w-full lg:w-80"
               onSubmit={(e) => {
                 e.preventDefault();
                 const formData = new FormData(e.currentTarget);
@@ -116,15 +116,17 @@ export function Navigation() {
                 }
               }}
             >
-              <Search className="absolute left-3 w-4 h-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 name="query"
-                placeholder="Buscar productos..."
-                className="pl-10"
+                placeholder="Buscar..."
+                className="pl-10 h-9 w-full"
               />
               <button type="submit" className="hidden" />
             </form>
+          </div>
 
+          <div className="flex items-center gap-1 sm:gap-4 shrink-0">
             <Link to="/cart">
               <Button variant="ghost" size="icon" className="relative">
                 <ShoppingCart className="w-5 h-5" />
@@ -200,25 +202,87 @@ export function Navigation() {
                 </DropdownMenu>
               </>
             ) : (
-              <div className="flex items-center gap-2">
-                <Link to="/login">
-                  <Button variant="ghost" className="hidden sm:flex">
-                    <LogIn className="w-4 h-4 mr-2" />
-                    Ingresar
-                  </Button>
-                </Link>
-                <Link to="/register">
-                  <Button className="bg-primary hover:bg-primary/90">
-                    <UserPlus className="w-4 h-4 mr-2" />
-                    Registrarse
-                  </Button>
-                </Link>
-              </div>
+              <>
+                <div className="hidden sm:flex items-center gap-2">
+                  <Link to="/login">
+                    <Button variant="ghost">
+                      <LogIn className="w-4 h-4 mr-2" />
+                      Ingresar
+                    </Button>
+                  </Link>
+                  <Link to="/register">
+                    <Button className="bg-primary hover:bg-primary/90">
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      Registrarse
+                    </Button>
+                  </Link>
+                </div>
+                <div className="flex sm:hidden items-center">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="relative h-8 w-8 rounded-full ring-1 ring-border">
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback>
+                            <User className="h-4 w-4" />
+                          </AvatarFallback>
+                        </Avatar>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-56" align="end">
+                      <DropdownMenuLabel className="font-normal">
+                        <div className="flex flex-col space-y-1">
+                          <p className="text-sm font-medium leading-none">Invitado</p>
+                          <p className="text-xs leading-none text-muted-foreground italic">
+                            No has iniciado sesión
+                          </p>
+                        </div>
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <Link to="/login" className="cursor-pointer w-full flex items-center">
+                          <LogIn className="mr-2 h-4 w-4" />
+                          <span>Ingresar</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/register" className="cursor-pointer w-full flex items-center">
+                          <UserPlus className="mr-2 h-4 w-4" />
+                          <span>Registrarse</span>
+                        </Link>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </>
             )}
 
-            <Button variant="ghost" size="icon" className="md:hidden">
-              <Menu className="w-5 h-5" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="md:hidden">
+                  <Menu className="w-5 h-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem asChild>
+                  <Link to="/" className="w-full">Inicio</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/search" className="w-full">Productos</Link>
+                </DropdownMenuItem>
+                {isAuthenticated && (
+                  <>
+                    {isSeller && (
+                      <DropdownMenuItem asChild>
+                        <Link to="/seller" className="w-full">Mis Ventas</Link>
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem asChild>
+                      <Link to="/chat" className="w-full">Mensajes</Link>
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>
