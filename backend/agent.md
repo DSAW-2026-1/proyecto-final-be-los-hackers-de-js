@@ -108,6 +108,10 @@ All endpoints return JSON; protect with auth middleware where noted.
   - GET /conversations/:id/messages — fetch messages
   - POST /conversations/:id/messages — send message
 
+Notes: the running `server.js` exposes message routes under `/api/messages/:chatId`:
+- `GET /api/messages/:chatId` — fetch messages for a chat (by `chatId`)
+- `POST /api/messages/:chatId` — send a message; `chatId` must be provided as a path parameter (previously accepted in the request body). The handler validates chat existence and that the authenticated user is a participant.
+
  - Notifications
   - GET /api/notifications — list (authenticated users only; paginated)
     - Query params: `since=<ISO date>` (optional), `page=<number>` (optional, default 1)
@@ -227,6 +231,8 @@ All endpoints return JSON; protect with auth middleware where noted.
  - 2026-05-12: Updated chat route implementation and auth usage
    - `server.js` chat routes now use `DbManager.findProductByID()` for product lookups (centralized DB access via `dbManager.js`).
    - Replaced the header-based placeholder auth with a composed middleware using `middleware/auth/tokenValidator.js` followed by `middleware/auth/userValidator.js`. Routes should prefer this composition for JWT validation and user state checks.
+ - 2026-05-12: Refactored messages endpoint to use path param
+   - `POST /api/messages/:chatId` now accepts `chatId` as a URL parameter instead of requiring it in the request body. The route verifies chat existence and participant membership before saving messages.
    - Added `GET /api/admin/users` to return paginated users for admin views; this endpoint includes suspended users and supports basic search by `name` or `email` and an `isSeller` filter.
    - Added `dbManager.findProductsAdmin()` and `dbManager.findUsers()` helpers to support paginated admin listings.
    - Updated `routes/admin/users.js` to accept flexible boolean formats for the `isSeller` query parameter (`true|false`, `1|0`, `yes|no`). Invalid values return `400`.

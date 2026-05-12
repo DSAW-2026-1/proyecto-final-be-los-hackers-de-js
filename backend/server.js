@@ -95,15 +95,29 @@ router.get('/api/messages/:chatId', async (req, res) => {
     res.json(messages);
 });
 
-// POST /api/messages - Enviar mensaje
-router.post('/api/messages', authMiddleware, async (req, res) => {
-    const { chatId, text } = req.body;
-    const newMessage = await new Message({ 
-        chatId, 
-        senderId: req.user.id, 
-        text 
-    }).save();
-    res.status(201).json(newMessage);
+// POST /api/messages/:chatId - Enviar mensaje (chatId as path param)
+// TODO: The request should fail for an empty message body
+router.post('/api/messages/:chatId', authMiddleware, async (req, res) => {
+    const chatId = req.params.chatId;
+    const { text } = req.body;
+
+    // Verify chat exists and user is a participant
+    try {
+        const chat = await Chat.findById(chatId);
+        if (!chat) return res.status(404).json({ error: 'Chat not found' });
+        const uid = req.user.id;
+        if (chat.buyerID !== uid && chat.sellerID !== uid) return res.status(403).json({ error: 'Not a participant of this chat' });
+
+        const newMessage = await new Message({
+            chatId,
+            senderId: uid,
+            text
+        }).save();
+        res.status(201).json(newMessage);
+    }
+    catch (e) {
+        res.status(500).json({ error: 'Error saving message' });
+    }
 });
 
 module.exports = router;
