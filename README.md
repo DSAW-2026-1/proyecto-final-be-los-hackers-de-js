@@ -1,4 +1,4 @@
-Juan Felipe Ospina González - Mauricio Berbeo
+Juan Felipe Ospina González - Mauricio Berbeo Murcia
 
 Deployments:
 
