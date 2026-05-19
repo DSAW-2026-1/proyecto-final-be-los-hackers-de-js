@@ -16,7 +16,8 @@ const salesRouter = require('./routes/sales/sale')
 const ordersRouter = require('./routes/orders/order')
 const sellerRouter = require('./routes/seller/seller')
 const notificationsRouter = require('./routes/notifications/notification')
-const chatRouter = require('./server')
+const chatTmpRouter = require('./server')
+const chatRouter = require('./routes/chat/chat')
 
 const app = express();
 
@@ -50,7 +51,8 @@ app.use('/api/sales', salesRouter)
 app.use('/api/shipping', ordersRouter)
 app.use('/api/notifications', notificationsRouter)
 
-app.use(chatRouter)
+app.use('/api/chat', chatRouter)
+app.use(chatTmpRouter)
 
 
 app.use(jsonParseFailureHandler)

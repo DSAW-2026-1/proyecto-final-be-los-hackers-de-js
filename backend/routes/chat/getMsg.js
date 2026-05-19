@@ -1,0 +1,68 @@
+const express = require('express');
+//TODO: Handle chats with dbManager instead of mongoose
+const mongoose = require('mongoose');
+
+const router = express.Router();
+
+// Reuse existing Chat model if defined, otherwise define it
+let Chat;
+try { Chat = mongoose.model('Chat'); } catch (e) {
+    const ChatSchema = new mongoose.Schema({
+        buyerID: { type: String, required: true },
+        sellerID: { type: String, required: true },
+        associatedProduct: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
+        deletedBy: { type: [String], default: [] },
+        createdAt: { type: Date, default: Date.now }
+    });
+    Chat = mongoose.model('Chat', ChatSchema);
+}
+
+// Reuse existing Message model if defined, otherwise define it
+let Message;
+try { Message = mongoose.model('Message'); } catch (e) {
+    const MessageSchema = new mongoose.Schema({
+        chatId: { type: mongoose.Schema.Types.ObjectId, ref: 'Chat', required: true },
+        senderId: { type: String, required: true },
+        content: { type: String },
+        attachments: [{ url: String, filename: String, mimeType: String }],
+        readBy: { type: [String], default: [] },
+    }, { timestamps: true });
+    Message = mongoose.model('Message', MessageSchema);
+}
+
+// GET /:chatId/messages - paginated. Authentication middleware is applied in parent router (chat.js)
+router.get('/:chatId/messages', async (req, res) => {
+    const chatId = req.params.chatId;
+    let limit = parseInt(req.query.limit, 10);
+    let offset = parseInt(req.query.offset, 10);
+    if (isNaN(limit) || limit <= 0) limit = 50;
+    if (isNaN(offset) || offset < 0) offset = 0;
+
+    try {
+        const chat = await Chat.findById(chatId);
+        if (!chat) return res.status(404).json({ error: 'Conversation not found' });
+        const uid = (req.user && req.user.id) || (req.token && req.token.payload && req.token.payload.UID);
+        if (!uid) return res.status(400).json({ error: 'Missing user identity' });
+        if (chat.buyerID !== uid && chat.sellerID !== uid) return res.status(403).json({ error: 'Not a participant of this conversation' });
+
+        const total = await Message.countDocuments({ chatId: chatId });
+        const messages = await Message.find({ chatId: chatId })
+            .sort({ createdAt: 1 })
+            .skip(offset)
+            .limit(limit)
+            .lean();
+
+        const messagesWithRead = messages.map(m => {
+            const isRead = Array.isArray(m.readBy) && m.readBy.includes(uid);
+            const { readBy, ...rest } = m;
+            return Object.assign(rest, { isRead });
+        });
+
+        return res.json({ messages: messagesWithRead, meta: { limit, offset, total } });
+    } catch (e) {
+        console.error('get messages error', e);
+        return res.status(500).json({ error: 'Server error' });
+    }
+});
+
+module.exports = router;
