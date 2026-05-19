@@ -4,31 +4,8 @@ const mongoose = require('mongoose');
 
 const router = express.Router();
 
-// Reuse existing Chat model if defined, otherwise define it
-let Chat;
-try { Chat = mongoose.model('Chat'); } catch (e) {
-    const ChatSchema = new mongoose.Schema({
-        buyerID: { type: String, required: true },
-        sellerID: { type: String, required: true },
-        associatedProduct: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
-        deletedBy: { type: [String], default: [] },
-        createdAt: { type: Date, default: Date.now }
-    });
-    Chat = mongoose.model('Chat', ChatSchema);
-}
-
-// Reuse existing Message model if defined, otherwise define it
-let Message;
-try { Message = mongoose.model('Message'); } catch (e) {
-    const MessageSchema = new mongoose.Schema({
-        chatId: { type: mongoose.Schema.Types.ObjectId, ref: 'Chat', required: true },
-        senderId: { type: String, required: true },
-        content: { type: String },
-        attachments: [{ url: String, filename: String, mimeType: String }],
-        readBy: { type: [String], default: [] },
-    }, { timestamps: true });
-    Message = mongoose.model('Message', MessageSchema);
-}
+const Chat = mongoose.model('Chat');
+const Message = mongoose.model('Message');
 
 // GET /:chatId/messages - paginated. Authentication middleware is applied in parent router (chat.js)
 router.get('/:chatId/messages', async (req, res) => {
