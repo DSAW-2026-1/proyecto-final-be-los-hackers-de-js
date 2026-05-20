@@ -8,12 +8,11 @@ const { Chat, Message } = require('./models');
 // POST /:chatId/messages/polling
 router.post('/:chatId/messages/polling', async (req, res) => {
     const chatId = req.params.chatId;
-    console.log(req.token)
     const { content, attachments } = req.body || {};
     try {
         const chat = await Chat.findById(chatId);
         if (!chat) return res.status(404).json({ error: 'Conversation not found' });
-        const uid = req.token && req.token.payload && req.token.payload.UID
+        const uid = req.token && req.token.payload && req.token.payload.UID;
         if (!uid) return res.status(401).json({ error: 'Unauthorized' });
         if (chat.buyerID !== uid && chat.sellerID !== uid) return res.status(403).json({ error: 'Not a participant of this conversation' });
 

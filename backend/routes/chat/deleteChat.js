@@ -11,7 +11,7 @@ router.delete('/:chatId', async (req, res) => {
     try {
         const chat = await Chat.findById(chatId);
         if (!chat) return res.status(404).json({ error: 'Conversation not found' });
-        const uid = (req.user && req.user.id) || (req.token && req.token.payload && req.token.payload.UID);
+        const uid = req.token && req.token.payload && req.token.payload.UID;
         if (chat.buyerID !== uid && chat.sellerID !== uid) return res.status(403).json({ error: 'Not a participant' });
         if (!Array.isArray(chat.deletedBy)) chat.deletedBy = [];
         if (!chat.deletedBy.includes(uid)) {

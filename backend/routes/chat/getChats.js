@@ -9,7 +9,7 @@ const { Chat, Message } = require('./models');
 
 // GET /my - get user's conversations excluding those soft-deleted by the current user
 router.get('/my', async (req, res) => {
-    const uid = (req.user && req.user.id) || (req.token && req.token.payload && req.token.payload.UID);
+    const uid = req.token && req.token.payload && req.token.payload.UID;
     let limit = parseInt(req.query.limit, 10);
     let offset = parseInt(req.query.offset, 10);
     if (isNaN(limit) || limit <= 0) limit = 50;
