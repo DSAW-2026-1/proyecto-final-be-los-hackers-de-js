@@ -5,8 +5,7 @@ const DbManager = require('../../dbManager');
 
 const router = express.Router();
 
-const Chat = mongoose.model('Chat');
-const Message = mongoose.model('Message');
+const { Chat, Message } = require('./models');
 
 // GET /my - get user's conversations excluding those soft-deleted by the current user
 router.get('/my', async (req, res) => {

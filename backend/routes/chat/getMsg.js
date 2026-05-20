@@ -4,8 +4,7 @@ const mongoose = require('mongoose');
 
 const router = express.Router();
 
-const Chat = mongoose.model('Chat');
-const Message = mongoose.model('Message');
+const { Chat, Message } = require('./models');
 
 // GET /:chatId/messages - paginated. Authentication middleware is applied in parent router (chat.js)
 router.get('/:chatId/messages', async (req, res) => {

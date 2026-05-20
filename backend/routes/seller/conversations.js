@@ -3,20 +3,7 @@ const router = express.Router();
 const DbManager = require('../../dbManager');
 const mongoose = require('mongoose');
 
-// Reuse existing Chat model if defined, otherwise define it
-let Chat;
-try {
-    Chat = mongoose.model('Chat');
-} catch (e) {
-    const ChatSchema = new mongoose.Schema({
-        buyerID: { type: String, required: true },
-        sellerID: { type: String, required: true },
-        associatedProduct: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
-        deletedBy: { type: [String], default: [] },
-        createdAt: { type: Date, default: Date.now }
-    });
-    Chat = mongoose.model('Chat', ChatSchema);
-}
+const { Chat } = require('../chat/models');
 
 // POST /api/seller/chat
 // Body: { saleID }
