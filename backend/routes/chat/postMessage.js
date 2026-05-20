@@ -7,7 +7,7 @@ const { Chat, Message } = require('./models');
 // New route: POST /:chatId/messages (mounted at /api/chat)
 router.post('/:chatId/messages', async (req, res) => {
     const chatId = req.params.chatId;
-    const { content, attachments } = req.body || {};
+    const { content, attachments, tempId } = req.body || {};
 
     try {
         const chat = await Chat.findById(chatId);
@@ -29,7 +29,18 @@ router.post('/:chatId/messages', async (req, res) => {
             readBy: [uid]
         }).save();
 
-        return res.status(201).json(newMessage);
+        // normalize response to match websocket message shape and echo tempId if provided
+        const messageToSend = {
+            id: String(newMessage._id),
+            content: newMessage.content,
+            senderId: String(newMessage.senderId),
+            createdAt: newMessage.createdAt,
+            readBy: newMessage.readBy,
+            chatId: String(newMessage.chatId)
+        };
+        if (typeof tempId !== 'undefined' && tempId !== null) messageToSend.tempId = tempId;
+
+        return res.status(201).json(messageToSend);
     } catch (e) {
         return res.status(500).json({ error: 'Error saving message' });
     }

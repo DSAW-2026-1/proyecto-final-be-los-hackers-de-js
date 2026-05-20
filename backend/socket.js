@@ -49,13 +49,13 @@ module.exports = function attach(server) {
         }
 
         socket.on('send_message', async (payload, ack) => {
-            // payload: { chatId, content, attachments }
+            // payload: { chatId, content, attachments, tempId }
             try {
-                const { chatId, content, attachments } = payload || {};
+                const { chatId, content, attachments, tempId } = payload || {};
                 if (!chatId) return ack && ack({ error: 'Missing chatId' });
                 const chat = await Chat.findById(chatId);
                 if (!chat) return ack && ack({ error: 'Chat not found' });
-                if (chat.buyerID !== uid && chat.sellerID !== uid) return ack && ack({ error: 'Not a participant' });
+                if (String(chat.buyerID) !== String(uid) && String(chat.sellerID) !== String(uid)) return ack && ack({ error: 'Not a participant' });
                 if ((!content || content.trim().length === 0) && (!attachments || attachments.length === 0)) return ack && ack({ error: 'Empty message' });
 
                 const newMessage = await new Message({
@@ -68,23 +68,29 @@ module.exports = function attach(server) {
                 }).save();
 
                 const messageToSend = {
-                    id: newMessage._id,
+                    id: String(newMessage._id),
                     content: newMessage.content,
-                    senderId: newMessage.senderId,
+                    senderId: String(newMessage.senderId),
                     createdAt: newMessage.createdAt,
                     // expose readBy so clients can compute per-user isRead; consider not exposing in future
                     readBy: newMessage.readBy,
-                    chatId: newMessage.chatId
+                    chatId: String(newMessage.chatId)
                 };
+
+                // echo tempId if provided by client so frontend can match optimistic messages
+                if (typeof tempId !== 'undefined' && tempId !== null) {
+                    messageToSend.tempId = tempId;
+                }
 
                 // emit to both participants
                 try {
-                    io.to(chat.buyerID).emit('receive_message', messageToSend);
-                    io.to(chat.sellerID).emit('receive_message', messageToSend);
+                    io.to(String(chat.buyerID)).emit('receive_message', messageToSend);
+                    io.to(String(chat.sellerID)).emit('receive_message', messageToSend);
                 } catch (e) {
                     console.error('Error emitting receive_message', e);
                 }
 
+                // Ack back to sender including the canonical message and echoed tempId
                 ack && ack({ ok: true, message: messageToSend });
             } catch (e) {
                 console.error('send_message error', e);
