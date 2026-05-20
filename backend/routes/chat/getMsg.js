@@ -19,7 +19,8 @@ router.get('/:chatId/messages', async (req, res) => {
         if (!chat) return res.status(404).json({ error: 'Conversation not found' });
         const uid = req.token && req.token.payload && req.token.payload.UID;
         if (!uid) return res.status(400).json({ error: 'Missing user identity' });
-        if (chat.buyerID !== uid && chat.sellerID !== uid) return res.status(403).json({ error: 'Not a participant of this conversation' });
+        const isParticipant = String(chat.buyerID) === String(uid) || String(chat.sellerID) === String(uid);
+        if (!isParticipant) return res.status(403).json({ error: 'Not a participant of this conversation' });
 
         const total = await Message.countDocuments({ chatId: chatId });
         const messages = await Message.find({ chatId: chatId })

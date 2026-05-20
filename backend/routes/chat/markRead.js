@@ -13,7 +13,8 @@ router.post('/:chatId/messages/mark_read', async (req, res) => {
         const chat = await Chat.findById(chatId);
         if (!chat) return res.status(404).json({ error: 'Conversation not found' });
         const uid = req.token && req.token.payload && req.token.payload.UID;
-        if (chat.buyerID !== uid && chat.sellerID !== uid) return res.status(403).json({ error: 'Not a participant' });
+        const isParticipant = String(chat.buyerID) === String(uid) || String(chat.sellerID) === String(uid);
+        if (!isParticipant) return res.status(403).json({ error: 'Not a participant' });
 
         const filter = { chatId: chatId, senderId: { $ne: uid } };
         if (Array.isArray(messageIds) && messageIds.length > 0) {
