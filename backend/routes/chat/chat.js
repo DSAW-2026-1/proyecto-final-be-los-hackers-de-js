@@ -15,6 +15,7 @@ const postMessage = require('./postMessage');
 const polling = require('./polling');
 const markRead = require('./markRead');
 const deleteChat = require('./deleteChat');
+const unread = require('./unread');
 
 router.use(tokenValidatorMiddleware)
 router.use(userAuthMiddleware)
@@ -24,5 +25,6 @@ router.use('/', postMessage)
 router.use('/', polling)
 router.use('/', markRead)
 router.use('/', deleteChat)
+router.use('/', unread)
 
 module.exports = router;
