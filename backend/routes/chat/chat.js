@@ -11,10 +11,12 @@ const { Chat, Message } = require('./models');
 // Now require child routes so they can access the models defined above
 const getChats = require('./getChats');
 const getMessages = require('./getMsg');
+const deleteChat = require('./deleteChat');
 
 router.use(tokenValidatorMiddleware)
 router.use(userAuthMiddleware)
 router.use('/', getChats)
 router.use('/', getMessages)
+router.use('/', deleteChat)
 
 module.exports = router;
