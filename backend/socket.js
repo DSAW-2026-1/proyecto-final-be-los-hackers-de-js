@@ -3,6 +3,8 @@ const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const DbManager = require('./dbManager');
 const { Chat, Message } = require('./routes/chat/models');
+const { createNotification } = require('./services/notifications');
+const db = require("./dbManager");
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_change_me';
 
@@ -80,6 +82,24 @@ module.exports = function attach(server) {
                 // echo tempId if provided by client so frontend can match optimistic messages
                 if (typeof tempId !== 'undefined' && tempId !== null) {
                     messageToSend.tempId = tempId;
+                }
+
+                // Send notification to recipient (fire-and-forget)
+                try {
+                    const recipientId = String(chat.buyerID) === String(uid) ? String(chat.sellerID) : String(chat.buyerID);
+                    if (recipientId && String(recipientId) !== String(uid)) {
+                        const user = await db.findUserByUID(String(uid))
+                        const notif = {
+                            userID: recipientId,
+                            type: 'message',
+                            title: (user && user.username)? 'Nuevo mensaje de '+user.username : 'Nuevo mensaje',
+                            message: (newMessage.content && String(newMessage.content).substring(0, 200)) || 'Adjunto enviado',
+                            topicID: messageToSend.id
+                        };
+                        createNotification(notif).catch(err => console.error('createNotification error', err));
+                    }
+                } catch (e) {
+                    console.error('notify error', e);
                 }
 
                 // emit to both participants

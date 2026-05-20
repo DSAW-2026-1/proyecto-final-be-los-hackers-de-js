@@ -70,7 +70,23 @@ router.get('/:chatId/messages/polling', async (req, res) => {
             // reflect change in returned objects
             messages = messages.map(m => idsToMark.find(id => String(id) === String(m._id)) ? Object.assign(m, { isRead: true }) : m);
         }
-
+        // Create notification for recipient (fire-and-forget)
+        try {
+            const recipientId = String(chat.buyerID) === String(uid) ? String(chat.sellerID) : String(chat.buyerID);
+            if (recipientId && String(recipientId) !== String(uid)) {
+                const user = await db.findUserByUID(String(uid))
+                const notif = {
+                    userID: recipientId,
+                    type: 'message',
+                    title: (user && user.username)? 'Nuevo mensaje de '+user.username : 'Nuevo mensaje',
+                    message: (newMessage.content && String(newMessage.content).substring(0, 200)) || 'Adjunto enviado',
+                    topicID: messageToSend.id
+                };
+                createNotification(notif).catch(err => console.error('createNotification error', err));
+            }
+        } catch (e) {
+            console.error('notification error', e);
+        }
         return res.json({ messages });
     } catch (e) {
         console.error('polling GET error', e);
