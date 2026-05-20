@@ -1,6 +1,6 @@
 # Marketplace Backend — Agent Notes
 
-Last updated: 2026-05-09
+Last updated: 2026-05-12
 
 This document is the single-source agent-facing summary of the backend: goals, constraints, architecture, data models, APIs, operational notes, and short-term priorities. Keep this file updated as decisions change.
 
@@ -47,7 +47,7 @@ Record these updates before merging when possible, or immediately after merging 
 ## 4. Environment variables (required / recommended)
 - `PORT` — server port (default 3000)
 - `NODE_ENV` — development|production
-- `DATABASE_URL` — Postgres connection string (or Mongo URI)
+- `MONGODB_URI` — MongoDB connection string (used by `dbManager.js`)
 - `JWT_SECRET` — access token signing secret
 - `JWT_REFRESH_SECRET` — refresh token signing secret
 - `IMAGE_UPLOAD_PATH` — local path for uploaded images
@@ -107,6 +107,10 @@ All endpoints return JSON; protect with auth middleware where noted.
   - POST /conversations — open conversation
   - GET /conversations/:id/messages — fetch messages
   - POST /conversations/:id/messages — send message
+
+Notes: the running `server.js` exposes message routes under `/api/messages/:chatId`:
+- `GET /api/messages/:chatId` — fetch messages for a chat (by `chatId`)
+- `POST /api/messages/:chatId` — send a message; `chatId` must be provided as a path parameter (previously accepted in the request body). The handler validates chat existence and that the authenticated user is a participant.
 
  - Notifications
   - GET /api/notifications — list (authenticated users only; paginated)
@@ -176,7 +180,7 @@ All endpoints return JSON; protect with auth middleware where noted.
 ----
 
 ## 11. Deployment notes
-- Containerize with Docker; keep app stateless. Use `DATABASE_URL` and secrets from environment.
+- Containerize with Docker; keep app stateless. Use `MONGODB_URI` and other secrets from environment.
  - In production use HTTPS and rotate JWT secrets periodically. Use a managed MongoDB service + S3.
 
 ----
@@ -224,6 +228,11 @@ All endpoints return JSON; protect with auth middleware where noted.
    - `deleteOffending` now performs the appropriate corrective action based on report `type`: for `userReport` it suspends the reported user and soft-deletes their products; for `productReport` it soft-deletes the offending product.
  - 2026-05-09: Admin listing endpoints and DB helpers:
    - Added `GET /api/admin/products` to return paginated products for admin views; this endpoint includes soft-deleted products and supports filters similar to the public product search.
+ - 2026-05-12: Updated chat route implementation and auth usage
+   - `server.js` chat routes now use `DbManager.findProductByID()` for product lookups (centralized DB access via `dbManager.js`).
+   - Replaced the header-based placeholder auth with a composed middleware using `middleware/auth/tokenValidator.js` followed by `middleware/auth/userValidator.js`. Routes should prefer this composition for JWT validation and user state checks.
+ - 2026-05-12: Refactored messages endpoint to use path param
+   - `POST /api/messages/:chatId` now accepts `chatId` as a URL parameter instead of requiring it in the request body. The route verifies chat existence and participant membership before saving messages.
    - Added `GET /api/admin/users` to return paginated users for admin views; this endpoint includes suspended users and supports basic search by `name` or `email` and an `isSeller` filter.
    - Added `dbManager.findProductsAdmin()` and `dbManager.findUsers()` helpers to support paginated admin listings.
    - Updated `routes/admin/users.js` to accept flexible boolean formats for the `isSeller` query parameter (`true|false`, `1|0`, `yes|no`). Invalid values return `400`.
