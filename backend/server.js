@@ -1,3 +1,4 @@
+//TODO: Standardize all the routes here to use dbManager and be organized properly like the rest of them
 const express = require('express');
 const mongoose = require('mongoose');
 const DbManager = require('./dbManager');
@@ -8,21 +9,9 @@ const router = express.Router();
 // TODO: Integrate into dbManager
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/marketplace');
 
-const ChatSchema = new mongoose.Schema({
-    buyerID: { type: String, required: true },
-    sellerID: { type: String, required: true },
-    associatedProduct: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
-    createdAt: { type: Date, default: Date.now }
-});
-const Chat = mongoose.model('Chat', ChatSchema);
+const { Chat, Message } = require('./routes/chat/models');
 
-const MessageSchema = new mongoose.Schema({
-    chatId: { type: mongoose.Schema.Types.ObjectId, ref: 'Chat' },
-    senderId: String,
-    text: String,
-    timestamp: { type: Date, default: Date.now }
-});
-const Message = mongoose.model('Message', MessageSchema);
+// Message model and schema moved to backend/models/message.js
 
 // 3. Middleware de Autenticación — use existing validators
 const tokenValidator = require('./middleware/auth/tokenValidator');
@@ -53,6 +42,7 @@ router.post('/api/chat/', authMiddleware, async (req, res) => {
         // A. Verificar que el productID exista
         const product = await DbManager.findProductByID(productID);
         if (!product) {
+            console.log("Product "+productID+" not found")
             return res.status(404).json({ error: "Product not found" });
         }
 
@@ -60,7 +50,7 @@ router.post('/api/chat/', authMiddleware, async (req, res) => {
 
         // Validación extra: No chatear con uno mismo
         if (buyerID === sellerID) {
-            return res.status(400).json({ error: "No puedes iniciar chat con tu propio producto" });
+            return res.status(400).json({ error: "Cannot start conversation with your own product" });
         }
 
         // B. Verificar que no exista ya un chat para este producto entre ellos
@@ -89,35 +79,25 @@ router.post('/api/chat/', authMiddleware, async (req, res) => {
     }
 });
 
-// GET /api/messages/:chatId - Obtener mensajes
-router.get('/api/messages/:chatId', async (req, res) => {
-    const messages = await Message.find({ chatId: req.params.chatId }).sort('timestamp');
-    res.json(messages);
-});
+// legacy POST /api/chat removed; use POST /api/chat/ instead
+// NOTE: This handler was removed to avoid duplicate route handlers. Use the existing POST /api/chat/ endpoint.
 
-// POST /api/messages/:chatId - Enviar mensaje (chatId as path param)
-// TODO: The request should fail for an empty message body
-router.post('/api/messages/:chatId', authMiddleware, async (req, res) => {
-    const chatId = req.params.chatId;
-    const { text } = req.body;
+// GET /api/messages/:chatId - Obtener mensajes (legacy)
+// Moved to backend/routes/chat/legacyMessages.js and mounted relative to /api/chat as /api/chat/messages/:chatId
 
-    // Verify chat exists and user is a participant
-    try {
-        const chat = await Chat.findById(chatId);
-        if (!chat) return res.status(404).json({ error: 'Chat not found' });
-        const uid = req.user.id;
-        if (chat.buyerID !== uid && chat.sellerID !== uid) return res.status(403).json({ error: 'Not a participant of this chat' });
 
-        const newMessage = await new Message({
-            chatId,
-            senderId: uid,
-            text
-        }).save();
-        res.status(201).json(newMessage);
-    }
-    catch (e) {
-        res.status(500).json({ error: 'Error saving message' });
-    }
-});
+// Route moved to backend/routes/chat/getMsg.js (handled by routes/chat/chat.js)
+
+
+// POST /api/messages/:chatId - moved to backend/routes/chat/postMessage.js
+
+// Polling endpoints moved to backend/routes/chat/polling.js
+
+
+
+// Route moved to backend/routes/chat/getChats.js (handled by routes/chat/chat.js)
+// POST /api/chat/:chatId/messages/mark_read moved to backend/routes/chat/markRead.js
+
+// DELETE /api/chat/:chatId moved to backend/routes/chat/deleteChat.js
 
 module.exports = router;
