@@ -12,6 +12,7 @@ const { Chat, Message } = require('./models');
 const getChats = require('./getChats');
 const getMessages = require('./getMsg');
 const polling = require('./polling');
+const markRead = require('./markRead');
 const deleteChat = require('./deleteChat');
 
 router.use(tokenValidatorMiddleware)
@@ -19,6 +20,7 @@ router.use(userAuthMiddleware)
 router.use('/', getChats)
 router.use('/', getMessages)
 router.use('/', polling)
+router.use('/', markRead)
 router.use('/', deleteChat)
 
 module.exports = router;
