@@ -10,6 +10,9 @@ const db = require('../../dbManager');
 // POST /:chatId/messages/polling
 router.post('/:chatId/messages/polling', async (req, res) => {
     const chatId = req.params.chatId;
+    if (!mongoose.Types.ObjectId.isValid(chatId)) {
+        return res.status(400).json({ error: 'Invalid conversation ID' });
+    }
     const { content, attachments } = req.body || {};
     try {
         const chat = await Chat.findById(chatId);
@@ -70,6 +73,9 @@ router.post('/:chatId/messages/polling', async (req, res) => {
 // GET /:chatId/messages/polling?lastCheckedAt=<ISO>
 router.get('/:chatId/messages/polling', async (req, res) => {
     const chatId = req.params.chatId;
+    if (!mongoose.Types.ObjectId.isValid(chatId)) {
+        return res.status(400).json({ error: 'Invalid conversation ID' });
+    }
     const { lastCheckedAt } = req.query;
     if (!lastCheckedAt) return res.status(400).json({ error: 'Missing lastCheckedAt query parameter' });
     const since = new Date(lastCheckedAt);
