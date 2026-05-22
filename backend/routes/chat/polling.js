@@ -4,6 +4,8 @@ const router = express.Router();
 
 // Reuse centralized chat models
 const { Chat, Message } = require('./models');
+const { createNotification } = require('../../services/notifications');
+const db = require('../../dbManager');
 
 // POST /:chatId/messages/polling
 router.post('/:chatId/messages/polling', async (req, res) => {
@@ -40,6 +42,24 @@ router.post('/:chatId/messages/polling', async (req, res) => {
             chatId: newMessage.chatId
         };
 
+        // Create notification for recipient (fire-and-forget)
+        try {
+            const recipientId = String(chat.buyerID) === String(uid) ? String(chat.sellerID) : String(chat.buyerID);
+            if (recipientId && String(recipientId) !== String(uid)) {
+                const user = await db.findUserByUID(String(uid));
+                const notif = {
+                    userID: recipientId,
+                    type: 'message',
+                    title: (user && user.username) ? 'Nuevo mensaje de ' + user.username : 'Nuevo mensaje',
+                    message: (newMessage.content && String(newMessage.content).substring(0, 200)) || 'Adjunto enviado',
+                    topicID: String(messageToReturn.id)
+                };
+                createNotification(notif).catch(err => console.error('createNotification error', err));
+            }
+        } catch (e) {
+            console.error('notification error', e);
+        }
+
         return res.status(201).json({ message: messageToReturn });
     } catch (e) {
         console.error('polling POST error', e);
@@ -64,30 +84,20 @@ router.get('/:chatId/messages/polling', async (req, res) => {
 
         let messages = await Message.find({ chatId: chatId, createdAt: { $gt: since } }).sort({ createdAt: 1 }).lean();
 
-        const idsToMark = messages.filter(m => String(m.senderId) !== String(uid) && !(Array.isArray(m.readBy) && m.readBy.includes(uid))).map(m => m._id);
+        const idsToMark = messages
+            .filter(m => String(m.senderId) !== String(uid) && !(Array.isArray(m.readBy) && m.readBy.includes(uid)))
+            .map(m => m._id);
         if (idsToMark.length > 0) {
             await Message.updateMany({ _id: { $in: idsToMark } }, { $addToSet: { readBy: uid } });
             // reflect change in returned objects
             messages = messages.map(m => idsToMark.find(id => String(id) === String(m._id)) ? Object.assign(m, { isRead: true }) : m);
         }
-        // Create notification for recipient (fire-and-forget)
-        try {
-            const recipientId = String(chat.buyerID) === String(uid) ? String(chat.sellerID) : String(chat.buyerID);
-            if (recipientId && String(recipientId) !== String(uid)) {
-                const user = await db.findUserByUID(String(uid))
-                const notif = {
-                    userID: recipientId,
-                    type: 'message',
-                    title: (user && user.username)? 'Nuevo mensaje de '+user.username : 'Nuevo mensaje',
-                    message: (newMessage.content && String(newMessage.content).substring(0, 200)) || 'Adjunto enviado',
-                    topicID: messageToSend.id
-                };
-                createNotification(notif).catch(err => console.error('createNotification error', err));
-            }
-        } catch (e) {
-            console.error('notification error', e);
-        }
-        return res.json({ messages });
+        const messagesWithRead = messages.map(m => {
+            const isRead = Array.isArray(m.readBy) && m.readBy.includes(uid);
+            const { readBy, ...rest } = m;
+            return Object.assign(rest, { isRead });
+        });
+        return res.json({ messages: messagesWithRead });
     } catch (e) {
         console.error('polling GET error', e);
         return res.status(500).json({ error: 'Server error' });
