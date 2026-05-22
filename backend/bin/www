@@ -20,8 +20,13 @@ app.set('port', port);
  */
 
 const server = http.createServer(app);
-const attachSocket = require('../socket');
-attachSocket(server);
+
+const disableWebsocket = process.env.TESTING_DISABLE_WEBSOCKET || false
+if(!disableWebsocket) {
+  const attachSocket = require('../socket');
+  attachSocket(server);
+}
+else console.warn("WARNING: WebSocket temporarily disabled via environment variable")
 
 /**
  * Listen on provided port, on all network interfaces.
