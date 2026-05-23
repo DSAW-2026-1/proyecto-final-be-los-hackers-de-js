@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const router = express.Router();
 const db = require("../../dbManager");
 const ITEMS_PER_PAGE = 12
@@ -11,10 +12,10 @@ router.get('/', async function (req, res) {
     if(!page) page = 1;
     let pageInt = parseInt(page) || 1
     if(isNaN(pageInt)) pageInt = 1
-    //if(!query && !categories && !fromPrice && !toPrice && !conditions && !minRating) return res.status("400")
+    
     const minRatingVal = parseInt(minRating) || NaN
-    if(categories) fullQuery["category"] = { $in: categories.split(',') }
-    if(conditions) fullQuery["condition"] = { $in: conditions.split(',') }
+    if(categories && typeof categories === 'string') fullQuery["category"] = { $in: categories.split(',') }
+    if(conditions && typeof conditions === 'string') fullQuery["condition"] = { $in: conditions.split(',') }
     if(fromPrice || toPrice) {
         let fromPriceVal = parseInt(fromPrice) || NaN
         let toPriceVal = parseInt(toPrice) || NaN
@@ -25,17 +26,22 @@ router.get('/', async function (req, res) {
     if(!isNaN(minRatingVal)){
         fullQuery["rating"] = {$gte: minRatingVal}
     }
-    if(query){
-        //TODO: Sanitize this
+    if(query && typeof query === 'string'){
+        const regex = new RegExp(query, 'i');
         if(searchDescription){
             fullQuery["$or"] = [
-                {name: {$regex: query}},
-                {description: {$regex: query}}
+                {name: {$regex: regex}},
+                {description: {$regex: regex}}
             ]
         }
-        else fullQuery["name"] = {$regex: query}
+        else fullQuery["name"] = {$regex: regex}
     }
-    if(sellerID) fullQuery["sellerID"] = sellerID
+    if(sellerID) {
+        if (!mongoose.Types.ObjectId.isValid(sellerID)) {
+            return res.status(400).json({ error: 'Invalid seller ID' });
+        }
+        fullQuery["sellerID"] = sellerID;
+    }
     if(!includeOutOfStock) fullQuery["stock"] = {$gt: 0}
     //TODO: Probably not the quickest way of paginating
     const search = await db.findProducts(fullQuery, (pageInt-1), ITEMS_PER_PAGE)
