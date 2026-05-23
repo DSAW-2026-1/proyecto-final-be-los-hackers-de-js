@@ -7,6 +7,7 @@ const getUserReviews = require("./reviews")
 const getSelf = require("./getSelf")
 const editSelf = require("./edit")
 const reportUser = require("./report")
+const changePassword = require("./changePassword")
 
 router.use('/', getUserReviews)
 router.use('/', findUser)
@@ -15,5 +16,6 @@ router.use('/', userrAuthMiddleware)
 router.use('/', reportUser)
 router.use('/', getSelf)
 router.use('/', editSelf)
+router.use('/', changePassword)
 
 module.exports = router;
