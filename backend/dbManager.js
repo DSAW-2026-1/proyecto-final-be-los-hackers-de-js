@@ -37,6 +37,13 @@ class DbManager{
         return client.db("marketplace");
     }*/
     
+    static #validateObjectId(id) {
+        if (!ObjectId.isValid(id)) {
+            throw new Error('Invalid ObjectId');
+        }
+        return new ObjectId(id);
+    }
+    
     static async closeConnection(){
         await client.close();
     }
@@ -66,7 +73,7 @@ class DbManager{
     static async #findByID(database, id){
         try {
             //let db = await this.#openConnection()
-            return await client.db(MAIN_DB).collection(database).findOne({_id: new ObjectId(id)})
+            return await client.db(MAIN_DB).collection(database).findOne({_id: this.#validateObjectId(id)})
         }
         catch (e){
             return null
@@ -117,7 +124,7 @@ class DbManager{
     static async #updateItem(collection, id, newData){
         try {
             await client.db(MAIN_DB).collection(collection).updateOne(
-                {_id: new ObjectId(id)},
+                {_id: this.#validateObjectId(id)},
                 { $set: newData }
             )
             return true
@@ -129,7 +136,7 @@ class DbManager{
     static async #appendToArrays(collection, id, newData){
         try {
             await client.db(MAIN_DB).collection(collection).updateOne(
-                {_id: new ObjectId(id)},
+                {_id: this.#validateObjectId(id)},
                 { $push: newData }
             )
             return true
@@ -151,7 +158,7 @@ class DbManager{
                 temp[key+"."+internalKey] = newData[internalKey]
             }
             await client.db(MAIN_DB).collection(collection).updateOne(
-                {_id: new ObjectId(id)},
+                {_id: this.#validateObjectId(id)},
                 { $set: temp }
             )
             return true
