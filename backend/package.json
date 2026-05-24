@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "start": "node ./bin/www",
+    "test": "jest",
     "test:messaging": "node ./messaging.test.js"
   },
   "dependencies": {
@@ -22,6 +23,13 @@
     "socket.io-client": "^4.7.2"
   },
   "devDependencies": {
-    "axios": "^1.4.0"
+    "axios": "^1.4.0",
+    "jest": "^30.4.2",
+    "supertest": "^7.2.2"
+  },
+  "jest": {
+    "testMatch": [
+      "<rootDir>/tests/**/*.test.js"
+    ]
   }
 }

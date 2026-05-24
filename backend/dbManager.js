@@ -37,7 +37,7 @@ class DbManager{
         return client.db("marketplace");
     }*/
     
-    static async #closeConnection(){
+    static async closeConnection(){
         await client.close();
     }
     static async #addToCollection(collection, object){
